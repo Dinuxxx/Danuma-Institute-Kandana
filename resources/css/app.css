@@ -1,3 +1,160 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Keyframes for animations */
+@keyframes fadeInScaleUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideFromLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-100px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Apply to each element with appropriate delays */
+.welcome-to {
+  opacity: 0;
+  animation: fadeInScaleUp 0.8s ease-out forwards;
+}
+
+.danuma {
+  opacity: 0;
+  animation: slideFromLeft 1s ease-out forwards;
+  animation-delay: 0.3s;
+}
+
+.institute {
+  opacity: 0;
+  animation: fadeInScaleUp 0.8s ease-out forwards;
+  animation-delay: 0.6s;
+}
+
+.login-button {
+  opacity: 0;
+  animation: bounceIn 1s ease-out forwards;
+  animation-delay: 1s; /* Adjust the delay as needed */
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 9999px; /* Make sure the button has rounded corners */
+}
+
+
+
+@keyframes fadeInScaleUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.nav-item {
+  opacity: 0;
+  animation: fadeInScaleUp 0.6s ease-out forwards;
+}
+
+.nav-item-1 {
+  animation-delay: 0.2s; /* 200ms delay */
+}
+
+.nav-item-2 {
+  animation-delay: 0.4s; /* 400ms delay */
+}
+
+.nav-item-3 {
+  animation-delay: 0.6s; /* 600ms delay */
+}
+
+.nav-item-4 {
+  animation-delay: 0.8s; /* 800ms delay */
+}
+
+.nav-item-5 {
+  animation-delay: 1s; /* 1000ms delay */
+}
+
+/* Basic Hamburger Icon */
+.hamburger {
+  position: relative;
+  width: 30px;
+  height: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.hamburger div {
+  width: 100%;
+  height: 4px;
+  background-color: #333; /* Color of the hamburger lines */
+  border-radius: 5px;
+  transition: all 0.3s ease-in-out; /* Smooth transition */
+}
+
+/* Animation to turn hamburger into cross */
+.hamburger.open div:nth-child(1) {
+  transform: rotate(45deg);
+  position: absolute;
+  top: 0;
+}
+
+.hamburger.open div:nth-child(2) {
+  opacity: 0; /* Hide the middle line */
+}
+
+.hamburger.open div:nth-child(3) {
+  transform: rotate(-45deg);
+  position: absolute;
+  bottom: 0;
+}
+
+/* Add some easing for smoother transitions */
+.hamburger div:nth-child(1), .hamburger div:nth-child(3) {
+  transition: transform 0.4s ease, top 0.4s ease, bottom 0.4s ease;
+}
+
+.hamburger.open div:nth-child(1) {
+  top: 50%;
+  transform-origin: 50% 50%;
+}
+
+.hamburger.open div:nth-child(3) {
+  bottom: 50%;
+  transform-origin: 50% 50%;
+}
+
+

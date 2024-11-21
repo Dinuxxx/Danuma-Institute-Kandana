@@ -4,6 +4,7 @@ import Footer from '@/Components/Public-access/Footer';
 import Title from '@/Components/Public-access/Title';
 import AddressInfo from '@/Components/Public-access/AddressInfo';
 import ContactForm from '@/Components/Public-access/ContactForm';
+import Timetable from '@/Components/Timetable';
 import { Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import { BsList, BsX } from 'react-icons/bs';
@@ -14,6 +15,25 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
     };
+
+    const columns = ["Subject Code", "Subject Name", "Day", "Start Time", "End Time"];
+    const data = [
+        {
+        "Subject Code": "CSC101",
+        "Subject Name": "Introduction to Programming",
+        Day: "Monday",
+        "Start Time": "09:00 AM",
+        "End Time": "11:00 AM",
+        },
+        {
+        "Subject Code": "CSC102",
+        "Subject Name": "Data Structures",
+        Day: "Wednesday",
+        "Start Time": "02:00 PM",
+        "End Time": "04:00 PM",
+        },
+    ];
+    const handleBack = () => alert("Back button clicked!");
 
     return (
         <>
@@ -72,6 +92,14 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 <main className="mt-[80px] sm:mt-[100px]">
                     <Hero/>
                 </main>
+            </div>
+            <div className='ml-[5%] mr-[5%]'>
+                <Title title='Time Table'/>
+                <Timetable
+                    columns={columns}
+                    data={data}
+                    onBack={handleBack}
+                />
             </div>
             <div>
                 <div className='ml-[5%] mr-[5%]'>

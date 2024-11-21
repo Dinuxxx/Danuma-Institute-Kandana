@@ -31,7 +31,7 @@ const Hero = () => {
 
         {/* Login Button with animation */}
         <PrimaryButton
-          className="mt-5 sm:mt-10 sm:w-40 font-bold text-xl py-2 px-4 rounded-xl shadow-[0_0_5px_#FC9C02] hover:shadow-[0_0_10px_#FC9C02,0_0_20px_#FC9C02] login-button"
+          className="mt-5 sm:mt-10 sm:w-40 font-bold text-lg lg:text-xl md:text-xl py-2 px-4 rounded-xl shadow-[0_0_5px_#FC9C02] hover:shadow-[0_0_10px_#FC9C02,0_0_20px_#FC9C02] login-button"
           style={{
             backgroundColor: '#FC9C02',
             borderColor: '#FC9C02',

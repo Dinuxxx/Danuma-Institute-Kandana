@@ -1,5 +1,9 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import Hero from '@/Components/Public-access/Hero';
+import Footer from '@/Components/Public-access/Footer';
+import Title from '@/Components/Public-access/Title';
+import AddressInfo from '@/Components/Public-access/AddressInfo';
+import ContactForm from '@/Components/Public-access/ContactForm';
 import { Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import { BsList, BsX } from 'react-icons/bs';
@@ -68,6 +72,18 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 <main className="mt-[80px] sm:mt-[100px]">
                     <Hero/>
                 </main>
+            </div>
+            <div>
+                <div className='ml-[5%] mr-[5%]'>
+                    <Title title='Contact Us'/>
+                </div>
+                <div className=" flex flex-col mt-[-100px]">
+                    <div className="flex flex-col md:flex-row w-full my-10 md:mb-10 lg:mb-8 mb-4 flex-grow">
+                        <ContactForm />
+                        <AddressInfo />
+                    </div>
+                        <Footer />
+                </div>
             </div>
         </>
     );

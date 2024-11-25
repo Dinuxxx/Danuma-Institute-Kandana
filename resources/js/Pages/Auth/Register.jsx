@@ -246,7 +246,7 @@ export default function Register() {
                         />
                     </div>
                     <div className="flex justify-center ">
-                        <PrimaryButton type="submit" className="bg-orange-500 md:w-[40%] w-[50%] justify-center rounded-xl py-2 md:mt-20 md:mb-5 mt-5">
+                        <PrimaryButton type="submit" className="bg-orange-500 hover:bg-orange-600 md:w-[40%] w-[50%] justify-center rounded-xl py-2 md:mt-20 md:mb-5 mt-5">
                             Next
                         </PrimaryButton>
                     </div>
@@ -320,7 +320,7 @@ export default function Register() {
                         </div>
                     </div>
                     <div className="flex justify-center">
-                        <PrimaryButton type="submit" className="bg-orange-500 md:w-[40%] w-[50%] justify-center rounded-xl py-2 md:mt-10 md:mb-5 mt-5">
+                        <PrimaryButton type="submit" className="bg-orange-500 hover:bg-orange-600 md:w-[40%] w-[50%] justify-center rounded-xl py-2 md:mt-10 md:mb-5 mt-5">
                             Register
                         </PrimaryButton>
                     </div>

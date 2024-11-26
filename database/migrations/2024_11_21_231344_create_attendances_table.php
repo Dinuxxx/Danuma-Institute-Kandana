@@ -12,8 +12,26 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('attendances', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+            $table->increments('att_id'); 
+            $table->timestamp('check_in_time'); 
+            $table->timestamp('check_out_time');
+            $table->string('status',50);
+            $table->string('marked_method',50); 
+            $table->date('date'); 
+            $table->unsignedBigInteger('marked_by')->nullable(); 
+            $table->unsignedInteger('student_id')->nullable(); 
+            
+            $table->foreign('marked_by')
+                ->references('id')
+                ->on('users')
+                ->onDelete('set null')
+                ->onUpdate('cascade');
+
+            $table->foreign('student_id')
+                ->references('student_id')
+                ->on('students')
+                ->onDelete('set null')
+                ->onUpdate('cascade');
         });
     }
 

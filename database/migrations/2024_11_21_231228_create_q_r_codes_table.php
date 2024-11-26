@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('q_r_codes', function (Blueprint $table) {
-            $table->id();
+            $table->increments('QR_id');
+            $table->string('QR_reference');
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }

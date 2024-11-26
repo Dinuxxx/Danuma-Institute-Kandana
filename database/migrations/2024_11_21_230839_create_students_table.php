@@ -12,7 +12,30 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('students', function (Blueprint $table) {
-            $table->id();
+            $table->increments('student_id');
+            $table->string('grade');
+            $table->unsignedInteger('QR_id')->unique()->nullable();
+            $table->unsignedInteger('parent_id')->nullable();
+            $table->unsignedBigInteger('user_id');
+        
+            $table->foreign('QR_id')
+                ->references('QR_id')
+                ->on('q_r_codes')
+                ->onDelete('set null')
+                ->onUpdate('cascade');
+
+            $table->foreign('parent_id')
+                ->references('parent_id')
+                ->on('parents')
+                ->onDelete('set null')
+                ->onUpdate('cascade');
+
+            $table->foreign('user_id')
+                ->references('id')
+                ->on('users')
+                ->onDelete('cascade')
+                ->onUpdate('cascade');
+
             $table->timestamps();
         });
     }

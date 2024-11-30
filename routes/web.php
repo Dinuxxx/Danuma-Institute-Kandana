@@ -14,14 +14,18 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/student/coursedetails', function () {
-    return Inertia::render('Students/StudentCourses'); 
-})->name('student.coursedetails');
+Route::get('/student/lessons', function () {
+    return Inertia::render('Students/StudentLessons'); 
+})->name('student.lessons');
 
 
-Route::get('/teacher/coursedetails', function () {
-    return Inertia::render('Teachers/TeacherCourses'); 
-})->name('teacher.coursedetails');
+Route::get('/teacher/lessons', function () {
+    return Inertia::render('Teachers/TeacherLessons'); 
+})->name('teacher.lessons');
+
+Route::get('/teacher/courseoverview', function () {
+    return Inertia::render('Teachers/CourseOverview'); 
+})->name('admin.courseoverview');
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');

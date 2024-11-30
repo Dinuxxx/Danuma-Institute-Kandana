@@ -1,6 +1,6 @@
 import React from 'react';
 
-const CourseCardStudent = () => {
+const LessonCardStudent = () => {
   return (
     <div className="p-4 bg-customCream rounded-lg shadow-md border border-gray-200">
       
@@ -76,4 +76,4 @@ const CourseCardStudent = () => {
   );
 };
 
-export default CourseCardStudent;
+export default LessonCardStudent;

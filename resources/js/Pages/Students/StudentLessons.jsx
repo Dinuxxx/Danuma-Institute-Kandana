@@ -1,7 +1,7 @@
-import CourseCardStudent from '@/Components/CourseCardStudent';
+import LessonCardStudent from '@/Components/LessonCardStudent';
 import React from 'react';
 
-const StudentCourses = () => {
+const StudentLessons = () => {
   return (
     <div className="min-h-screen bg-white flex flex-col p-6">
       
@@ -32,17 +32,17 @@ const StudentCourses = () => {
         </div>
       </div>
 
-      {/* Course Cards */}
+      
       <div className="space-y-4">
-        <CourseCardStudent />
-        <CourseCardStudent />
-        <CourseCardStudent />
-        <CourseCardStudent />
-        <CourseCardStudent />
-        <CourseCardStudent />
+        <LessonCardStudent />
+        <LessonCardStudent />
+        <LessonCardStudent />
+        <LessonCardStudent />
+        <LessonCardStudent />
+        <LessonCardStudent />
       </div>
     </div>
   );
 };
 
-export default StudentCourses;
+export default StudentLessons;

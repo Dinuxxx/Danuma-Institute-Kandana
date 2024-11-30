@@ -2,9 +2,9 @@ import React from 'react';
 
 const CourseCardStudent = () => {
   return (
-    <div className="p-4 bg-orange-50 rounded-lg shadow-md border border-gray-200">
+    <div className="p-4 bg-customCream rounded-lg shadow-md border border-gray-200">
       
-      <h1 className="text-orange-600 font-semibold mb-2">S.M 01: Description</h1>
+      <h1 className="text-customOrange font-semibold mb-2">S.M 01: Description</h1>
       
       
       <div className="flex gap-4 items-center mb-2 bg-blue-100 rounded-lg">

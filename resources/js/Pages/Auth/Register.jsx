@@ -5,12 +5,14 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function Register() {
-    const [currentStep, setCurrentStep] = useState(1); // State to track current step
-    const [courses, setCourses] = useState([]); // State for managing added courses
-    const [courseInput, setCourseInput] = useState(''); // Course search input
-    const [grade, setGrade] = useState(''); // Selected grade
+    const [currentStep, setCurrentStep] = useState(1); 
+    const [courses, setCourses] = useState([]); 
+    const [courseInput, setCourseInput] = useState('');
+    const [grade, setGrade] = useState(''); 
     const { data, setData, post, processing, errors, reset } = useForm({
         firstName: '',
         lastName: '',
@@ -27,31 +29,111 @@ export default function Register() {
 
     const handleNext = (e) => {
         e.preventDefault();
-        setCurrentStep((prev) => prev + 1); // Move to the next step
+        setCurrentStep((prev) => prev + 1);
     };
+
+    const handleCourseChange = (e) => setCourseInput(e.target.value);
 
     const handleAddCourse = () => {
         if (courseInput && grade) {
             setCourses([...courses, { id: Date.now(), name: courseInput, grade }]);
             setCourseInput('');
             setGrade('');
+            notifySuccess("Course successfully added!");
+        } else {
+            notifyError("Please provide both course and grade.");
         }
     };
 
     const handleRemoveCourse = (id) => {
         setCourses(courses.filter((course) => course.id !== id));
+        notifySuccess("Course removed successfully.");
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
         const finalData = { ...data, courses };
-        console.log('Final Registration Data:', finalData); // Replace with `post` for backend submission
+        console.log('Final Registration Data:', finalData); // Replace with post for backend submission
         post(route('register'), {
             data: finalData,
-            onFinish: () => reset(),
+            onFinish: () => {
+                reset();
+                toast.success("Registration successful!", {
+                    position: "bottom-right",
+                    autoClose: 3000,
+                    hideProgressBar: true,
+                });
+            },
         });
     };
 
+    const validateName = (name) => /^[A-Za-z][A-Za-z\s-]*$/.test(name) || name === "";
+    const handleNameChange = (fieldName, value) => {
+        if (validateName(value)) {
+            setData(fieldName, value);
+            if (errors[fieldName]) delete errors[fieldName];
+        } else {
+            setData(fieldName, value);
+            errors[fieldName] = "Name can only contain letters.";
+        }
+    };
+
+    const validateEmail = (email) => /^[a-z-][a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email) || email === "";
+    const handleEmailChange = (value) => {
+        if (validateEmail(value)) {
+            setData('email', value);
+            if (errors.email) delete errors.email;
+        } else {
+            setData('email', value);
+            errors.email = "Please enter a valid email address.";
+        }
+    };
+
+    const validatePhoneNumber = (phoneNumber) => /^0\d{9}$/.test(phoneNumber) || phoneNumber === "";
+    const handlePhoneNumberChange = (fieldName, value) => {
+        if (validatePhoneNumber(value)) {
+            setData(fieldName, value);
+            if (errors[fieldName]) delete errors[fieldName];
+        } else {
+            setData(fieldName, value);
+            errors[fieldName] = "Invalid phone number.";
+        }
+    };
+
+    const validateGrade = (grade) => /^(?:[6-9]|10|11|A\/L)$/i.test(grade) || grade === "";
+    const handleGradeChange = (value) => {
+        if (validateGrade(value)) {
+            setGrade(value);
+            if (errors.grade) delete errors.grade;
+        } else {
+            setGrade(value);
+            errors.grade = "Grade must be between 6-11 or 'A/L'.";
+        }
+    };
+
+    const notifySuccess = (message) => toast.success(message, {
+        position: "bottom-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progressClassName: "bg-green-500",
+        className: "border border-green-600 rounded-lg shadow-md",
+        style: { backgroundColor: '#ebfeee' },
+    });
+
+    const notifyError = (message) => toast.error(message, {
+        position: "bottom-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progressClassName: "bg-red-500",
+        className: "border border-red-600 rounded-lg shadow-md",
+        style: { backgroundColor: '#fcf0f0' },
+    });
 
     return (
         <GuestLayout>
@@ -67,7 +149,7 @@ export default function Register() {
                             name="firstName"
                             value={data.firstName}
                             className="mt-1 block w-full"
-                            onChange={(e) => setData('firstName', e.target.value)}
+                            onChange={(e) => handleNameChange('firstName', e.target.value)}
                             required
                         />
                         <InputError message={errors.firstName} className="mt-2" />
@@ -79,7 +161,7 @@ export default function Register() {
                             name="lastName"
                             value={data.lastName}
                             className="mt-1 block w-full"
-                            onChange={(e) => setData('lastName', e.target.value)}
+                            onChange={(e) => handleNameChange('lastName', e.target.value)}
                             required
                         />
                         <InputError message={errors.lastName} className="mt-2" />
@@ -92,7 +174,7 @@ export default function Register() {
                             name="email"
                             value={data.email}
                             className="mt-1 block w-full"
-                            onChange={(e) => setData('email', e.target.value)}
+                            onChange={(e) => handleEmailChange(e.target.value)}
                             required
                         />
                         <InputError message={errors.email} className="mt-2" />
@@ -116,7 +198,7 @@ export default function Register() {
                             name="phoneNumber"
                             value={data.phoneNumber}
                             className="mt-1 block w-full"
-                            onChange={(e) => setData('phoneNumber', e.target.value)}
+                            onChange={(e) => handlePhoneNumberChange('phoneNumber', e.target.value)}
                             required
                         />
                         <InputError message={errors.phoneNumber} className="mt-2" />
@@ -184,9 +266,7 @@ export default function Register() {
                             name="parentFirstName"
                             value={data.parentFirstName}
                             className="mt-1 block w-full"
-                            onChange={(e) =>
-                                setData('parentFirstName', e.target.value)
-                            }
+                            onChange={(e) => handleNameChange('parentFirstName', e.target.value)}
                             required
                         />
                         <InputError
@@ -201,9 +281,7 @@ export default function Register() {
                             name="parentSecondName"
                             value={data.parentSecondName}
                             className="mt-1 block w-full"
-                            onChange={(e) =>
-                                setData('parentSecondName', e.target.value)
-                            }
+                            onChange={(e) => handleNameChange('parentSecondName', e.target.value)}
                             required
                         />
                         <InputError
@@ -218,9 +296,7 @@ export default function Register() {
                             name="parentPhoneNumber"
                             value={data.parentPhoneNumber}
                             className="mt-1 block w-full"
-                            onChange={(e) =>
-                                setData('parentPhoneNumber', e.target.value)
-                            }
+                            onChange={(e) => handlePhoneNumberChange('parentPhoneNumber', e.target.value)}
                             required
                         />
                         <InputError
@@ -246,7 +322,7 @@ export default function Register() {
                         />
                     </div>
                     <div className="flex justify-center ">
-                        <PrimaryButton type="submit" className="bg-orange-500 hover:bg-orange-600 md:w-[40%] w-[50%] justify-center rounded-xl py-2 md:mt-20 md:mb-5 mt-5">
+                        <PrimaryButton type="submit" className="bg-orange-500 md:w-[40%] w-[50%] justify-center rounded-xl py-2 md:mt-20 md:mb-5 mt-5">
                             Next
                         </PrimaryButton>
                     </div>
@@ -262,9 +338,10 @@ export default function Register() {
                             name="grade"
                             value={grade}
                             className="mt-1 block w-full"
-                            onChange={(e) => setGrade(e.target.value)}
+                            onChange={(e) => handleGradeChange(e.target.value)}
                             placeholder="Grade"
                         />
+                        <InputError message={errors.grade} className="mt-2" />
                     </div>
                     <div>
                         <InputLabel htmlFor="course" value="Add a Course" />
@@ -288,7 +365,7 @@ export default function Register() {
                     </div>
                     <div className='pt-10 '>
                         <InputLabel value="Added Courses" />
-                        <div className='mt-2 overflow-x-auto rounded-3xl shadow-[1px_1px_5px_#3d3d3df7,_1px_1px_5px_#afb0b0f7] bg-white'>
+                        <div className='mt-2 overflow-x-auto rounded-3xl shadow-[1px_1px_5px_#3d3d3df7,1px_1px_5px#afb0b0f7] bg-white'>
                             <table className="min-w-full table-auto border-collapse w-full bg-white rounded-3xl">
                                 <thead>
                                     <tr>
@@ -310,7 +387,7 @@ export default function Register() {
                                                     onClick={() => handleRemoveCourse(course.id)}
                                                     className="text-red-500"
                                                 >
-                                                    🗑️
+                                                    🗑
                                                 </button>
                                             </td>
                                         </tr>
@@ -320,12 +397,13 @@ export default function Register() {
                         </div>
                     </div>
                     <div className="flex justify-center">
-                        <PrimaryButton type="submit" className="bg-orange-500 hover:bg-orange-600 md:w-[40%] w-[50%] justify-center rounded-xl py-2 md:mt-10 md:mb-5 mt-5">
+                        <PrimaryButton type="submit" className="bg-orange-500 md:w-[40%] w-[50%] justify-center rounded-xl py-2 md:mt-10 md:mb-5 mt-5">
                             Register
                         </PrimaryButton>
                     </div>
                 </form>
             )}
+            <ToastContainer />
         </GuestLayout>
     );
 }

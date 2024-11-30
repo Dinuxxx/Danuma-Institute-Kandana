@@ -29,6 +29,15 @@ Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 
 
 
+Route::get('/student/coursedetails', function () {
+    return Inertia::render('Students/StudentCourses'); 
+})->name('student.coursedetails');
+
+
+Route::get('/teacher/coursedetails', function () {
+    return Inertia::render('Teachers/TeacherCourses'); 
+})->name('teacher.coursedetails');
+
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');

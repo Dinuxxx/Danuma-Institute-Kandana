@@ -1,120 +1,409 @@
+import React, { useState } from 'react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function Register() {
+    const [currentStep, setCurrentStep] = useState(1); 
+    const [courses, setCourses] = useState([]); 
+    const [courseInput, setCourseInput] = useState('');
+    const [grade, setGrade] = useState(''); 
     const { data, setData, post, processing, errors, reset } = useForm({
-        name: '',
+        firstName: '',
+        lastName: '',
         email: '',
-        password: '',
-        password_confirmation: '',
+        address: '',
+        phoneNumber: '',
+        dateOfBirth: '',
+        gender: '',
+        parentFirstName: '',
+        parentSecondName: '',
+        parentPhoneNumber: '',
+        relationshipToStudent: '',
     });
 
-    const submit = (e) => {
+    const handleNext = (e) => {
         e.preventDefault();
+        setCurrentStep((prev) => prev + 1);
+    };
 
+    const handleCourseChange = (e) => setCourseInput(e.target.value);
+
+    const handleAddCourse = () => {
+        if (courseInput && grade) {
+            setCourses([...courses, { id: Date.now(), name: courseInput, grade }]);
+            setCourseInput('');
+            setGrade('');
+            notifySuccess("Course successfully added!");
+        } else {
+            notifyError("Please provide both course and grade.");
+        }
+    };
+
+    const handleRemoveCourse = (id) => {
+        setCourses(courses.filter((course) => course.id !== id));
+        notifySuccess("Course removed successfully.");
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const finalData = { ...data, courses };
+        console.log('Final Registration Data:', finalData); // Replace with post for backend submission
         post(route('register'), {
-            onFinish: () => reset('password', 'password_confirmation'),
+            data: finalData,
+            onFinish: () => {
+                reset();
+                toast.success("Registration successful!", {
+                    position: "bottom-right",
+                    autoClose: 3000,
+                    hideProgressBar: true,
+                });
+            },
         });
     };
+
+    const validateName = (name) => /^[A-Za-z][A-Za-z\s-]*$/.test(name) || name === "";
+    const handleNameChange = (fieldName, value) => {
+        if (validateName(value)) {
+            setData(fieldName, value);
+            if (errors[fieldName]) delete errors[fieldName];
+        } else {
+            setData(fieldName, value);
+            errors[fieldName] = "Name can only contain letters.";
+        }
+    };
+
+    const validateEmail = (email) => /^[a-z-][a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email) || email === "";
+    const handleEmailChange = (value) => {
+        if (validateEmail(value)) {
+            setData('email', value);
+            if (errors.email) delete errors.email;
+        } else {
+            setData('email', value);
+            errors.email = "Please enter a valid email address.";
+        }
+    };
+
+    const validatePhoneNumber = (phoneNumber) => /^0\d{9}$/.test(phoneNumber) || phoneNumber === "";
+    const handlePhoneNumberChange = (fieldName, value) => {
+        if (validatePhoneNumber(value)) {
+            setData(fieldName, value);
+            if (errors[fieldName]) delete errors[fieldName];
+        } else {
+            setData(fieldName, value);
+            errors[fieldName] = "Invalid phone number.";
+        }
+    };
+
+    const validateGrade = (grade) => /^(?:[6-9]|10|11|A\/L)$/i.test(grade) || grade === "";
+    const handleGradeChange = (value) => {
+        if (validateGrade(value)) {
+            setGrade(value);
+            if (errors.grade) delete errors.grade;
+        } else {
+            setGrade(value);
+            errors.grade = "Grade must be between 6-11 or 'A/L'.";
+        }
+    };
+
+    const notifySuccess = (message) => toast.success(message, {
+        position: "bottom-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progressClassName: "bg-green-500",
+        className: "border border-green-600 rounded-lg shadow-md",
+        style: { backgroundColor: '#ebfeee' },
+    });
+
+    const notifyError = (message) => toast.error(message, {
+        position: "bottom-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progressClassName: "bg-red-500",
+        className: "border border-red-600 rounded-lg shadow-md",
+        style: { backgroundColor: '#fcf0f0' },
+    });
 
     return (
         <GuestLayout>
             <Head title="Register" />
+            <div className="relative mb-8 md:mb-20 h-1 bg-black w-full"></div>
 
-            <form onSubmit={submit}>
-                <div>
-                    <InputLabel htmlFor="name" value="Name" />
+            {currentStep === 1 && (
+                <form onSubmit={handleNext} className="space-y-2 px-[10%]">
+                    <div>
+                        <InputLabel htmlFor="firstName" value="First Name" />
+                        <TextInput
+                            id="firstName"
+                            name="firstName"
+                            value={data.firstName}
+                            className="mt-1 block w-full"
+                            onChange={(e) => handleNameChange('firstName', e.target.value)}
+                            required
+                        />
+                        <InputError message={errors.firstName} className="mt-2" />
+                    </div>
+                    <div>
+                        <InputLabel htmlFor="lastName" value="Last Name" />
+                        <TextInput
+                            id="lastName"
+                            name="lastName"
+                            value={data.lastName}
+                            className="mt-1 block w-full"
+                            onChange={(e) => handleNameChange('lastName', e.target.value)}
+                            required
+                        />
+                        <InputError message={errors.lastName} className="mt-2" />
+                    </div>
+                    <div>
+                        <InputLabel htmlFor="email" value="Email" />
+                        <TextInput
+                            id="email"
+                            type="email"
+                            name="email"
+                            value={data.email}
+                            className="mt-1 block w-full"
+                            onChange={(e) => handleEmailChange(e.target.value)}
+                            required
+                        />
+                        <InputError message={errors.email} className="mt-2" />
+                    </div>
+                    <div>
+                        <InputLabel htmlFor="address" value="Address" />
+                        <TextInput
+                            id="address"
+                            name="address"
+                            value={data.address}
+                            className="mt-1 block w-full"
+                            onChange={(e) => setData('address', e.target.value)}
+                            required
+                        />
+                        <InputError message={errors.address} className="mt-2" />
+                    </div>
+                    <div>
+                        <InputLabel htmlFor="phoneNumber" value="Phone Number" />
+                        <TextInput
+                            id="phoneNumber"
+                            name="phoneNumber"
+                            value={data.phoneNumber}
+                            className="mt-1 block w-full"
+                            onChange={(e) => handlePhoneNumberChange('phoneNumber', e.target.value)}
+                            required
+                        />
+                        <InputError message={errors.phoneNumber} className="mt-2" />
+                    </div>
+                    <div>
+                        <InputLabel htmlFor="dateOfBirth" value="Date of Birth" />
+                        <TextInput
+                            id="dateOfBirth"
+                            type="date"
+                            name="dateOfBirth"
+                            value={data.dateOfBirth}
+                            className="mt-1 block w-full"
+                            onChange={(e) => setData('dateOfBirth', e.target.value)}
+                            required
+                        />
+                        <InputError message={errors.dateOfBirth} className="mt-2" />
+                    </div>
+                    <div>
+                        <InputLabel value="Gender" />
+                        <div className="mt-1 flex items-center space-x-4 md:pl-10">
+                            <label className="flex items-center">
+                                <input
+                                    type="radio"
+                                    name="gender"
+                                    value="Male"
+                                    checked={data.gender === 'Male'}
+                                    onChange={(e) => setData('gender', e.target.value)}
+                                    className="mr-2"
+                                />
+                                Male
+                            </label>
+                            <label className="flex items-center">
+                                <input
+                                    type="radio"
+                                    name="gender"
+                                    value="Female"
+                                    checked={data.gender === 'Female'}
+                                    onChange={(e) => setData('gender', e.target.value)}
+                                    className="mr-2"
+                                />
+                                Female
+                            </label>
+                        </div>
+                        <InputError message={errors.gender} className="mt-2" />
+                    </div>
+                    <div className="flex justify-center">
+                        <PrimaryButton
+                            type="submit"
+                            className="bg-orange-500 hover:bg-orange-600 md:w-[40%] w-[50%] justify-center rounded-xl py-2 md:mt-10 mt-5"
+                            disabled={processing}
+                        >
+                            Next
+                        </PrimaryButton>
+                    </div>
+                </form>
+            )}
 
-                    <TextInput
-                        id="name"
-                        name="name"
-                        value={data.name}
-                        className="mt-1 block w-full"
-                        autoComplete="name"
-                        isFocused={true}
-                        onChange={(e) => setData('name', e.target.value)}
-                        required
-                    />
-
-                    <InputError message={errors.name} className="mt-2" />
-                </div>
-
-                <div className="mt-4">
-                    <InputLabel htmlFor="email" value="Email" />
-
-                    <TextInput
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={data.email}
-                        className="mt-1 block w-full"
-                        autoComplete="username"
-                        onChange={(e) => setData('email', e.target.value)}
-                        required
-                    />
-
-                    <InputError message={errors.email} className="mt-2" />
-                </div>
-
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
-
-                    <TextInput
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={data.password}
-                        className="mt-1 block w-full"
-                        autoComplete="new-password"
-                        onChange={(e) => setData('password', e.target.value)}
-                        required
-                    />
-
-                    <InputError message={errors.password} className="mt-2" />
-                </div>
-
-                <div className="mt-4">
-                    <InputLabel
-                        htmlFor="password_confirmation"
-                        value="Confirm Password"
-                    />
-
-                    <TextInput
-                        id="password_confirmation"
-                        type="password"
-                        name="password_confirmation"
-                        value={data.password_confirmation}
-                        className="mt-1 block w-full"
-                        autoComplete="new-password"
-                        onChange={(e) =>
-                            setData('password_confirmation', e.target.value)
-                        }
-                        required
-                    />
-
-                    <InputError
-                        message={errors.password_confirmation}
-                        className="mt-2"
-                    />
-                </div>
-
-                <div className="mt-4 flex items-center justify-end">
-                    <Link
-                        href={route('login')}
-                        className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >
-                        Already registered?
-                    </Link>
-
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Register
-                    </PrimaryButton>
-                </div>
-            </form>
+            {currentStep === 2 && (
+                <form onSubmit={handleNext} className="space-y-3 px-[10%]">
+                    {/* Second Part of the Form */}
+                    <div>
+                        <InputLabel htmlFor="parentFirstName" value="Parent First Name" />
+                        <TextInput
+                            id="parentFirstName"
+                            name="parentFirstName"
+                            value={data.parentFirstName}
+                            className="mt-1 block w-full"
+                            onChange={(e) => handleNameChange('parentFirstName', e.target.value)}
+                            required
+                        />
+                        <InputError
+                            message={errors.parentFirstName}
+                            className="mt-2"
+                        />
+                    </div>
+                    <div>
+                        <InputLabel htmlFor="parentSecondName" value="Parent Second Name" />
+                        <TextInput
+                            id="parentSecondName"
+                            name="parentSecondName"
+                            value={data.parentSecondName}
+                            className="mt-1 block w-full"
+                            onChange={(e) => handleNameChange('parentSecondName', e.target.value)}
+                            required
+                        />
+                        <InputError
+                            message={errors.parentSecondName}
+                            className="mt-2"
+                        />
+                    </div>
+                    <div>
+                        <InputLabel htmlFor="parentPhoneNumber" value="Parent Phone Number" />
+                        <TextInput
+                            id="parentPhoneNumber"
+                            name="parentPhoneNumber"
+                            value={data.parentPhoneNumber}
+                            className="mt-1 block w-full"
+                            onChange={(e) => handlePhoneNumberChange('parentPhoneNumber', e.target.value)}
+                            required
+                        />
+                        <InputError
+                            message={errors.parentPhoneNumber}
+                            className="mt-2"
+                        />
+                    </div>
+                    <div>
+                        <InputLabel htmlFor="relationshipToStudent" value="Relationship to Student" />
+                        <TextInput
+                            id="relationshipToStudent"
+                            name="relationshipToStudent"
+                            value={data.relationshipToStudent}
+                            className="mt-1 block w-full"
+                            onChange={(e) =>
+                                setData('relationshipToStudent', e.target.value)
+                            }
+                            required
+                        />
+                        <InputError
+                            message={errors.relationshipToStudent}
+                            className="mt-2"
+                        />
+                    </div>
+                    <div className="flex justify-center ">
+                        <PrimaryButton type="submit" className="bg-orange-500 md:w-[40%] w-[50%] justify-center rounded-xl py-2 md:mt-20 md:mb-5 mt-5">
+                            Next
+                        </PrimaryButton>
+                    </div>
+                </form>
+            )}
+            {currentStep === 3 && (
+                <form onSubmit={handleSubmit} className="space-y-4 px-[8%]">
+                    {/* Third Part of the Form */}
+                    <div>
+                        <InputLabel htmlFor="grade" value="Grade" />
+                        <TextInput
+                            id="grade"
+                            name="grade"
+                            value={grade}
+                            className="mt-1 block w-full"
+                            onChange={(e) => handleGradeChange(e.target.value)}
+                            placeholder="Grade"
+                        />
+                        <InputError message={errors.grade} className="mt-2" />
+                    </div>
+                    <div>
+                        <InputLabel htmlFor="course" value="Add a Course" />
+                        <div className="flex space-x-2">
+                            <TextInput
+                                id="course"
+                                name="course"
+                                value={courseInput}
+                                className="mt-1 block w-full"
+                                onChange={(e) => setCourseInput(e.target.value)}
+                                placeholder="Search course"
+                            />
+                            <button
+                                type="button"
+                                className="bg-gray-400 hover:bg-gray-500 text-black font-semibold rounded-md px-8 py-2"
+                                onClick={handleAddCourse}
+                            >
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                    <div className='pt-10 '>
+                        <InputLabel value="Added Courses" />
+                        <div className='mt-2 overflow-x-auto rounded-3xl shadow-[1px_1px_5px_#3d3d3df7,1px_1px_5px#afb0b0f7] bg-white'>
+                            <table className="min-w-full table-auto border-collapse w-full bg-white rounded-3xl">
+                                <thead>
+                                    <tr>
+                                        <th className=" p-2">Course ID</th>
+                                        <th className=" p-2">Course Name</th>
+                                        <th className=" p-2">Grade</th>
+                                        <th className=" p-2">Option</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {courses.map((course) => (
+                                        <tr key={course.id}>
+                                            <td className="border-t p-2">{course.id}</td>
+                                            <td className="border-t p-2">{course.name}</td>
+                                            <td className="border-t p-2">{course.grade}</td>
+                                            <td className="border-t p-2 text-center">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveCourse(course.id)}
+                                                    className="text-red-500"
+                                                >
+                                                    🗑
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div className="flex justify-center">
+                        <PrimaryButton type="submit" className="bg-orange-500 md:w-[40%] w-[50%] justify-center rounded-xl py-2 md:mt-10 md:mb-5 mt-5">
+                            Register
+                        </PrimaryButton>
+                    </div>
+                </form>
+            )}
+            <ToastContainer />
         </GuestLayout>
     );
 }

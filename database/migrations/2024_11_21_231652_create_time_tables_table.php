@@ -12,8 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('time_tables', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+            $table->increments('ttable_id');
+            $table->string('day_of_week',50);
+            $table->time('start_time');
+            $table->time('end_time');
+            $table->unsignedInteger('course_id');
+        
+            $table->foreign('course_id')
+                ->references('course_id')
+                ->on('courses')
+                ->onDelete('cascade')
+                ->onUpdate('cascade');
+
         });
     }
 

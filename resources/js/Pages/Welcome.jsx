@@ -150,13 +150,13 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                 </button>
                             </Dropdown.Trigger>
                             <Dropdown.Content>
-                                <Dropdown.Link onClick={() => handleGradeChange('Grade 6')}>Grade 6</Dropdown.Link>
-                                <Dropdown.Link onClick={() => handleGradeChange('Grade 7')}>Grade 7</Dropdown.Link>
-                                <Dropdown.Link onClick={() => handleGradeChange('Grade 8')}>Grade 8</Dropdown.Link>
-                                <Dropdown.Link onClick={() => handleGradeChange('Grade 9')}>Grade 9</Dropdown.Link>
-                                <Dropdown.Link onClick={() => handleGradeChange('Grade 10')}>Grade 10</Dropdown.Link>
-                                <Dropdown.Link onClick={() => handleGradeChange('Grade 11')}>Grade 11</Dropdown.Link>
-                                <Dropdown.Link onClick={() => handleGradeChange('Grade A/L')}>A/L</Dropdown.Link>
+                                <Dropdown.Link onClick={() => handleGradeChange('Grade 6')} className="hover:bg-orange-100 hover:text-orange-500 hover:font-semibold">Grade 6</Dropdown.Link>
+                                <Dropdown.Link onClick={() => handleGradeChange('Grade 7')} className="hover:bg-orange-100 hover:text-orange-500 hover:font-semibold">Grade 7</Dropdown.Link>
+                                <Dropdown.Link onClick={() => handleGradeChange('Grade 8')} className="hover:bg-orange-100 hover:text-orange-500 hover:font-semibold">Grade 8</Dropdown.Link>
+                                <Dropdown.Link onClick={() => handleGradeChange('Grade 9')} className="hover:bg-orange-100 hover:text-orange-500 hover:font-semibold">Grade 9</Dropdown.Link>
+                                <Dropdown.Link onClick={() => handleGradeChange('Grade 10')} className="hover:bg-orange-100 hover:text-orange-500 hover:font-semibold">Grade 10</Dropdown.Link>
+                                <Dropdown.Link onClick={() => handleGradeChange('Grade 11')} className="hover:bg-orange-100 hover:text-orange-500 hover:font-semibold">Grade 11</Dropdown.Link>
+                                <Dropdown.Link onClick={() => handleGradeChange('Grade A/L')} className="hover:bg-orange-100 hover:text-orange-500 hover:font-semibold">A/L</Dropdown.Link>
                             </Dropdown.Content>
                         </Dropdown>
                     </div>

@@ -53,7 +53,7 @@ export default function Register() {
     const handleSubmit = (e) => {
         e.preventDefault();
         const finalData = { ...data, courses };
-        console.log('Final Registration Data:', finalData); // Replace with `post` for backend submission
+        console.log('Final Registration Data:', finalData); // Replace with post for backend submission
         post(route('register'), {
             data: finalData,
             onFinish: () => {
@@ -365,7 +365,7 @@ export default function Register() {
                     </div>
                     <div className='pt-10 '>
                         <InputLabel value="Added Courses" />
-                        <div className='mt-2 overflow-x-auto rounded-3xl shadow-[1px_1px_5px_#3d3d3df7,_1px_1px_5px_#afb0b0f7] bg-white'>
+                        <div className='mt-2 overflow-x-auto rounded-3xl shadow-[1px_1px_5px_#3d3d3df7,1px_1px_5px#afb0b0f7] bg-white'>
                             <table className="min-w-full table-auto border-collapse w-full bg-white rounded-3xl">
                                 <thead>
                                     <tr>
@@ -387,7 +387,7 @@ export default function Register() {
                                                     onClick={() => handleRemoveCourse(course.id)}
                                                     className="text-red-500"
                                                 >
-                                                    🗑️
+                                                    🗑
                                                 </button>
                                             </td>
                                         </tr>

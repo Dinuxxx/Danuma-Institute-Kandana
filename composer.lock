@@ -5484,16 +5484,16 @@
         },
         {
             "name": "tightenco/ziggy",
-            "version": "v2.3.1",
+            "version": "v2.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/tighten/ziggy.git",
-                "reference": "ab39cd9647c3fbe2efc04407e078dfc4ff212ad1"
+                "reference": "e5d51d2a58c23a2932d80938990fa6a7623cbe46"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tighten/ziggy/zipball/ab39cd9647c3fbe2efc04407e078dfc4ff212ad1",
-                "reference": "ab39cd9647c3fbe2efc04407e078dfc4ff212ad1",
+                "url": "https://api.github.com/repos/tighten/ziggy/zipball/e5d51d2a58c23a2932d80938990fa6a7623cbe46",
+                "reference": "e5d51d2a58c23a2932d80938990fa6a7623cbe46",
                 "shasum": ""
             },
             "require": {
@@ -5548,9 +5548,9 @@
             ],
             "support": {
                 "issues": "https://github.com/tighten/ziggy/issues",
-                "source": "https://github.com/tighten/ziggy/tree/v2.3.1"
+                "source": "https://github.com/tighten/ziggy/tree/v2.4.0"
             },
-            "time": "2024-10-17T15:36:15+00:00"
+            "time": "2024-11-09T17:21:59+00:00"
         },
         {
             "name": "tijsverkoyen/css-to-inline-styles",
@@ -6270,18 +6270,22 @@
         },
         {
             "name": "laravel/breeze",
-<<<<<<< Updated upstream
+
             "version": "v2.2.4",
+
+            "version": "v2.2.5",
+
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/breeze.git",
-                "reference": "d3484d08aaaa84896bdd2d1787e7da0fc03f676f"
+                "reference": "e698f651ac55920fd2ee1336c3c6cdd2467ea784"
             },
             "dist": {
                 "type": "zip",
+
                 "url": "https://api.github.com/repos/laravel/breeze/zipball/d3484d08aaaa84896bdd2d1787e7da0fc03f676f",
                 "reference": "d3484d08aaaa84896bdd2d1787e7da0fc03f676f",
-=======
+
             "version": "v2.2.6",
             "source": {
                 "type": "git",
@@ -6292,7 +6296,10 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/laravel/breeze/zipball/907b12160d1b8b8213e7e2e011987fffb5567edc",
                 "reference": "907b12160d1b8b8213e7e2e011987fffb5567edc",
->>>>>>> Stashed changes
+
+                "url": "https://api.github.com/repos/laravel/breeze/zipball/e698f651ac55920fd2ee1336c3c6cdd2467ea784",
+                "reference": "e698f651ac55920fd2ee1336c3c6cdd2467ea784",
+
                 "shasum": ""
             },
             "require": {
@@ -6340,11 +6347,12 @@
                 "issues": "https://github.com/laravel/breeze/issues",
                 "source": "https://github.com/laravel/breeze"
             },
-<<<<<<< Updated upstream
+
             "time": "2024-10-29T15:11:57+00:00"
-=======
+
             "time": "2024-11-20T15:01:15+00:00"
->>>>>>> Stashed changes
+            "time": "2024-11-12T14:56:47+00:00"
+
         },
         {
             "name": "laravel/pail",

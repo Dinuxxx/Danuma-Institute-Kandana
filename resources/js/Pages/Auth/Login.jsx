@@ -5,6 +5,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import ApplicationLogo from '@/Components/ApplicationLogo';
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -15,7 +16,6 @@ export default function Login({ status, canResetPassword }) {
 
     const submit = (e) => {
         e.preventDefault();
-
         post(route('login'), {
             onFinish: () => reset('password'),
         });
@@ -23,78 +23,81 @@ export default function Login({ status, canResetPassword }) {
 
     return (
         <GuestLayout>
-            <Head title="Log in" />
+            <Head title="Login">
+            <ApplicationLogo/>
+            </Head>
 
-            {status && (
-                <div className="mb-4 text-sm font-medium text-green-600">
-                    {status}
-                </div>
-            )}
+            <form onSubmit={submit} className=' p-6 sm:p-10 md:p-16 lg:p-20 lg:pt-10'>
 
-            <form onSubmit={submit}>
+                <ApplicationLogo className="h-20 w-auto mx-auto mb-12" />
+
+                {status && (
+                    <div className="mb-4 text-sm font-medium text-green-600">
+                        {status}
+                    </div>
+                )}
+
+                {/* Email Input */}
                 <div>
-                    <InputLabel htmlFor="email" value="Email" />
-
+                    <InputLabel htmlFor="email" value="Username" />
                     <TextInput
                         id="email"
                         type="email"
                         name="email"
-                        value={data.email}
+                        value={data.email || ''} 
                         className="mt-1 block w-full"
                         autoComplete="username"
                         isFocused={true}
                         onChange={(e) => setData('email', e.target.value)}
                     />
-
                     <InputError message={errors.email} className="mt-2" />
                 </div>
 
-                <div className="mt-4">
+                {/* Password Input */}
+                <div className="mt-6">
                     <InputLabel htmlFor="password" value="Password" />
-
                     <TextInput
                         id="password"
                         type="password"
                         name="password"
-                        value={data.password}
+                        value={data.password || ''} 
                         className="mt-1 block w-full"
                         autoComplete="current-password"
                         onChange={(e) => setData('password', e.target.value)}
                     />
-
                     <InputError message={errors.password} className="mt-2" />
                 </div>
 
-                <div className="mt-4 block">
+                {/* Remember Me Checkbox */}
+                <div className="mt-2 block">
                     <label className="flex items-center">
                         <Checkbox
                             name="remember"
                             checked={data.remember}
-                            onChange={(e) =>
-                                setData('remember', e.target.checked)
-                            }
+                            onChange={(e) => setData('remember', e.target.checked)}
                         />
-                        <span className="ms-2 text-sm text-gray-600 dark:text-gray-400">
-                            Remember me
-                        </span>
+                        <span className="ml-2 text-sm text-gray-600">Remember me</span>
                     </label>
                 </div>
 
-                <div className="mt-4 flex items-center justify-end">
+                {/* Submit Button and Forgot Password */}
+                <div className="mt-10 flex flex-col items-center">
+                    <PrimaryButton className="w-full sm:w-48 font-bold text-center flex justify-center sm:rounded-xl text-lg pt-1 pb-1 shadow-md" disabled={processing}
+                        style={{ backgroundColor: '#FC9C02', borderColor: '#FC9C02'}}
+                    >
+                        {processing ? 'Logging in...' : 'Login'} 
+                    </PrimaryButton>
+
                     {canResetPassword && (
                         <Link
                             href={route('password.request')}
-                            className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:text-gray-400 dark:hover:text-gray-100 dark:focus:ring-offset-gray-800"
+                            className="mt-2 text-sm text-blue-500 hover:text-blue-700 underline"
                         >
                             Forgot your password?
                         </Link>
                     )}
-
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Log in
-                    </PrimaryButton>
                 </div>
             </form>
-        </GuestLayout>
+        </GuestLayout>  
     );
 }

@@ -1,7 +1,7 @@
-import CourseCardTeacher from '@/Components/CourseCardTeacher';
+import LessonCardTeacher from '@/Components/LessonCardTeacher';
 import React from 'react';
 
-const TeacherCourses = () => {
+const TeacherLessons = () => {
   return (
     <div className="min-h-screen bg-white flex flex-col p-6">
       <div className="flex justify-between items-center mb-6 sticky top-0 bg-white px-4 py-4">
@@ -30,12 +30,12 @@ const TeacherCourses = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-        <CourseCardTeacher />
-        <CourseCardTeacher />
-        <CourseCardTeacher />
-        <CourseCardTeacher />
-        <CourseCardTeacher />
-        <CourseCardTeacher />
+        <LessonCardTeacher />
+        <LessonCardTeacher />
+        <LessonCardTeacher />
+        <LessonCardTeacher />
+        <LessonCardTeacher />
+        <LessonCardTeacher />
       </div>
 
       <div className="sticky bottom-0 bg-white py-4 flex justify-end">
@@ -47,4 +47,4 @@ const TeacherCourses = () => {
   );
 };
 
-export default TeacherCourses;
+export default TeacherLessons;

@@ -1,4 +1,4 @@
-import LessonCardTeacher from '@/Components/LessonCardTeacher';
+import LessonCardTeacher from '@/Components/Teacher Components/LessonCardTeacher';
 import React from 'react';
 
 const TeacherLessons = () => {

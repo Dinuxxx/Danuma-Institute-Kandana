@@ -1,4 +1,4 @@
-import LessonCardStudent from '@/Components/LessonCardStudent';
+import LessonCardStudent from '@/Components/Student Components/LessonCardStudent';
 import React from 'react';
 
 const StudentLessons = () => {

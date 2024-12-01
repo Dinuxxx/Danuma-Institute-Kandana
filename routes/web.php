@@ -15,18 +15,9 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/student/lessons', function () {
-    return Inertia::render('Students/StudentLessons'); 
-})->name('student.lessons');
-
-
 Route::get('/teacher/lessons', function () {
     return Inertia::render('Teachers/TeacherLessons'); 
-})->name('teacher.lessons');
-
-Route::get('/teacher/courseoverview', function () {
-    return Inertia::render('Teachers/CourseOverview'); 
-})->name('admin.courseoverview');
+})->name('admin.viewexams');
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');

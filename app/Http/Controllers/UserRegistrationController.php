@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\UserRegistration;
+use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -25,6 +26,7 @@ class UserRegistrationController extends Controller
             'gender' => 'required|string',
             'dob' => 'nullable|date',
             'role' => 'required|string',
+            'grade' => 'required|string|max:255',
         ]);
 
         // Create the user in the users table
@@ -42,6 +44,14 @@ class UserRegistrationController extends Controller
             'gender' => $request->gender,
             'dob' => $request->dob,
             'role' => $request->role,
+        ]);
+
+
+        Student::create([
+            'u_id' => $user->id,
+            'grade' => $request->grade,
+            'QR_id' => null,
+            'parent_id' => null,
         ]);
 
         return response()->json(['message' => 'User registered successfully.']);

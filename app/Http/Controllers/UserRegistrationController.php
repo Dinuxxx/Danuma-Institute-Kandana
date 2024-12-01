@@ -38,12 +38,20 @@ class UserRegistrationController extends Controller
 
         // Create the user registration details in user_registrations table
         UserRegistration::create([
-            'user_id' => $user->id,
+            'registration_id' => null, // Assuming this is auto-incremented
+            'title' => $request->input('title', 'default_title'), // Add title if needed
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'gender' => $request->gender,
             'dob' => $request->dob,
             'role' => $request->role,
+            'tel_no' => $request->tel_no,
+            'address' => $request->address,
+            'image' => null, // Set a default value or leave null if not uploaded
+            'status' => 'active', // Set a default status if required
+            'user_id' => $user->id, // Reference the newly created user
+            'added_by' => auth()->user()->id, // Assuming you're getting the current user's ID
+
         ]);
 
 
@@ -54,6 +62,11 @@ class UserRegistrationController extends Controller
             'parent_id' => null,
         ]);
 
-        return response()->json(['message' => 'User registered successfully.']);
+
+         // Return a success response
+         return redirect()->back()->with('success', 'User registered successfully!');
+        // return redirect()->route('dashboard')->with('success', 'Registration successful!');
+
+        //return response()->json(['message' => 'User registered successfully.']);
     }
 }

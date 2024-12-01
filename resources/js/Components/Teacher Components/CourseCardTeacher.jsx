@@ -6,40 +6,40 @@ const CourseCardTeacher = ({ course }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleDropdownToggle = () => {
-    setDropdownOpen((prev) => !prev); // Toggle dropdown visibility
+    setDropdownOpen((prev) => !prev); 
   };
 
   return (
-    <div className="relative bg-white border border-gray-300 rounded-lg shadow-sm overflow-hidden">
-      {/* Header with the background image */}
+    <div className="relative bg-white border border-gray-300 rounded-2xl shadow-sm overflow-hidden h-full">
+     
       <div
-        className="h-24 bg-gray-200"
+        className="h-48 bg-gray-200"
         style={{ backgroundImage: "url('/path-to-pattern.png')", backgroundSize: 'cover' }}
       ></div>
 
-      {/* Course information */}
-      <div className="p-4">
-        <h3 className="text-lg font-semibold text-customOrange">{course.title}</h3>
+      
+      <div className="px-4 py-10">
+        <a href="#" className="text-2xl font-bold text-customOrange">{course.title}</a>
         <p className="text-gray-700">{course.instructor}</p>
       </div>
 
-      {/* Three dots button and dropdown */}
+     
       <div className="absolute top-2 right-2">
         <button
-          onClick={handleDropdownToggle} // Toggle dropdown on click
+          onClick={handleDropdownToggle} 
           className="text-gray-500 hover:text-gray-700 focus:outline-none"
         >
           <BsThreeDotsVertical className="h-5 w-5" />
         </button>
 
-        {/* Conditional rendering of the Dropdown */}
+        
         {dropdownOpen && (
           <div className="absolute right-0 mt-2 w-48 bg-white shadow-md rounded-md border">
             <div className="py-1">
               <button
                 onClick={() => {
-                  console.log('Start the Course'); // Replace with your logic
-                  setDropdownOpen(false); // Close dropdown after action
+                  console.log('Start the Course'); 
+                  setDropdownOpen(false); 
                 }}
                 className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
               >
@@ -47,8 +47,8 @@ const CourseCardTeacher = ({ course }) => {
               </button>
               <button
                 onClick={() => {
-                  console.log('Remove from View'); // Replace with your logic
-                  setDropdownOpen(false); // Close dropdown after action
+                  console.log('Remove from View'); 
+                  setDropdownOpen(false); 
                 }}
                 className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
               >

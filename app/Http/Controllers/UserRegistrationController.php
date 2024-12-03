@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\UserRegistration;
+
 use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -37,6 +38,7 @@ class UserRegistrationController extends Controller
         ]);
 
         // Create the user registration details in user_registrations table
+
         UserRegistration::create([
             'registration_id' => null, // Assuming this is auto-incremented
             'title' => $request->input('title', 'default_title'), // Add title if needed
@@ -44,13 +46,16 @@ class UserRegistrationController extends Controller
             'last_name' => $request->last_name,
             'gender' => $request->gender,
             'dob' => $request->dob,
+
             'role' => $request->role,
+
             'tel_no' => $request->tel_no,
             'address' => $request->address,
             'image' => null, // Set a default value or leave null if not uploaded
             'status' => 'active', // Set a default status if required
             'user_id' => $user->id, // Reference the newly created user
             'added_by' => auth()->user()->id, // Assuming you're getting the current user's ID
+
 
         ]);
 
@@ -68,5 +73,6 @@ class UserRegistrationController extends Controller
         // return redirect()->route('dashboard')->with('success', 'Registration successful!');
 
         //return response()->json(['message' => 'User registered successfully.']);
+
     }
 }

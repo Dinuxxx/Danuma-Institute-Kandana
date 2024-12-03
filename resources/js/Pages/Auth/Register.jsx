@@ -7,24 +7,28 @@ import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+//import route from "ziggy-js"; // Import the Ziggy route helper
+import { route } from "ziggy-js"; // Correctly import Ziggy's route helper
+import axios from "axios";
 
 export default function Register() {
     const [currentStep, setCurrentStep] = useState(1); 
     const [courses, setCourses] = useState([]); 
     const [courseInput, setCourseInput] = useState('');
     const [grade, setGrade] = useState(''); 
+
     const { data, setData, post, processing, errors, reset } = useForm({
-        firstName: '',
-        lastName: '',
-        email: '',
-        address: '',
-        phoneNumber: '',
-        dateOfBirth: '',
-        gender: '',
-        parentFirstName: '',
-        parentSecondName: '',
-        parentPhoneNumber: '',
-        relationshipToStudent: '',
+        firstName: "",
+        lastName: "",
+        email: "",
+        address: "",
+        phoneNumber: "",
+        dateOfBirth: "",
+        gender: "",
+        parentFirstName: "",
+        parentSecondName: "",
+        parentPhoneNumber: "",
+        relationshipToStudent: "",
     });
 
     const handleNext = (e) => {
@@ -50,11 +54,13 @@ export default function Register() {
         notifySuccess("Course removed successfully.");
     };
 
-    const handleSubmit = (e) => {
+    /*const handleSubmit = (e) => {
         e.preventDefault();
         const finalData = { ...data, courses };
+
         console.log('Final Registration Data:', finalData); // Replace with post for backend submission
         post(route('register'), {
+
             data: finalData,
             onFinish: () => {
                 reset();
@@ -65,6 +71,25 @@ export default function Register() {
                 });
             },
         });
+    };*/
+  
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        const finalData = { ...data, courses };
+ setLoading(true); // Set loading state to true
+        setError(null); // Clear any previous errors
+
+        try {
+            const response = await axios.post(route("register"), finalData);
+            console.log("Registration successful", response.data);
+            reset(); // Reset form fields
+        } catch (error) {
+            setError(error.message); // Set the error message
+            console.error("Registration error:", error);
+        } finally {
+            setLoading(false); // Reset loading state
+        }
     };
 
     const validateName = (name) => /^[A-Za-z][A-Za-z\s-]*$/.test(name) || name === "";
@@ -143,28 +168,34 @@ export default function Register() {
             {currentStep === 1 && (
                 <form onSubmit={handleNext} className="space-y-2 px-[10%]">
                     <div>
-                        <InputLabel htmlFor="firstName" value="First Name" />
+                        <InputLabel htmlFor="first_name" value="First Name" />
                         <TextInput
-                            id="firstName"
-                            name="firstName"
+                            id="first_name"
+                            name="first_name"
                             value={data.firstName}
                             className="mt-1 block w-full"
                             onChange={(e) => handleNameChange('firstName', e.target.value)}
                             required
                         />
-                        <InputError message={errors.firstName} className="mt-2" />
+                        <InputError
+                            message={errors.first_name}
+                            className="mt-2"
+                        />
                     </div>
                     <div>
-                        <InputLabel htmlFor="lastName" value="Last Name" />
+                        <InputLabel htmlFor="last_name" value="Last Name" />
                         <TextInput
-                            id="lastName"
-                            name="lastName"
+                            id="last_name"
+                            name="last_name"
                             value={data.lastName}
                             className="mt-1 block w-full"
                             onChange={(e) => handleNameChange('lastName', e.target.value)}
                             required
                         />
-                        <InputError message={errors.lastName} className="mt-2" />
+                        <InputError
+                            message={errors.last_mame}
+                            className="mt-2"
+                        />
                     </div>
                     <div>
                         <InputLabel htmlFor="email" value="Email" />
@@ -186,35 +217,37 @@ export default function Register() {
                             name="address"
                             value={data.address}
                             className="mt-1 block w-full"
-                            onChange={(e) => setData('address', e.target.value)}
+                            onChange={(e) => setData("address", e.target.value)}
                             required
                         />
                         <InputError message={errors.address} className="mt-2" />
                     </div>
                     <div>
-                        <InputLabel htmlFor="phoneNumber" value="Phone Number" />
+                        <InputLabel htmlFor="tel_no" value="Phone Number" />
                         <TextInput
-                            id="phoneNumber"
-                            name="phoneNumber"
+                            id="tel_no"
+                            name="tel_no"
                             value={data.phoneNumber}
                             className="mt-1 block w-full"
                             onChange={(e) => handlePhoneNumberChange('phoneNumber', e.target.value)}
                             required
                         />
-                        <InputError message={errors.phoneNumber} className="mt-2" />
+                        <InputError message={errors.tel_no} className="mt-2" />
                     </div>
                     <div>
-                        <InputLabel htmlFor="dateOfBirth" value="Date of Birth" />
+                        <InputLabel htmlFor="dob" value="Date of Birth" />
                         <TextInput
-                            id="dateOfBirth"
+                            id="dob"
                             type="date"
-                            name="dateOfBirth"
+                            name="dob"
                             value={data.dateOfBirth}
                             className="mt-1 block w-full"
-                            onChange={(e) => setData('dateOfBirth', e.target.value)}
+                            onChange={(e) =>
+                                setData("dateOfBirth", e.target.value)
+                            }
                             required
                         />
-                        <InputError message={errors.dateOfBirth} className="mt-2" />
+                        <InputError message={errors.dob} className="mt-2" />
                     </div>
                     <div>
                         <InputLabel value="Gender" />
@@ -224,8 +257,10 @@ export default function Register() {
                                     type="radio"
                                     name="gender"
                                     value="Male"
-                                    checked={data.gender === 'Male'}
-                                    onChange={(e) => setData('gender', e.target.value)}
+                                    checked={data.gender === "Male"}
+                                    onChange={(e) =>
+                                        setData("gender", e.target.value)
+                                    }
                                     className="mr-2"
                                 />
                                 Male
@@ -235,8 +270,10 @@ export default function Register() {
                                     type="radio"
                                     name="gender"
                                     value="Female"
-                                    checked={data.gender === 'Female'}
-                                    onChange={(e) => setData('gender', e.target.value)}
+                                    checked={data.gender === "Female"}
+                                    onChange={(e) =>
+                                        setData("gender", e.target.value)
+                                    }
                                     className="mr-2"
                                 />
                                 Female
@@ -260,7 +297,10 @@ export default function Register() {
                 <form onSubmit={handleNext} className="space-y-3 px-[10%]">
                     {/* Second Part of the Form */}
                     <div>
-                        <InputLabel htmlFor="parentFirstName" value="Parent First Name" />
+                        <InputLabel
+                            htmlFor="parentFirstName"
+                            value="Parent First Name"
+                        />
                         <TextInput
                             id="parentFirstName"
                             name="parentFirstName"
@@ -275,7 +315,10 @@ export default function Register() {
                         />
                     </div>
                     <div>
-                        <InputLabel htmlFor="parentSecondName" value="Parent Second Name" />
+                        <InputLabel
+                            htmlFor="parentSecondName"
+                            value="Parent Second Name"
+                        />
                         <TextInput
                             id="parentSecondName"
                             name="parentSecondName"
@@ -290,7 +333,10 @@ export default function Register() {
                         />
                     </div>
                     <div>
-                        <InputLabel htmlFor="parentPhoneNumber" value="Parent Phone Number" />
+                        <InputLabel
+                            htmlFor="parentPhoneNumber"
+                            value="Parent Phone Number"
+                        />
                         <TextInput
                             id="parentPhoneNumber"
                             name="parentPhoneNumber"
@@ -305,14 +351,17 @@ export default function Register() {
                         />
                     </div>
                     <div>
-                        <InputLabel htmlFor="relationshipToStudent" value="Relationship to Student" />
+                        <InputLabel
+                            htmlFor="relationshipToStudent"
+                            value="Relationship to Student"
+                        />
                         <TextInput
                             id="relationshipToStudent"
                             name="relationshipToStudent"
                             value={data.relationshipToStudent}
                             className="mt-1 block w-full"
                             onChange={(e) =>
-                                setData('relationshipToStudent', e.target.value)
+                                setData("relationshipToStudent", e.target.value)
                             }
                             required
                         />
@@ -363,7 +412,7 @@ export default function Register() {
                             </button>
                         </div>
                     </div>
-                    <div className='pt-10 '>
+                    <div className="pt-10 ">
                         <InputLabel value="Added Courses" />
                         <div className='mt-2 overflow-x-auto rounded-3xl shadow-[1px_1px_5px_#3d3d3df7,1px_1px_5px#afb0b0f7] bg-white'>
                             <table className="min-w-full table-auto border-collapse w-full bg-white rounded-3xl">
@@ -378,13 +427,23 @@ export default function Register() {
                                 <tbody>
                                     {courses.map((course) => (
                                         <tr key={course.id}>
-                                            <td className="border-t p-2">{course.id}</td>
-                                            <td className="border-t p-2">{course.name}</td>
-                                            <td className="border-t p-2">{course.grade}</td>
+                                            <td className="border-t p-2">
+                                                {course.id}
+                                            </td>
+                                            <td className="border-t p-2">
+                                                {course.name}
+                                            </td>
+                                            <td className="border-t p-2">
+                                                {course.grade}
+                                            </td>
                                             <td className="border-t p-2 text-center">
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleRemoveCourse(course.id)}
+                                                    onClick={() =>
+                                                        handleRemoveCourse(
+                                                            course.id
+                                                        )
+                                                    }
                                                     className="text-red-500"
                                                 >
                                                     🗑
@@ -397,13 +456,17 @@ export default function Register() {
                         </div>
                     </div>
                     <div className="flex justify-center">
-                        <PrimaryButton type="submit" className="bg-orange-500 md:w-[40%] w-[50%] justify-center rounded-xl py-2 md:mt-10 md:mb-5 mt-5">
-                            Register
+                        <PrimaryButton
+                            type="submit"
+                            className="bg-orange-500 hover:bg-orange-600 md:w-[40%] w-[50%] justify-center rounded-xl py-2 md:mt-10 md:mb-5 mt-5"
+                            disabled={loading}
+                        >
+                            {loading ? "Registering..." : "Register"}
                         </PrimaryButton>
                     </div>
                 </form>
             )}
             <ToastContainer />
         </GuestLayout>
-    );
+    );
 }

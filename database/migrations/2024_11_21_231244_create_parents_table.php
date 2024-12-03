@@ -12,7 +12,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('parents', function (Blueprint $table) {
+<<<<<<< Updated upstream
+            $table->increments('parent_id');
+            $table->string('first_name');
+            $table->string('last_name');
+            $table->text('address');
+            $table->string('tel_no', 15);
+            //$table->string('email')->unique();
+            $table->string('relationship_type');
+            
+=======
             $table->id();
+            $table->string('first_name',250);
+            $table->string('last_name',250);
+            $table->string('relationship_type',250);
+>>>>>>> Stashed changes
             $table->timestamps();
         });
     }

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('first_name',250);
             $table->string('last_name',250);
             $table->string('gender', 50);
-            $table->string('email')->unique();
+            // $table->string('email')->unique();
             $table->date('dob');
             $table->string('tel_no', 25);
             $table->text('address');
@@ -39,6 +39,7 @@ return new class extends Migration
                     ->on('users')
                     ->onDelete('set null')
                     ->onUpdate('cascade');
+
         });
     }
 

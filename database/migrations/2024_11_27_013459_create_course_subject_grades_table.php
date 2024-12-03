@@ -12,8 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('course_subject_grades', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+            $table->increments('row_id');
+            $table->string('subject');
+            $table->string('grade');
+            $table->unsignedInteger('course_id');
+            
+            $table->foreign('course_id')
+                ->references('course_id')
+                ->on('courses')
+                ->onDelete('cascade')
+                ->onUpdate('cascade');
         });
     }
 

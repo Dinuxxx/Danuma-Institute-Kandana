@@ -5,8 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Login extends Model
+class Admin extends Model
 {
-    /** @use HasFactory<\Database\Factories\LoginFactory> */
+    /** @use HasFactory<\Database\Factories\AdminFactory> */
     use HasFactory;
 }

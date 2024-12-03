@@ -5,6 +5,7 @@ use App\Http\Controllers\UserRegistrationController; // Added this line to impor
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\RegistrationController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -14,6 +15,10 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
     ]);
 });
+
+Route::get('/teacher/lessons', function () {
+    return Inertia::render('Teachers/TeacherLessons'); 
+})->name('admin.viewexams');
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
@@ -26,12 +31,15 @@ Route::middleware('auth')->group(function () {
 });
 
 
+
 // New route for user registration
 Route::get('/register', function () {
     return Inertia::render('auth.register'); // Render the new registration form view
 })->name('register');
 
 Route::post('/register', [UserRegistrationController::class, 'register'])->name('register');
+
+
 
 
 require __DIR__.'/auth.php';

@@ -17,6 +17,7 @@ export default function Register() {
     const [courseInput, setCourseInput] = useState('');
     const [grade, setGrade] = useState(''); 
     const [loading, setLoading] = React.useState(false);
+    const [error, setError] = useState(null);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         first_name: "",

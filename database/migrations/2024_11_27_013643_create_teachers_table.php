@@ -17,7 +17,6 @@ return new class extends Migration
             $table->text('qualifications');
             $table->string('nic')->unique();
             $table->unsignedBigInteger('user_id');
-            $table->unsignedInteger('course_id');
         
             $table->foreign('user_id')
                 ->references('id')
@@ -25,13 +24,7 @@ return new class extends Migration
                 ->onDelete('cascade')
                 ->onUpdate('cascade');
                 
-            $table->foreign('course_id')
-                ->references('course_id')
-                ->on('courses')
-                ->onDelete('cascade')
-                ->onUpdate('cascade');
-            
-            $table->timestamps();
+            //$table->timestamps();
         });
     }
 

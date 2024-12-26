@@ -16,7 +16,14 @@ return new class extends Migration
             $table->decimal('monthly_fees', 10, 2);
             $table->string('course_name');
             $table->text('course_desc')->nullable();
+            $table->unsignedInteger('teacher_id')->nullable();
             $table->timestamps();
+
+            $table->foreign('teacher_id')
+            ->references('tea_id')
+            ->on('teachers')
+            ->onDelete('set null')
+            ->onUpdate('cascade');
         });
     }
 

@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('image')->nullable();
             $table->string('status');
             $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('role');
             $table->unsignedBigInteger('added_by')->nullable();
             $table->timestamps();
             
@@ -37,6 +38,12 @@ return new class extends Migration
             $table->foreign('added_by')
                     ->references('id')
                     ->on('users')
+                    ->onDelete('set null')
+                    ->onUpdate('cascade');
+
+            $table->foreign('role_id')
+                    ->references('role_id')
+                    ->on('roles')
                     ->onDelete('set null')
                     ->onUpdate('cascade');
 

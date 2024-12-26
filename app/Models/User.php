@@ -5,8 +5,10 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -47,10 +49,39 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
-
-    public function registration()
+    // Get the registration details associated with the user.
+    public function registration(): HasOne
     {
-        return $this->hasOne(UserRegistration::class, 'user_id');
+        return $this->hasOne(UserRegistration::class,'user_id');
     }
 
+    // get the users added by current user
+    public function addedRegistrations(): HasMany
+    {
+        return $this->hasMany(UserRegistration::class, 'added_by', 'id');
+    }   
+
+    //get the admin details if a user is a admin
+    public function admin() :HasOne
+    {
+        return $this->hasOne(Admin::class, 'user_id', 'id');
+    }
+
+    //get the student details if a user is a student
+    public function student() :HasOne
+    {
+        return $this->hasOne(Student::class, 'user_id', 'id');
+    }
+
+    //get the teacher details if a user is a teacher
+    public function teacher():HasOne
+    {
+        return $this->hasOne(Student::class, 'user_id', 'id');
+    }
+
+    // get the users added by current user
+    public function loginLog() :HasMany
+    {
+        return $this->hasMany(LoginLog::class, 'user_id', 'id');
+    } 
 }

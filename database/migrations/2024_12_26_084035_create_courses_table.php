@@ -24,6 +24,7 @@ return new class extends Migration
             ->on('teachers')
             ->onDelete('set null')
             ->onUpdate('cascade');
+        
         });
     }
 

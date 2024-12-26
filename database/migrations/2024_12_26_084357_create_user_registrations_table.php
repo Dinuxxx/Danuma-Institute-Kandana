@@ -12,7 +12,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user_registrations', function (Blueprint $table) {
-            
             $table->increments('registration_id');
             $table->string('title');
             $table->string('first_name',250);
@@ -25,7 +24,7 @@ return new class extends Migration
             $table->string('image')->nullable();
             $table->string('status');
             $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('role');
+            $table->unsignedInteger('role_id')->nullable();
             $table->unsignedBigInteger('added_by')->nullable();
             $table->timestamps();
             
@@ -46,7 +45,6 @@ return new class extends Migration
                     ->on('roles')
                     ->onDelete('set null')
                     ->onUpdate('cascade');
-
         });
     }
 

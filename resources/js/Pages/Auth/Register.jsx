@@ -16,13 +16,14 @@ export default function Register() {
     const [courses, setCourses] = useState([]); 
     const [courseInput, setCourseInput] = useState('');
     const [grade, setGrade] = useState(''); 
+    const [loading, setLoading] = React.useState(false);
 
     const { data, setData, post, processing, errors, reset } = useForm({
-        firstName: "",
-        lastName: "",
+        first_name: "",
+        last_name: "",
         email: "",
         address: "",
-        phoneNumber: "",
+        tel_no: "",
         dateOfBirth: "",
         gender: "",
         parentFirstName: "",
@@ -77,7 +78,7 @@ export default function Register() {
         e.preventDefault();
 
         const finalData = { ...data, courses };
- setLoading(true); // Set loading state to true
+        setLoading(true); // Set loading state to true
         setError(null); // Clear any previous errors
 
         try {
@@ -103,7 +104,7 @@ export default function Register() {
         }
     };
 
-    const validateEmail = (email) => /^[a-z-][a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email) || email === "";
+    const validateEmail = (email) => /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email) || email === "";
     const handleEmailChange = (value) => {
         if (validateEmail(value)) {
             setData('email', value);
@@ -172,9 +173,9 @@ export default function Register() {
                         <TextInput
                             id="first_name"
                             name="first_name"
-                            value={data.firstName}
+                            value={data.first_name}
                             className="mt-1 block w-full"
-                            onChange={(e) => handleNameChange('firstName', e.target.value)}
+                            onChange={(e) => handleNameChange('first_name', e.target.value)}
                             required
                         />
                         <InputError
@@ -187,13 +188,13 @@ export default function Register() {
                         <TextInput
                             id="last_name"
                             name="last_name"
-                            value={data.lastName}
+                            value={data.last_name}
                             className="mt-1 block w-full"
-                            onChange={(e) => handleNameChange('lastName', e.target.value)}
+                            onChange={(e) => handleNameChange('last_name', e.target.value)}
                             required
                         />
                         <InputError
-                            message={errors.last_mame}
+                            message={errors.last_name}
                             className="mt-2"
                         />
                     </div>
@@ -227,9 +228,9 @@ export default function Register() {
                         <TextInput
                             id="tel_no"
                             name="tel_no"
-                            value={data.phoneNumber}
+                            value={data.tel_no}
                             className="mt-1 block w-full"
-                            onChange={(e) => handlePhoneNumberChange('phoneNumber', e.target.value)}
+                            onChange={(e) => handlePhoneNumberChange('tel_no', e.target.value)}
                             required
                         />
                         <InputError message={errors.tel_no} className="mt-2" />

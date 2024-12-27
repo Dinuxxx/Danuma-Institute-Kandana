@@ -19,13 +19,19 @@ class UserRegistrationController extends Controller
     {
         // Validate the request data
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
+            //'name' => 'required|string|max:255',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'gender' => 'required|string',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
+            'address' => 'required|string|max:255',
+            'phone_number' => 'required|digits:10',
+            'gender' => 'required|string|in:male,female',
             'dob' => 'nullable|date',
+            'parent_first_name' => 'required|string|max:255',
+            'parent_last_name' => 'required|string|max:255',
+            'parent_phone_number' => 'required|digits_between:10,15',
+            'relationship_to_student' => 'required|string|max:255',
             'role' => 'required|string',
             'grade' => 'required|string|max:255',
         ]);
@@ -66,6 +72,7 @@ class UserRegistrationController extends Controller
             'QR_id' => null,
             'parent_id' => null,
         ]);
+        
 
 
          // Return a success response

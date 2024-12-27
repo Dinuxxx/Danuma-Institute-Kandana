@@ -84,4 +84,10 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(LoginLog::class, 'user_id', 'id');
     } 
+
+    // get the attendances records added by current user
+    public function attendances() :HasMany
+    {
+        return $this->hasMany(Attendance::class, 'marked_by', 'id');
+    } 
 }

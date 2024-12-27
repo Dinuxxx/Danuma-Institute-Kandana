@@ -11,6 +11,7 @@ import { BsSearch, BsChevronDown } from 'react-icons/bs';
 import TeacherCard from "@/Components/Public-access/TeacherCard";
 import TeacherDetails from "@/Components/Public-access/TeacherDetails";
 import Dropdown from '@/Components/Dropdown';
+import AboutUs from "@/Components/Public-access/AboutUs";
 
 export default function Welcome({ auth, laravelVersion, phpVersion }) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -122,6 +123,10 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 <main className="mt-[80px] sm:mt-[100px]">
                     <Hero />
                 </main>
+            </div>
+            <div className="ml-[5%] mr-[5%]">
+                <Title title="About Us" />
+                <AboutUs/>
             </div>
             <div className='ml-[5%] mr-[5%]'>
                 <Title title='Teacher Profiles'/>

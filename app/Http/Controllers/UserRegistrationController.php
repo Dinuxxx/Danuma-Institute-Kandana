@@ -66,6 +66,7 @@ class UserRegistrationController extends Controller
             'QR_id' => null,
             'parent_id' => null,
         ]);
+        
 
 
          // Return a success response

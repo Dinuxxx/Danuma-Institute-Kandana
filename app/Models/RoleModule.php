@@ -9,4 +9,11 @@ class RoleModule extends Model
 {
     /** @use HasFactory<\Database\Factories\RoleModuleFactory> */
     use HasFactory;
+
+    /**
+     * Indicates if the model should be timestamped.
+     *
+     * @var bool
+     */
+    public $timestamps = false;
 }

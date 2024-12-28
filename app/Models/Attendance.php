@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Attendance extends Model
 {
@@ -40,8 +41,14 @@ class Attendance extends Model
     }
 
     // get the student of this attendance
-    public function student()
+    public function student():BelongsTo
     {
         return $this->belongsTo(Student::class, 'student_id','student_id');
+    }
+
+    //get the courses scheduled for the day
+    public function courseAttendances() :HasMany
+    {
+        return $this->hasMany(CourseAttendance::class, 'att_id', 'att_id');
     }
 }

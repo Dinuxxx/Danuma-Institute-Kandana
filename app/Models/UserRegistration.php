@@ -37,6 +37,11 @@ class UserRegistration extends Model
         return $this->belongsTo(User::class, 'added_by', 'id');
     }
 
+    //get the role of the user
+    public function role():BelongsTo
+    {
+        return $this->belongsTo(Role::class, 'role_id', 'role_id');
+    }
 
 
 }

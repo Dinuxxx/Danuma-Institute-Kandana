@@ -16,7 +16,7 @@ class CourseAttendance extends Model
      *
      * @var string
      */
-    protected $primaryKey = 'att_id';
+    protected $primaryKey = 'row_id';
 
     /**
      * Indicates if the model should be timestamped.
@@ -26,23 +26,18 @@ class CourseAttendance extends Model
     public $timestamps = false;
 
     // Mass-assignable attributes
-    protected $fillable = [
-        'check_in_time',
-        'check_out_time',
-        'date',
-        'student_id',
-    ];
+    protected $fillable = [ ];
 
-    // get who marked this attendance
-    public function markedBy():BelongsTo
+    //get the attendance records
+    public function attendance():BelongsTo
     {
-        return $this->belongsTo(User::class, 'marked_by','id');
+        return $this->belongsTo(Attendance::class, 'att_id', 'att_id');
     }
 
-    // get the student of this attendance
-    public function student()
+    //get the course time slots assigned for the day
+    public function timeSlot()
     {
-        return $this->belongsTo(Student::class, 'student_id','student_id');
+        return $this->belongsTo(TimeTables::class, 'for_slot', 'ttable_id');
     }
 
 }

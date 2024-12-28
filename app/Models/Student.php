@@ -60,4 +60,15 @@ class Student extends Model
                     ->withPivot('registered_date_time', 'status');
     }
 
+     // get the payments verified by current user
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payments::class, 'student_id', 'student_id');
+    }
+
+    //get the exammarks  of the student
+    public function examMarks():HasMany
+    {
+        return $this->hasMany(ExamMarks::class, 'student_id', 'student_id');
+    }
 }

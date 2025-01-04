@@ -16,8 +16,8 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/teacher/lessons', function () {
-    return Inertia::render('Teachers/TeacherLessons'); 
+Route::get('/aboutus', function () {
+    return Inertia::render('AboutUs'); 
 })->name('admin.viewexams');
 
 Route::get('/dashboard', function () {

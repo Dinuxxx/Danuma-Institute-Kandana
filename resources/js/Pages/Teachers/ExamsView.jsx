@@ -1,4 +1,5 @@
 import Exams from '@/Components/Teacher Components/Exams';
+import StudentPerformance from '@/Components/Teacher Components/StudentPerformance';
 import React, { useState } from 'react'
 
 const ExamsView = () => {
@@ -33,7 +34,7 @@ const ExamsView = () => {
             </div>
         ) : (
             <div>
-                
+                <StudentPerformance/>
             </div>
         )
         }

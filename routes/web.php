@@ -29,7 +29,27 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
-
+Route::get('/admin/courses', function () {
+    return Inertia::render('Admin/Courses');
+});
+Route::get('/admin/attendance', function () {
+    return Inertia::render('Admin/Attendance');
+});
+Route::get('/admin/payments', function () {
+    return Inertia::render('Admin/Payments');
+});
+Route::get('/admin/users', function () {
+    return Inertia::render('Admin/Users');
+});
+Route::get('/admin/notices', function () {
+    return Inertia::render('Admin/Notices');
+});
+Route::get('/admin/time-tables', function () {
+    return Inertia::render('Admin/Timetable');
+});
+Route::get('/admin/exams', function () {
+    return Inertia::render('Admin/Exams');
+});
 
 
 // New route for user registration

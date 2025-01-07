@@ -13,7 +13,7 @@ export default function Header() {
     return (
         <header
             ref={headerRef}
-            className="fixed top-0 w-full bg-white dark:bg-gray-800 z-50 flex justify-between items-center px-[3%] py-4 transition-shadow duration-300"
+            className="fixed top-0 w-full bg-gray-100 z-50 flex justify-between items-center px-[3%] py-4 transition-shadow duration-300"
         >
             {/* Logo Section */}
             <div>
@@ -26,9 +26,9 @@ export default function Header() {
                 {/* User Name and Profile */}
                 <div className="relative flex items-center space-x-2 cursor-pointer">
                     {/* User Name */}
-                    <span className="md:text-2xl text-xl font-medium text-gray-700 dark:text-gray-300">
+                    {/* <span className="md:text-2xl text-xl font-medium text-gray-700 dark:text-gray-300">
                         {user.name}
-                    </span>
+                    </span> */}
                     {/* Profile Image */}
                     <img
                         src={profileImage}

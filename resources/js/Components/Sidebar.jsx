@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Link, usePage } from '@inertiajs/react'; // Import Link and usePage
 import {
     FaHome,
     FaBook,
@@ -11,6 +12,8 @@ import {
 } from 'react-icons/fa';
 
 function Sidebar({ isOpen, toggleSidebar }) {
+    const { url } = usePage(); // Get the current URL from Inertia's usePage hook
+
     const styles = {
         sidebar: {
             backgroundColor: '#87CEFA',
@@ -43,9 +46,10 @@ function Sidebar({ isOpen, toggleSidebar }) {
             cursor: 'pointer',
             transition: 'padding 0.3s ease-in-out',
             fontSize: '18px',
+            // Make sure active state styles are applied before hover styles
         },
         menuItemHover: {
-            backgroundColor: '#add8e6',
+            backgroundColor: '#add8e6', // Hover background color
         },
         menuIcon: {
             fontSize: '30px',
@@ -60,17 +64,22 @@ function Sidebar({ isOpen, toggleSidebar }) {
             transform: isOpen ? 'translateX(0)' : 'translateX(-15px)',
             pointerEvents: isOpen ? 'auto' : 'none',
         },
+        activeMenuItem: {
+            backgroundColor: '#fff',
+            fontWeight: 'bold',
+        },
     };
 
+    // Define the menu items with their corresponding links
     const menuItems = [
-        { icon: <FaHome />, text: 'Dashboard' },
-        { icon: <FaBook />, text: 'Courses' },
-        { icon: <FaTrophy />, text: 'Exams' },
-        { icon: <FaClipboardList />, text: 'Attendance' },
-        { icon: <FaMoneyBill />, text: 'Payments' },
-        { icon: <FaUsers />, text: 'Users' },
-        { icon: <FaBullhorn />, text: 'Notices' },
-        { icon: <FaCalendarAlt />, text: 'Time Tables' },
+        { icon: <FaHome />, text: 'Dashboard', link: '/dashboard' },
+        { icon: <FaBook />, text: 'Courses', link: '/admin/courses' },
+        { icon: <FaTrophy />, text: 'Exams', link: '/admin/exams' },
+        { icon: <FaClipboardList />, text: 'Attendance', link: '/admin/attendance' },
+        { icon: <FaMoneyBill />, text: 'Payments', link: '/admin/payments' },
+        { icon: <FaUsers />, text: 'Users', link: '/admin/users' },
+        { icon: <FaBullhorn />, text: 'Notices', link: '/admin/notices' },
+        { icon: <FaCalendarAlt />, text: 'Time Tables', link: '/admin/time-tables' },
     ];
 
     return (
@@ -79,17 +88,35 @@ function Sidebar({ isOpen, toggleSidebar }) {
                 ☰
             </button>
             <div style={styles.menuItems}>
-                {menuItems.map((item, index) => (
-                    <div className='hover:font-bold'
-                        key={index}
-                        style={styles.menuItem}
-                        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = styles.menuItemHover.backgroundColor)}
-                        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                    >
-                        <div style={styles.menuIcon}>{item.icon}</div>
-                        <span style={styles.menuText}>{item.text}</span>
-                    </div>
-                ))}
+                {menuItems.map((item, index) => {
+                    // Check if the current URL matches the menu item link
+                    const isActive = url === item.link;
+                    return (
+                        <Link key={index} href={item.link} style={{ textDecoration: 'none' }}>
+                            <div
+                                className='hover:font-bold'
+                                style={{
+                                    ...styles.menuItem,
+                                    ...(isActive ? styles.activeMenuItem : {}),
+                                    // Keep the hover style independent of the active state
+                                }}
+                                onMouseOver={(e) => {
+                                    if (!isActive) {
+                                        e.currentTarget.style.backgroundColor = styles.menuItemHover.backgroundColor;
+                                    }
+                                }}
+                                onMouseOut={(e) => {
+                                    if (!isActive) {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                    }
+                                }}
+                            >
+                                <div style={styles.menuIcon}>{item.icon}</div>
+                                <span style={styles.menuText}>{item.text}</span>
+                            </div>
+                        </Link>
+                    );
+                })}
             </div>
         </div>
     );

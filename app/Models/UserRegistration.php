@@ -23,6 +23,11 @@ class UserRegistration extends Model
         'dob',
         'tel_no',
         'address',
+        'image', 
+        'status' , 
+        'user_id',
+        'role_id',
+        'added_by'
     ];
  
     //  Get the user whos details are these.

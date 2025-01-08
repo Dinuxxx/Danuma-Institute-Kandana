@@ -9,13 +9,13 @@ use App\Models\UserRegistration;
 use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Http\Controllers\Str;
+use App\Models\Course;
+use Illuminate\Support\Facades\DB;
 
 class UserRegistrationController extends Controller
 {
     
-
-
-
     public function register(Request $request)
     {
         // Validate the request data
@@ -28,7 +28,7 @@ class UserRegistrationController extends Controller
             'phone_number' => 'required|digits:10',
             'dob' => 'nullable|date',
             'gender' => 'required|string|in:male,female',
-            'password' => 'required|string|min:8|confirmed',           
+            //'password' => 'required|string|min:8|confirmed',           
             'parent_first_name' => 'required|string|max:255',
             'parent_last_name' => 'required|string|max:255',
             'parent_phone_number' => 'required|digits_between:10,15',
@@ -38,7 +38,9 @@ class UserRegistrationController extends Controller
             'courses' => 'array', // Array of selected course IDs
         ]);
 
-        $password = Str::random(12); // Generate a random password of 12 characters
+        $password = "sdadasdadadadadd"; // Generate a random password of 12 characters
+
+       // $password = Str::random(12); // Generate a random password of 12 characters
 
         // Create the user in the users table
         $user = User::create([
@@ -50,7 +52,7 @@ class UserRegistrationController extends Controller
         // Create the user registration details in user_registrations table
 
         UserRegistration::create([
-            'registration_id' => null, // Assuming this is auto-incremented
+            //'registration_id' => null, // Assuming this is auto-incremented
             'title' => $request->input('title', 'default_title'), // Add title if needed
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
@@ -85,6 +87,12 @@ class UserRegistrationController extends Controller
 
          // Insert courses into the student_courses table
         foreach ($request->courses as $course) {
+
+            $course = Course::create([
+                // TODO:  Please create a course before registering a student to course
+            ]);
+
+
         DB::table('student_courses')->insert([
             'registered_date_time' => now(),  //current timestamp
             'status' => 'active', // or any default status
@@ -100,4 +108,5 @@ class UserRegistrationController extends Controller
         //return response()->json(['message' => 'User registered successfully.']);
 
     }
+}
 }

@@ -6,14 +6,12 @@ const Notices = () => {
   return (
     <AuthenticatedLayout>
         <Head title="Notices" />
-        <div className="p-6">
+        <div className="p-4">
             <h1>
              Notices
             </h1>
         </div>
-        <div className="py-12">
-            
-        </div>
+        
       </AuthenticatedLayout>
   )
 }

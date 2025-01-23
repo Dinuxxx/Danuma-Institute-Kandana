@@ -6,14 +6,12 @@ const Timetable = () => {
   return (
     <AuthenticatedLayout>
         <Head title="Timetable" />
-        <div className="p-6">
+        <div className="p-4">
             <h1>
              Timetable
             </h1>
         </div>
-        <div className="py-12">
-            
-        </div>
+       
       </AuthenticatedLayout>
   )
 }

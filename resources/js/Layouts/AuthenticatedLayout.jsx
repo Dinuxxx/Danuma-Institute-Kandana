@@ -23,7 +23,7 @@ export default function AuthenticatedLayout({children }) {
             >
 
                 {/* Main Content */}
-                <div className="transition-all duration-300 p-4">{children}</div>
+                <div className="transition-all duration-300">{children}</div>
             </div>
         </div>
     );

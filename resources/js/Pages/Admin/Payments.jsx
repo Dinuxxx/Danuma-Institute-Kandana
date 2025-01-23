@@ -6,14 +6,12 @@ const Payments = () => {
   return (
     <AuthenticatedLayout>
         <Head title="Payments" />
-        <div className="p-6">
+        <div className="p-4">
             <h1>
              Payments
             </h1>
         </div>
-        <div className="py-12">
-            
-        </div>
+        
       </AuthenticatedLayout>
   )
 }

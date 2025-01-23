@@ -6,6 +6,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\RegistrationController;
+use App\Http\Controllers\CourseController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -43,6 +44,8 @@ Route::middleware('auth')->group(function () {
 Route::get('/admin/courses', function () {
     return Inertia::render('Admin/Courses');
 });
+Route::get('/courses/{id}/edit', [CourseController::class, 'edit'])->name('courses.edit');
+
 Route::get('/admin/attendance', function () {
     return Inertia::render('Admin/Attendance');
 });

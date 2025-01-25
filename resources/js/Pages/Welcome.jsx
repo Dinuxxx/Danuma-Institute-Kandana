@@ -174,7 +174,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 </div>
             </div>
             <div className="ml-[5%] mr-[5%]">
-                <Title title="Time Table" />
+                <Title title="Time Table"/>
                 <Timetable columns={columns} data={data} onBack={handleBack} />
             </div>
             <div>

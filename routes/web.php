@@ -33,11 +33,19 @@ Route::middleware('auth')->group(function () {
 Route::get('/admin/courses', function () {
     return Inertia::render('Admin/Courses');
 });
+
+Route::post('/courses', [CourseController::class, 'store'])->name('courses.store');
+
 Route::get('/courses/{id}/edit', [CourseController::class, 'edit'])->name('courses.edit');
 
 Route::get('/admin/attendance', function () {
     return Inertia::render('Admin/Attendance');
 });
+
+Route::get('/admin/attendance/mark-attendance', function () {
+    return Inertia::render('Admin/MarkAttendance');
+})->name('mark-attendance');
+
 Route::get('/admin/payments', function () {
     return Inertia::render('Admin/Payments');
 });

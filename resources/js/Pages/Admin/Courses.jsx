@@ -128,17 +128,22 @@ const Courses = () => {
               Create
             </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-            {sortedCourses.map((course) => (
-              <CourseCard
-                key={course.course_id}
-                id={course.course_id}
-                title={course.course_name}
-                instructor={`Instructor ID: ${course.teacher_id}`} // Replace with actual instructor details
-                pattern={course.pattern}
-              />
-            ))}
-          </div>
+          {/* Display No Results Found if no courses match the search query */}
+          {filteredCourses.length === 0 ? (
+            <div className="p-4 text-gray-500">No results found</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+              {sortedCourses.map((course) => (
+                <CourseCard
+                  key={course.course_id}
+                  id={course.course_id}
+                  title={course.course_name}
+                  instructor={`Instructor ID: ${course.teacher_id}`} // Replace with actual instructor details
+                  pattern={course.pattern}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

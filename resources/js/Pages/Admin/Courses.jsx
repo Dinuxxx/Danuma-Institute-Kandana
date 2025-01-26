@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
-import { BsPlus } from "react-icons/bs";
+import { BsPlus, BsSearch } from "react-icons/bs"; // Import the search icon
 import CreateCourseModal from "@/Components/Admin Components/CreateCourseModal";
 import CourseCard from "@/Components/CourseCard";
 import axios from "axios";
@@ -9,6 +9,8 @@ import axios from "axios";
 const Courses = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [courses, setCourses] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortMethod, setSortMethod] = useState("name"); // Default to sorting by name
 
   const handleCreateClick = () => {
     setIsModalOpen(true);
@@ -62,6 +64,22 @@ const Courses = () => {
     return patternImages[randomIndex];
   };
 
+  // Filter courses based on search query
+  const filteredCourses = courses.filter(course =>
+    course.course_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Sort courses based on the selected method
+  const sortedCourses = filteredCourses.sort((a, b) => {
+    if (sortMethod === "name") {
+      return a.course_name.localeCompare(b.course_name);
+    } else if (sortMethod === "lastAccessed") {
+      // Assuming 'last_accessed' is a date string or timestamp
+      return new Date(b.last_accessed) - new Date(a.last_accessed);
+    }
+    return 0;
+  });
+
   return (
     <AuthenticatedLayout>
       <Head title="Courses" />
@@ -75,9 +93,30 @@ const Courses = () => {
           </h1>
           <div className="flex p-8 justify-between">
             <div className="flex gap-4">
-              <div className="p-2 border-2">Search</div>
-              <div className="p-2 border-2">Filter</div>
-              <div className="p-2 border-2">Sort</div>
+              {/* Search Box with Icon */}
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search courses..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="p-2 border-2 rounded-md pl-8" // Added padding-left for icon space
+                />
+                <BsSearch
+                  size={20}
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500"
+                />
+              </div>
+
+              {/* Sort Dropdown */}
+              <select
+                value={sortMethod}
+                onChange={(e) => setSortMethod(e.target.value)}
+                className="p-2 md:pr-8 border-2 rounded-md"
+              >
+                <option value="name">Sort by Course Name</option>
+                <option value="lastAccessed">Sort by Last Accessed</option>
+              </select>
             </div>
             <button
               onClick={handleCreateClick}
@@ -90,7 +129,7 @@ const Courses = () => {
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-            {courses.map((course) => (
+            {sortedCourses.map((course) => (
               <CourseCard
                 key={course.course_id}
                 id={course.course_id}

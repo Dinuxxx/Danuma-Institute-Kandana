@@ -35,6 +35,7 @@ Route::get('/admin/courses', function () {
 });
 
 Route::post('/courses', [CourseController::class, 'store'])->name('courses.store');
+Route::get('/courses', [CourseController::class, 'index']);
 
 Route::get('/courses/{id}/edit', [CourseController::class, 'edit'])->name('courses.edit');
 

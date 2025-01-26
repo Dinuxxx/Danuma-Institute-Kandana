@@ -27,5 +27,10 @@ class CourseController extends Controller
 
     return response()->json(['message' => 'Course created successfully!', 'course' => $course]);
 }
+    public function index()
+    {
+        $courses = Course::all();
+        return response()->json($courses);
+    }
 
 }

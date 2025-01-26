@@ -1,12 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
 import { BsPlus } from "react-icons/bs";
 import CreateCourseModal from "@/Components/Admin Components/CreateCourseModal";
 import CourseCard from "@/Components/CourseCard";
+import axios from "axios";
 
 const Courses = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [courses, setCourses] = useState([]);
 
   const handleCreateClick = () => {
     setIsModalOpen(true);
@@ -16,14 +18,49 @@ const Courses = () => {
     setIsModalOpen(false);
   };
 
-  // Hardcoded course data (replace with backend data later)
-  const courses = [
-    { id: 1, title: "FM1478 - Maths", instructor: "Dr. Samdamali", pattern: "/images/pattern1.png" },
-    { id: 2, title: "CS101 - Programming", instructor: "Dr. Smith", pattern: "/images/pattern2.png" },
-    { id: 3, title: "EN202 - Literature", instructor: "Dr. Emily", pattern: "/images/pattern3.png" },
-    { id: 4, title: "PH303 - Physics", instructor: "Dr. Newton", pattern: "/images/pattern4.png" },
-    { id: 5, title: "CH404 - Chemistry", instructor: "Dr. Curie", pattern: "/images/pattern5.png" },
+  // Fetch courses from the backend
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await axios.get("/courses"); // Update the URL as needed
+        const coursesWithImages = response.data.map((course) => ({
+          ...course,
+          pattern: getOrAssignImage(course.course_id), // Assign or retrieve image for each course
+        }));
+        setCourses(coursesWithImages);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  // List of available pattern images
+  const patternImages = [
+    "/images/CourseCardImages/CoursePattern01.jpg",
+    "/images/CourseCardImages/CoursePattern02.jpg",
+    "/images/CourseCardImages/CoursePattern03.jpg",
+    "/images/CourseCardImages/CoursePattern04.jpg",
+    "/images/CourseCardImages/CoursePattern05.jpg",
+    "/images/CourseCardImages/CoursePattern06.jpg",
   ];
+
+  const getOrAssignImage = (courseId) => {
+    const storedImages = JSON.parse(localStorage.getItem("courseImages")) || {};
+    if (!storedImages[courseId]) {
+      const randomImage = getRandomImage();
+      storedImages[courseId] = randomImage;
+      localStorage.setItem("courseImages", JSON.stringify(storedImages));
+    }
+    return storedImages[courseId];
+  };
+
+  // Function to get a random image
+  const getRandomImage = () => {
+    const randomIndex = Math.floor(Math.random() * patternImages.length);
+    return patternImages[randomIndex];
+  };
 
   return (
     <AuthenticatedLayout>
@@ -55,10 +92,10 @@ const Courses = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
             {courses.map((course) => (
               <CourseCard
-                key={course.id}
-                id={course.id}
-                title={course.title}
-                instructor={course.instructor}
+                key={course.course_id}
+                id={course.course_id}
+                title={course.course_name}
+                instructor={`Instructor ID: ${course.teacher_id}`} // Replace with actual instructor details
                 pattern={course.pattern}
               />
             ))}

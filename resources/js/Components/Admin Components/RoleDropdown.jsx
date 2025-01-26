@@ -3,7 +3,7 @@ import { Link } from "@inertiajs/react";
 
 function RoleDropdown() {
   const [isOpen, setIsOpen] = useState(false);
-  const [selected, setSelected] = useState("Select Role");
+  const [selected, setSelected] = useState("ADD new User");
 
   const toggleDropdown = () => setIsOpen(!isOpen);
 

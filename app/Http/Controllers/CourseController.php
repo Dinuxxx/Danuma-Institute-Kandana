@@ -33,4 +33,10 @@ class CourseController extends Controller
         return response()->json($courses);
     }
 
+    public function getCoursesCount()
+    {
+        $count = Course::count(); // Assuming you have a Course model
+        return response()->json(['count' => $count]);
+    }
+
 }

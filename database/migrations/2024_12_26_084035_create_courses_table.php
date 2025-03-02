@@ -16,6 +16,8 @@ return new class extends Migration
             $table->decimal('monthly_fees', 10, 2);
             $table->string('course_name');
             $table->text('course_desc')->nullable();
+            $table->string('subject');
+            $table->string('grade');
             $table->unsignedInteger('teacher_id')->nullable();
             $table->timestamps();
 

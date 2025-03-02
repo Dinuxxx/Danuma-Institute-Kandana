@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('student_courses', function (Blueprint $table) {
-            $table->increments('row_id'); 
+            $table->increments('row_id');  //primary key
             $table->timestamp('registered_date_time');
             $table->string('status',50); 
             $table->unsignedInteger('student_id'); 

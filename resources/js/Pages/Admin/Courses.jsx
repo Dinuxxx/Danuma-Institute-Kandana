@@ -1,12 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
-import { BsPlus } from "react-icons/bs";
+import { BsPlus, BsSearch } from "react-icons/bs"; // Import the search icon
 import CreateCourseModal from "@/Components/Admin Components/CreateCourseModal";
 import CourseCard from "@/Components/CourseCard";
+import axios from "axios";
 
 const Courses = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [courses, setCourses] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortMethod, setSortMethod] = useState("name"); // Default to sorting by name
 
   const handleCreateClick = () => {
     setIsModalOpen(true);
@@ -16,14 +20,65 @@ const Courses = () => {
     setIsModalOpen(false);
   };
 
-  // Hardcoded course data (replace with backend data later)
-  const courses = [
-    { id: 1, title: "FM1478 - Maths", instructor: "Dr. Samdamali", pattern: "/images/pattern1.png" },
-    { id: 2, title: "CS101 - Programming", instructor: "Dr. Smith", pattern: "/images/pattern2.png" },
-    { id: 3, title: "EN202 - Literature", instructor: "Dr. Emily", pattern: "/images/pattern3.png" },
-    { id: 4, title: "PH303 - Physics", instructor: "Dr. Newton", pattern: "/images/pattern4.png" },
-    { id: 5, title: "CH404 - Chemistry", instructor: "Dr. Curie", pattern: "/images/pattern5.png" },
+  // Fetch courses from the backend
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await axios.get("/courses"); // Update the URL as needed
+        const coursesWithImages = response.data.map((course) => ({
+          ...course,
+          pattern: getOrAssignImage(course.course_id), // Assign or retrieve image for each course
+        }));
+        setCourses(coursesWithImages);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  // List of available pattern images
+  const patternImages = [
+    "/images/CourseCardImages/CoursePattern01.jpg",
+    "/images/CourseCardImages/CoursePattern02.jpg",
+    "/images/CourseCardImages/CoursePattern03.jpg",
+    "/images/CourseCardImages/CoursePattern04.jpg",
+    "/images/CourseCardImages/CoursePattern05.jpg",
+    "/images/CourseCardImages/CoursePattern06.jpg",
   ];
+
+  const getOrAssignImage = (courseId) => {
+    const storedImages = JSON.parse(localStorage.getItem("courseImages")) || {};
+    if (!storedImages[courseId]) {
+      const randomImage = getRandomImage();
+      storedImages[courseId] = randomImage;
+      localStorage.setItem("courseImages", JSON.stringify(storedImages));
+    }
+    return storedImages[courseId];
+  };
+
+  // Function to get a random image
+  const getRandomImage = () => {
+    const randomIndex = Math.floor(Math.random() * patternImages.length);
+    return patternImages[randomIndex];
+  };
+
+  // Filter courses based on search query
+  const filteredCourses = courses.filter(course =>
+    course.course_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Sort courses based on the selected method
+  const sortedCourses = filteredCourses.sort((a, b) => {
+    if (sortMethod === "name") {
+      return a.course_name.localeCompare(b.course_name);
+    } else if (sortMethod === "lastAccessed") {
+      // Assuming 'last_accessed' is a date string or timestamp
+      return new Date(b.last_accessed) - new Date(a.last_accessed);
+    }
+    return 0;
+  });
 
   return (
     <AuthenticatedLayout>
@@ -38,9 +93,30 @@ const Courses = () => {
           </h1>
           <div className="flex p-8 justify-between">
             <div className="flex gap-4">
-              <div className="p-2 border-2">Search</div>
-              <div className="p-2 border-2">Filter</div>
-              <div className="p-2 border-2">Sort</div>
+              {/* Search Box with Icon */}
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search courses..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="p-2 border-2 rounded-md pl-8" // Added padding-left for icon space
+                />
+                <BsSearch
+                  size={20}
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500"
+                />
+              </div>
+
+              {/* Sort Dropdown */}
+              <select
+                value={sortMethod}
+                onChange={(e) => setSortMethod(e.target.value)}
+                className="p-2 md:pr-8 border-2 rounded-md"
+              >
+                <option value="name">Sort by Course Name</option>
+                <option value="lastAccessed">Sort by Last Accessed</option>
+              </select>
             </div>
             <button
               onClick={handleCreateClick}
@@ -52,17 +128,22 @@ const Courses = () => {
               Create
             </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-            {courses.map((course) => (
-              <CourseCard
-                key={course.id}
-                id={course.id}
-                title={course.title}
-                instructor={course.instructor}
-                pattern={course.pattern}
-              />
-            ))}
-          </div>
+          {/* Display No Results Found if no courses match the search query */}
+          {filteredCourses.length === 0 ? (
+            <div className="p-4 text-gray-500">No results found</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+              {sortedCourses.map((course) => (
+                <CourseCard
+                  key={course.course_id}
+                  id={course.course_id}
+                  title={course.course_name}
+                  instructor={`Instructor ID: ${course.teacher_id}`} // Replace with actual instructor details
+                  pattern={course.pattern}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

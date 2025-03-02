@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from '@inertiajs/react';
 import Header from '@/Components/Header';
 import Sidebar from '@/Components/Sidebar';
 import { Head } from '@inertiajs/react';
@@ -67,7 +68,9 @@ const Attendance = () => {
                   className="border border-gray-500 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <button className="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600">
-                  Mark Attendance
+                  <Link href="/admin/attendance/mark-attendance">
+                    Mark Attendance
+                  </Link>
                 </button>
               </div>)}
             </div>
@@ -87,10 +90,10 @@ const Attendance = () => {
 
           {/* Footer */}
           {activeTab === 'summary' && (
-          <footer className="flex items-center justify-between bg-white shadow-md px-6 py-4 fixed bottom-0 left-0 right-0 z-10">
-            <button className="bg-gray-200 text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-300">{'<'}</button>
-            <span className="text-gray-600">2024/08/24</span>
-            <button className="bg-gray-200 text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-300">{'>'}</button>
+          <footer className="flex items-center justify-between bg-white shadow-md px-8 py-4 fixed bottom-0 right-0 z-10">
+            <button className="bg-gray-200 text-gray-600 py-2 px-4 rounded-lg hover:bg-orange-300">{'<'}</button>
+            <span className="text-orange-600 font-bold px-4">2024/08/24</span>
+            <button className="bg-gray-200 text-gray-600 py-2 px-4 rounded-lg hover:bg-orange-300">{'>'}</button>
           </footer>)}
         </div>
       </div>

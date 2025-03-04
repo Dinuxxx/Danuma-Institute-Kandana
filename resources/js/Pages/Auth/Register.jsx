@@ -39,26 +39,44 @@ export default function Register() {
         setCurrentStep((prev) => prev + 1);
     };
 
-    const handleCourseChange = (e) => setCourseInput(e.target.value);
-
     const handleAddCourse = () => {
-        if (courseInput && grade) {
-            setCourses([
-                ...courses,
-                { id: Date.now(), name: courseInput, grade },
-            ]);
-            setCourseInput("");
-            setGrade("");
-            notifySuccess("Course successfully added!");
+        if (courseInput.length && grade) {
+            // Add each selected course separately
+            const newCourses = courseInput.map((course) => ({
+                id: Date.now() + Math.random(), // Unique ID for each course
+                name: course,
+                grade,
+            }));
+    
+            setCourses([...courses, ...newCourses]);
+            setCourseInput([]);
+            notifySuccess("Courses successfully added!");
         } else {
             notifyError("Please provide both course and grade.");
         }
     };
 
     const handleRemoveCourse = (id) => {
+        const removedCourse = courses.find((course) => course.id === id);
         setCourses(courses.filter((course) => course.id !== id));
-        notifySuccess("Course removed successfully.");
+
+        if (removedCourse) {
+            notifySuccess(`${removedCourse.name} removed successfully.`);
+        }
     };
+
+    const handleCourseChange = (course) => {
+        if (courseInput.includes(course)) {
+            setCourseInput(courseInput.filter((item) => item !== course));
+        } else {
+            setCourseInput([...courseInput, course]);
+        }
+    };
+
+    const isGradeDisabled = courses.length > 0;
+
+    // Helper function to check if course is already added
+    const isCourseAdded = (course) => courses.some((c) => c.name === course);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -406,77 +424,95 @@ export default function Register() {
                     {/* Third Part of the Form */}
                     <div>
                         <InputLabel htmlFor="grade" value="Grade" />
-                        <TextInput
+                        <select
                             id="grade"
                             name="grade"
                             value={grade}
-                            className="mt-1 block w-full"
-                            onChange={(e) => handleGradeChange(e.target.value)}
-                            placeholder="Grade"
-                        />
-                        <InputError message={errors.grade} className="mt-2" />
-                    </div>
-                    <div>
-                        <InputLabel htmlFor="course" value="Add a Course" />
+                            className={`mt-1 block w-full border rounded-md p-2 ${
+                                isGradeDisabled ? "cursor-not-allowed opacity-50" : ""
+                            }`}
+                            onChange={(e) => setGrade(e.target.value)}
+                            disabled={isGradeDisabled}
+                            required
+                        >
+                            <option value="" disabled>Select Grade</option>
+                            {[6, 7, 8, 9, 10, 11].map((g) => (
+                                <option key={g} value={g}>{g}</option>
+                            ))}
+                            <option value="A/L">A/L</option>
+                        </select>
+
+                        <InputLabel htmlFor="course" value="Add a Course" className="md:mt-2"/>
                         <div className="flex space-x-2">
-                            <TextInput
-                                id="course"
-                                name="course"
-                                value={courseInput}
-                                className="mt-1 block w-full"
-                                onChange={(e) => setCourseInput(e.target.value)}
-                                placeholder="Search course"
-                            />
+                            <div className="w-full">
+                                <div className="border rounded-md p-2">
+                                    {['Math', 'Science', 'History', 'English', 'Art'].map((course) => (
+                                        <div key={course} className="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                id={course}
+                                                value={course}
+                                                checked={courseInput.includes(course)}
+                                                onChange={() => handleCourseChange(course)}
+                                                disabled={!grade || isCourseAdded(course)}
+                                                className={`${
+                                                    (!grade || isCourseAdded(course)) ? 'cursor-not-allowed opacity-50' : ''
+                                                }`}
+                                            />
+                                            <label
+                                                htmlFor={course}
+                                                className={`ml-2 ${
+                                                    (!grade || isCourseAdded(course)) ? 'text-gray-400' : ''
+                                                }`}
+                                            >
+                                                {course}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                             <button
                                 type="button"
                                 className="bg-gray-400 hover:bg-gray-500 text-black font-semibold rounded-md px-8 py-2"
                                 onClick={handleAddCourse}
+                                disabled={!grade || courseInput.length === 0}
                             >
                                 Add
                             </button>
                         </div>
-                    </div>
-                    <div className="pt-10 ">
-                        <InputLabel value="Added Courses" />
-                        <div className="mt-2 overflow-x-auto rounded-3xl shadow-[1px_1px_5px_#3d3d3df7,1px_1px_5px#afb0b0f7] bg-white">
-                            <table className="min-w-full table-auto border-collapse w-full bg-white rounded-3xl">
-                                <thead>
-                                    <tr>
-                                        <th className=" p-2">Course ID</th>
-                                        <th className=" p-2">Course Name</th>
-                                        <th className=" p-2">Grade</th>
-                                        <th className=" p-2">Option</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {courses.map((course) => (
-                                        <tr key={course.id}>
-                                            <td className="border-t p-2">
-                                                {course.id}
-                                            </td>
-                                            <td className="border-t p-2">
-                                                {course.name}
-                                            </td>
-                                            <td className="border-t p-2">
-                                                {course.grade}
-                                            </td>
-                                            <td className="border-t p-2 text-center">
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        handleRemoveCourse(
-                                                            course.id
-                                                        )
-                                                    }
-                                                    className="text-red-500"
-                                                >
-                                                    🗑
-                                                </button>
-                                            </td>
+
+                        <div className="pt-10">
+                            <InputLabel value="Added Courses" />
+                            <div className="mt-2 overflow-x-auto rounded-3xl shadow-[1px_1px_5px_#3d3d3df7,1px_1px_5px#afb0b0f7] bg-white">
+                                <table className="min-w-full table-auto border-collapse w-full bg-white rounded-3xl">
+                                    <thead>
+                                        <tr>
+                                            <th className="p-2">Course ID</th>
+                                            <th className="p-2">Course Name</th>
+                                            <th className="p-2">Grade</th>
+                                            <th className="p-2">Option</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {courses.map((course) => (
+                                            <tr key={course.id}>
+                                                <td className="border-t p-2">{course.id}</td>
+                                                <td className="border-t p-2">{course.name}</td>
+                                                <td className="border-t p-2">{course.grade}</td>
+                                                <td className="border-t p-2 text-center">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRemoveCourse(course.id)}
+                                                        className="text-red-500"
+                                                    >
+                                                        🗑
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                     <div className="flex justify-center">

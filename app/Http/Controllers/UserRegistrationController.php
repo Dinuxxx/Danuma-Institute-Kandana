@@ -30,7 +30,7 @@ class UserRegistrationController extends Controller
     {
         // Validate the request data
         $request->validate([
-            //'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
@@ -45,13 +45,13 @@ class UserRegistrationController extends Controller
             'relationship_to_student' => 'required|string|max:255',
             //'role' => 'required|string',
             'grade' => 'required|string|max:255',
-            'courses' => 'required|array', // Array of selected course IDs
-            'courses.*'=> 'exists:courses,id',// Validate each course ID exists
+            'courses' => 'required|array|min:1', // Array of selected course IDs
+            'courses.*'=> 'required|exists:courses,course_id',// Validate each course ID exists
         ]);
 
-        $password = "sdadasdadadadadd"; // Generate a random password of 12 characters
+        //$password = "sdadasdadadadadd"; // Generate a random password of 12 characters
 
-       // $password = Str::random(12); // Generate a random password of 12 characters
+        $password = Str::random(12); // Generate a random password of 12 characters
 
         // Create the user in the users table
         $user = User::create([
@@ -140,5 +140,4 @@ class UserRegistrationController extends Controller
         //return response()->json(['message' => 'User registered successfully.']);
 
     }
-}
 }

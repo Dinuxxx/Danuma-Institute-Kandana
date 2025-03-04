@@ -5,16 +5,26 @@ namespace App\Http\Controllers;
 use App\Models\Parents;
 use App\Models\User;
 use App\Models\UserRegistration;
-
 use App\Models\Student;
+use App\Models\Course;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\Str;
-use App\Models\Course;
 use Illuminate\Support\Facades\DB;
 
 class UserRegistrationController extends Controller
 {
+
+    // Function to get courses by grade (for AJAX)
+    public function getCoursesByGrade(Request $request)
+    {
+        $grade = $request->grade;
+        $courses = Course::where('grade', $grade)
+        ->select('course_id', 'course_name', 'course_desc', 'subject', 'monthly_fees')
+        ->get();
+        return response()->json($courses);
+    }
+
     
     public function register(Request $request)
     {
@@ -25,7 +35,7 @@ class UserRegistrationController extends Controller
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'address' => 'required|string|max:255',
-            'phone_number' => 'required|digits:10',
+            'tel_no' => 'required|digits:10',
             'dob' => 'nullable|date',
             'gender' => 'required|string|in:male,female',
             //'password' => 'required|string|min:8|confirmed',           
@@ -35,7 +45,8 @@ class UserRegistrationController extends Controller
             'relationship_to_student' => 'required|string|max:255',
             //'role' => 'required|string',
             'grade' => 'required|string|max:255',
-            'courses' => 'array', // Array of selected course IDs
+            'courses' => 'required|array', // Array of selected course IDs
+            'courses.*'=> 'exists:courses,id',// Validate each course ID exists
         ]);
 
         $password = "sdadasdadadadadd"; // Generate a random password of 12 characters
@@ -63,17 +74,17 @@ class UserRegistrationController extends Controller
             'image' => null, // Set a default value or leave null if not uploaded
             'status' => 'active', // Set a default status if required
             'user_id' => $user->id, // Reference the newly created user
-            'role_id' => $request->role_id,
+            'role_id' => $request->role_id ?? 3, //assuming 3 is for students
             'added_by' => auth()->user()->id, // Assuming you're getting the current user's ID
 
         ]);
 
         
         $parent = Parents::create([
-            'first_name' => $request->parentFirstName,
-            'last_name' => $request->parentSecondName,
-            'tel_no'=> $request-> parentPhoneNumber,
-            'relationship_type' => $request->relationshipToStudent,
+            'first_name' => $request->parent_first_name,
+            'last_name' => $request->parent_last_name,
+            'tel_no'=> $request-> parent_phone_number,
+            'relationship_type' => $request->relationship_to_student,
         ]);
 
         
@@ -82,10 +93,11 @@ class UserRegistrationController extends Controller
             'grade' => $request->grade,
             'QR_id' => null,
             'parent_id' => $parent->parent_id,
+            'user_id' =>$user->id,
         ]);
 
 
-         // Insert courses into the student_courses table
+        /* // Insert courses into the student_courses table
         foreach ($request->courses as $course) {
 
             $course = Course::create([
@@ -98,7 +110,27 @@ class UserRegistrationController extends Controller
             'status' => 'active', // or any default status
             'student_id' => $student->student_id,
             'course_id' => $course['id'],
-        ]);
+        ]);*/
+
+         // Assign selected courses to the student
+         $courseData = [];
+         foreach ($request->courses as $courseId) {
+             $courseData[] = [
+                 'registered_date_time' => now(),
+                 'status' => 'active',
+                 'student_id' => $student->student_id,
+                 'course_id' => $courseId,
+                 'created_at' => now(),
+                 'updated_at' => now(),
+             ];
+         }
+         
+         // Bulk insert all course registrations
+         if (!empty($courseData)) {
+             DB::table('student_courses')->insert($courseData);
+         }
+
+        
 
 
          // Return a success response

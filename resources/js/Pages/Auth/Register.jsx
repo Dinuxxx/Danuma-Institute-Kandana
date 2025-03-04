@@ -24,12 +24,14 @@ export default function Register() {
         email: "",
         address: "",
         tel_no: "",
-        dateOfBirth: "",
+        dob: "",
         gender: "",
-        parentFirstName: "",
-        parentSecondName: "",
-        parentPhoneNumber: "",
-        relationshipToStudent: "",
+        parent_first_name: "",
+        parent_last_name: "",
+        parent_phone_number: "",
+        relationship_to_student: "",
+        grade: "",
+        courses: [],
     });
 
     const handleNext = (e) => {
@@ -245,9 +247,7 @@ export default function Register() {
                             name="dob"
                             value={data.dateOfBirth}
                             className="mt-1 block w-full"
-                            onChange={(e) =>
-                                setData("dateOfBirth", e.target.value)
-                            }
+                            onChange={(e) => setData("dob", e.target.value)}
                             required
                         />
                         <InputError message={errors.dob} className="mt-2" />
@@ -301,90 +301,93 @@ export default function Register() {
                     {/* Second Part of the Form */}
                     <div>
                         <InputLabel
-                            htmlFor="parentFirstName"
+                            htmlFor="parent_first_name"
                             value="Parent First Name"
                         />
                         <TextInput
-                            id="parentFirstName"
-                            name="parentFirstName"
-                            value={data.parentFirstName}
+                            id="parent_first_name"
+                            name="parent_first_name"
+                            value={data.parent_first_name}
                             className="mt-1 block w-full"
                             onChange={(e) =>
                                 handleNameChange(
-                                    "parentFirstName",
+                                    "parent_first_name",
                                     e.target.value
                                 )
                             }
                             required
                         />
                         <InputError
-                            message={errors.parentFirstName}
+                            message={errors.parent_first_name}
                             className="mt-2"
                         />
                     </div>
                     <div>
                         <InputLabel
-                            htmlFor="parentSecondName"
+                            htmlFor="parent_last_name"
                             value="Parent Second Name"
                         />
                         <TextInput
-                            id="parentSecondName"
-                            name="parentSecondName"
-                            value={data.parentSecondName}
+                            id="parent_last_name"
+                            name="parent_last_name"
+                            value={data.parent_last_name}
                             className="mt-1 block w-full"
                             onChange={(e) =>
                                 handleNameChange(
-                                    "parentSecondName",
+                                    "parent_last_name",
                                     e.target.value
                                 )
                             }
                             required
                         />
                         <InputError
-                            message={errors.parentSecondName}
+                            message={errors.parent_last_name}
                             className="mt-2"
                         />
                     </div>
                     <div>
                         <InputLabel
-                            htmlFor="parentPhoneNumber"
+                            htmlFor="parent_phone_number"
                             value="Parent Phone Number"
                         />
                         <TextInput
-                            id="parentPhoneNumber"
-                            name="parentPhoneNumber"
-                            value={data.parentPhoneNumber}
+                            id="parent_phone_number"
+                            name="parent_pone_number"
+                            value={data.parent_phone_number}
                             className="mt-1 block w-full"
                             onChange={(e) =>
                                 handlePhoneNumberChange(
-                                    "parentPhoneNumber",
+                                    "parent_phone_number",
                                     e.target.value
                                 )
                             }
                             required
                         />
                         <InputError
-                            message={errors.parentPhoneNumber}
+                            message={errors.parent_phone_number}
                             className="mt-2"
                         />
                     </div>
                     <div>
                         <InputLabel
-                            htmlFor="relationshipToStudent"
+                            htmlFor="relationship_to_student"
                             value="Relationship to Student"
                         />
                         <TextInput
-                            id="relationshipToStudent"
-                            name="relationshipToStudent"
-                            value={data.relationshipToStudent}
+                            id="relationship_to_student"
+                            name="relationship_to_student"
+                            value={data.relationship_to_student}
                             className="mt-1 block w-full"
                             onChange={(e) =>
-                                setData("relationshipToStudent", e.target.value)
+                                setData(
+                                    "relationship_to_student",
+                                    e.target.value
+                                )
                             }
                             required
                         />
                         <InputError
-                            message={errors.relationshipToStudent}
+                            message={errors.relationship_to_student}
                             className="mt-2"
                         />
                     </div>

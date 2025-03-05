@@ -34,6 +34,7 @@ class UserRegistrationController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
+            //'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'address' => 'required|string|max:255',
             'tel_no' => 'required|digits:10',
             'dob' => 'nullable|date',
@@ -52,6 +53,35 @@ class UserRegistrationController extends Controller
         //$password = "sdadasdadadadadd"; // Generate a random password of 12 characters
 
         $password = Str::random(12); // Generate a random password of 12 characters
+
+        /*$password = $this->generateTemporaryPassword();
+
+        // Add this method to your controller
+private function generateTemporaryPassword($length = 12)
+{
+    $lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    $uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $numbers = '0123456789';
+    $special = '!@#$%^&*()';
+
+    $password = 
+        $lowercase[random_int(0, strlen($lowercase) - 1)] .
+        $uppercase[random_int(0, strlen($uppercase) - 1)] .
+        $numbers[random_int(0, strlen($numbers) - 1)] .
+        $special[random_int(0, strlen($special) - 1)];
+
+    $remainingLength = $length - strlen($password);
+    $allChars = $lowercase . $uppercase . $numbers . $special;
+
+    for ($i = 0; $i < $remainingLength; $i++) {
+        $password .= $allChars[random_int(0, strlen($allChars) - 1)];
+    }
+
+    // Shuffle the password
+    $passwordArray = str_split($password);
+    shuffle($passwordArray);
+    return implode('', $passwordArray);
+}*/
 
         // Create the user in the users table
         $user = User::create([
@@ -89,7 +119,7 @@ class UserRegistrationController extends Controller
 
         
         $student = Student::create([
-            'student_id' => $user->id,
+            //'student_id' => $user->id,
             'grade' => $request->grade,
             'QR_id' => null,
             'parent_id' => $parent->parent_id,
@@ -120,8 +150,8 @@ class UserRegistrationController extends Controller
                  'status' => 'active',
                  'student_id' => $student->student_id,
                  'course_id' => $courseId,
-                 'created_at' => now(),
-                 'updated_at' => now(),
+                 //'created_at' => now(),
+                 //'updated_at' => now(),
              ];
          }
          

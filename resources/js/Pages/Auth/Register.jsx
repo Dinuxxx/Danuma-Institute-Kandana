@@ -32,6 +32,9 @@ export default function Register() {
         relationship_to_student: "",
         grade: "",
         courses: [],
+        name: "", // Add name field
+        password: "", // Add password field
+        password_confirmation: "", // Add password confirmation field
     });
 
     const handleNext = (e) => {
@@ -78,13 +81,61 @@ export default function Register() {
     // Helper function to check if course is already added
     const isCourseAdded = (course) => courses.some((c) => c.name === course);
 
+    // Add a utility function to generate a temporary password
+    const generateTemporaryPassword = () => {
+        const length = 12;
+        const charset =
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+        let password = "";
+
+        // Ensure at least one of each type of character
+        const requiredChars = [
+            charset.match(/[a-z]/)[0],
+            charset.match(/[A-Z]/)[0],
+            charset.match(/[0-9]/)[0],
+            charset.match(/[!@#$%^&*()]/)[0],
+        ];
+
+        password += requiredChars.join("");
+
+        // Fill the rest of the password
+        for (let i = password.length; i < length; i++) {
+            const randomIndex = Math.floor(Math.random() * charset.length);
+            password += charset[randomIndex];
+        }
+
+        // Shuffle the password
+        return password
+            .split("")
+            .sort(() => 0.5 - Math.random())
+            .join("");
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Concatenate first_name and last_name to create the 'name' field
+        const name = `${data.first_name} ${data.last_name}`.trim();
+
+        // Generate a temporary password
+        const generatedPassword = generateTemporaryPassword();
+
+        // Update the form data with generated name and password
+        setData((prevData) => ({
+            ...prevData,
+            name,
+            password: generatedPassword,
+            password_confirmation: generatedPassword, // Add password confirmation
+        }));
 
         const finalData = {
             ...data,
             courses,
+            name, // Add the concatenated name
+            password: generatedPassword, // Add the generated
+            password_confirmation: generatedPassword, // Add password confirmation
         };
+
         setLoading(true); // Set loading state to true
         setError(null); // Clear any previous errors
 

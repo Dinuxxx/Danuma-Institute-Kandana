@@ -47,7 +47,7 @@ export default function Register() {
                 name: course,
                 grade,
             }));
-    
+
             setCourses([...courses, ...newCourses]);
             setCourseInput([]);
             notifySuccess("Courses successfully added!");
@@ -81,7 +81,10 @@ export default function Register() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const finalData = { ...data, courses };
+        const finalData = {
+            ...data,
+            courses,
+        };
         setLoading(true); // Set loading state to true
         setError(null); // Clear any previous errors
 
@@ -429,40 +432,72 @@ export default function Register() {
                             name="grade"
                             value={grade}
                             className={`mt-1 block w-full border rounded-md p-2 ${
-                                isGradeDisabled ? "cursor-not-allowed opacity-50" : ""
+                                isGradeDisabled
+                                    ? "cursor-not-allowed opacity-50"
+                                    : ""
                             }`}
                             onChange={(e) => setGrade(e.target.value)}
                             disabled={isGradeDisabled}
                             required
                         >
-                            <option value="" disabled>Select Grade</option>
+                            <option value="" disabled>
+                                Select Grade
+                            </option>
                             {[6, 7, 8, 9, 10, 11].map((g) => (
-                                <option key={g} value={g}>{g}</option>
+                                <option key={g} value={g}>
+                                    {g}
+                                </option>
                             ))}
                             <option value="A/L">A/L</option>
                         </select>
 
-                        <InputLabel htmlFor="course" value="Add a Course" className="md:mt-2"/>
+                        <InputLabel
+                            htmlFor="course"
+                            value="Add a Course"
+                            className="md:mt-2"
+                        />
                         <div className="flex space-x-2">
                             <div className="w-full">
                                 <div className="border rounded-md p-2">
-                                    {['Math', 'Science', 'History', 'English', 'Art'].map((course) => (
-                                        <div key={course} className="flex items-center">
+                                    {[
+                                        "Math",
+                                        "Science",
+                                        "History",
+                                        "English",
+                                        "Art",
+                                    ].map((course) => (
+                                        <div
+                                            key={course}
+                                            className="flex items-center"
+                                        >
                                             <input
                                                 type="checkbox"
                                                 id={course}
                                                 value={course}
-                                                checked={courseInput.includes(course)}
-                                                onChange={() => handleCourseChange(course)}
-                                                disabled={!grade || isCourseAdded(course)}
+                                                checked={courseInput.includes(
+                                                    course
+                                                )}
+                                                onChange={() =>
+                                                    handleCourseChange(course)
+                                                }
+                                                disabled={
+                                                    !grade ||
+                                                    isCourseAdded(course)
+                                                }
                                                 className={`${
-                                                    (!grade || isCourseAdded(course)) ? 'cursor-not-allowed opacity-50' : ''
+                                                    !grade ||
+                                                    isCourseAdded(course)
+                                                        ? "cursor-not-allowed opacity-50"
+                                                        : ""
                                                 }`}
                                             />
                                             <label
                                                 htmlFor={course}
                                                 className={`ml-2 ${
-                                                    (!grade || isCourseAdded(course)) ? 'text-gray-400' : ''
+                                                    !grade ||
+                                                    isCourseAdded(course)
+                                                        ? "text-gray-400"
+                                                        : ""
                                                 }`}
                                             >
                                                 {course}
@@ -496,13 +531,23 @@ export default function Register() {
                                     <tbody>
                                         {courses.map((course) => (
                                             <tr key={course.id}>
-                                                <td className="border-t p-2">{course.id}</td>
-                                                <td className="border-t p-2">{course.name}</td>
-                                                <td className="border-t p-2">{course.grade}</td>
+                                                <td className="border-t p-2">
+                                                    {course.id}
+                                                </td>
+                                                <td className="border-t p-2">
+                                                    {course.name}
+                                                </td>
+                                                <td className="border-t p-2">
+                                                    {course.grade}
+                                                </td>
                                                 <td className="border-t p-2 text-center">
                                                     <button
                                                         type="button"
-                                                        onClick={() => handleRemoveCourse(course.id)}
+                                                        onClick={() =>
+                                                            handleRemoveCourse(
+                                                                course.id
+                                                            )
+                                                        }
                                                         className="text-red-500"
                                                     >
                                                         🗑

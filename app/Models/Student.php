@@ -27,7 +27,12 @@ class Student extends Model
      */
     public $timestamps = false;
 
-    protected $fillable = ['grade'];
+    protected $fillable = [
+    'grade',
+    'QR_id',
+    'parent_id',
+    'user_id',
+];
 
     // get the parent of the student
     public function parent() :BelongsTo

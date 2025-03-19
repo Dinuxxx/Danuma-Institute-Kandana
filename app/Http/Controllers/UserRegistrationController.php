@@ -11,6 +11,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Auth\Events\Registered; // for user verification
+use App\Mail\SendPasswordEmail; // You'll create this Mailable class
+
 
 class UserRegistrationController extends Controller
 {
@@ -90,6 +93,13 @@ private function generateTemporaryPassword($length = 12)
             'password' => Hash::make($password), // Hash the password before saving
         ]);
 
+        // Send the password to the user via email
+    Mail::to($user->email)->send(new SendPasswordEmail($password));
+
+
+        // Send the email verification notification
+    event(new Registered($user));
+
         // Create the user registration details in user_registrations table
 
         UserRegistration::create([
@@ -111,9 +121,9 @@ private function generateTemporaryPassword($length = 12)
 
         
         $parent = Parents::create([
-            'first_name' => $request->parent_first_name,
-            'last_name' => $request->parent_last_name,
-            'tel_no'=> $request-> parent_phone_number,
+            'parent_first_name' => $request->parent_first_name,
+            'parent_last_name' => $request->parent_last_name,
+            'parent_phone_number'=> $request-> parent_phone_number,
             'relationship_type' => $request->relationship_to_student,
         ]);
 
@@ -160,11 +170,10 @@ private function generateTemporaryPassword($length = 12)
              DB::table('student_courses')->insert($courseData);
          }
 
-        
-
-
+         // Redirect to the email verification notice page
+    return redirect()->route('verification.notice')->with('status', 'verification-link-sent');
          // Return a success response
-         return redirect()->back()->with('success', 'User registered successfully!');
+        // return redirect()->back()->with('success', 'User registered successfully!');
         // return redirect()->route('dashboard')->with('success', 'Registration successful!');
 
         //return response()->json(['message' => 'User registered successfully.']);

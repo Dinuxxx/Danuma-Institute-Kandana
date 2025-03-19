@@ -18,7 +18,13 @@ class Course extends Model
      */
     protected $primaryKey = 'course_id';
     
-    protected $fillable = ['monthly_fees','course_name','course_desc','subject','grade'];
+    protected $fillable = [
+        'monthly_fees',
+        'course_name',
+        'course_desc',
+        'subject',
+        'grade',
+    ];
 
     //get the teacher of the course
     public function teacher() :BelongsTo

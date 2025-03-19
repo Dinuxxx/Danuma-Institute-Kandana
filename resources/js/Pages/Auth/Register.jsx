@@ -30,6 +30,7 @@ export default function Register() {
         parent_last_name: "",
         parent_phone_number: "",
         relationship_to_student: "",
+        grade: grade,
         grade: "",
         courses: [],
         name: "", // Add name field
@@ -131,6 +132,7 @@ export default function Register() {
         const finalData = {
             ...data,
             courses,
+            grade: grade,
             name, // Add the concatenated name
             password: generatedPassword, // Add the generated
             password_confirmation: generatedPassword, // Add password confirmation
@@ -232,7 +234,6 @@ export default function Register() {
         <GuestLayout>
             <Head title="Register" />
             <div className="relative mb-8 md:mb-20 h-1 bg-black w-full"></div>
-
             {currentStep === 1 && (
                 <form onSubmit={handleNext} className="space-y-2 px-[10%]">
                     <div>
@@ -367,7 +368,6 @@ export default function Register() {
                     </div>
                 </form>
             )}
-
             {currentStep === 2 && (
                 <form onSubmit={handleNext} className="space-y-3 px-[10%]">
                     {/* Second Part of the Form */}
@@ -424,7 +424,7 @@ export default function Register() {
                         />
                         <TextInput
                             id="parent_phone_number"
-                            name="parent_pone_number"
+                            name="parent_phone_number"
                             value={data.parent_phone_number}
                             className="mt-1 block w-full"
                             onChange={(e) =>
@@ -473,6 +473,7 @@ export default function Register() {
                     </div>
                 </form>
             )}
+
             {currentStep === 3 && (
                 <form onSubmit={handleSubmit} className="space-y-4 px-[8%]">
                     {/* Third Part of the Form */}

@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\Auth\EmailVerificationPromptController;
+use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -84,6 +87,19 @@ Route::get('/register', function () {
 Route::post('/register', [UserRegistrationController::class, 'register'])->name('register');
 
 
+// Email verification notice
+Route::get('/email/verify', [EmailVerificationPromptController::class, '__invoke'])
+    ->middleware('auth')
+    ->name('verification.notice');
 
+// Email verification handler (this is already handled by Laravel)
+Route::get('/email/verify/{id}/{hash}', [VerifyEmailController::class, 'verify'])
+    ->middleware(['auth', 'signed'])
+    ->name('verification.verify');
+
+// Resend verification email
+Route::post('/email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
+    ->middleware('auth')
+    ->name('verification.send');
 
 require __DIR__.'/auth.php';

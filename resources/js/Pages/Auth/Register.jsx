@@ -24,12 +24,18 @@ export default function Register() {
         email: "",
         address: "",
         tel_no: "",
-        dateOfBirth: "",
+        dob: "",
         gender: "",
-        parentFirstName: "",
-        parentSecondName: "",
-        parentPhoneNumber: "",
-        relationshipToStudent: "",
+        parent_first_name: "",
+        parent_last_name: "",
+        parent_phone_number: "",
+        relationship_to_student: "",
+        grade: grade,
+        grade: "",
+        courses: [],
+        name: "", // Add name field
+        password: "", // Add password field
+        password_confirmation: "", // Add password confirmation field
     });
 
     const handleNext = (e) => {
@@ -45,7 +51,7 @@ export default function Register() {
                 name: course,
                 grade,
             }));
-    
+
             setCourses([...courses, ...newCourses]);
             setCourseInput([]);
             notifySuccess("Courses successfully added!");
@@ -76,10 +82,62 @@ export default function Register() {
     // Helper function to check if course is already added
     const isCourseAdded = (course) => courses.some((c) => c.name === course);
 
+    // Add a utility function to generate a temporary password
+    const generateTemporaryPassword = () => {
+        const length = 12;
+        const charset =
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+        let password = "";
+
+        // Ensure at least one of each type of character
+        const requiredChars = [
+            charset.match(/[a-z]/)[0],
+            charset.match(/[A-Z]/)[0],
+            charset.match(/[0-9]/)[0],
+            charset.match(/[!@#$%^&*()]/)[0],
+        ];
+
+        password += requiredChars.join("");
+
+        // Fill the rest of the password
+        for (let i = password.length; i < length; i++) {
+            const randomIndex = Math.floor(Math.random() * charset.length);
+            password += charset[randomIndex];
+        }
+
+        // Shuffle the password
+        return password
+            .split("")
+            .sort(() => 0.5 - Math.random())
+            .join("");
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const finalData = { ...data, courses };
+        // Concatenate first_name and last_name to create the 'name' field
+        const name = `${data.first_name} ${data.last_name}`.trim();
+
+        // Generate a temporary password
+        const generatedPassword = generateTemporaryPassword();
+
+        // Update the form data with generated name and password
+        setData((prevData) => ({
+            ...prevData,
+            name,
+            password: generatedPassword,
+            password_confirmation: generatedPassword, // Add password confirmation
+        }));
+
+        const finalData = {
+            ...data,
+            courses,
+            grade: grade,
+            name, // Add the concatenated name
+            password: generatedPassword, // Add the generated
+            password_confirmation: generatedPassword, // Add password confirmation
+        };
+
         setLoading(true); // Set loading state to true
         setError(null); // Clear any previous errors
 
@@ -176,7 +234,6 @@ export default function Register() {
         <GuestLayout>
             <Head title="Register" />
             <div className="relative mb-8 md:mb-20 h-1 bg-black w-full"></div>
-
             {currentStep === 1 && (
                 <form onSubmit={handleNext} className="space-y-2 px-[10%]">
                     <div>
@@ -263,9 +320,7 @@ export default function Register() {
                             name="dob"
                             value={data.dateOfBirth}
                             className="mt-1 block w-full"
-                            onChange={(e) =>
-                                setData("dateOfBirth", e.target.value)
-                            }
+                            onChange={(e) => setData("dob", e.target.value)}
                             required
                         />
                         <InputError message={errors.dob} className="mt-2" />
@@ -313,96 +368,98 @@ export default function Register() {
                     </div>
                 </form>
             )}
-
             {currentStep === 2 && (
                 <form onSubmit={handleNext} className="space-y-3 px-[10%]">
                     {/* Second Part of the Form */}
                     <div>
                         <InputLabel
-                            htmlFor="parentFirstName"
+                            htmlFor="parent_first_name"
                             value="Parent First Name"
                         />
                         <TextInput
-                            id="parentFirstName"
-                            name="parentFirstName"
-                            value={data.parentFirstName}
+                            id="parent_first_name"
+                            name="parent_first_name"
+                            value={data.parent_first_name}
                             className="mt-1 block w-full"
                             onChange={(e) =>
                                 handleNameChange(
-                                    "parentFirstName",
+                                    "parent_first_name",
                                     e.target.value
                                 )
                             }
                             required
                         />
                         <InputError
-                            message={errors.parentFirstName}
+                            message={errors.parent_first_name}
                             className="mt-2"
                         />
                     </div>
                     <div>
                         <InputLabel
-                            htmlFor="parentSecondName"
+                            htmlFor="parent_last_name"
                             value="Parent Second Name"
                         />
                         <TextInput
-                            id="parentSecondName"
-                            name="parentSecondName"
-                            value={data.parentSecondName}
+                            id="parent_last_name"
+                            name="parent_last_name"
+                            value={data.parent_last_name}
                             className="mt-1 block w-full"
                             onChange={(e) =>
                                 handleNameChange(
-                                    "parentSecondName",
+                                    "parent_last_name",
                                     e.target.value
                                 )
                             }
                             required
                         />
                         <InputError
-                            message={errors.parentSecondName}
+                            message={errors.parent_last_name}
                             className="mt-2"
                         />
                     </div>
                     <div>
                         <InputLabel
-                            htmlFor="parentPhoneNumber"
+                            htmlFor="parent_phone_number"
                             value="Parent Phone Number"
                         />
                         <TextInput
-                            id="parentPhoneNumber"
-                            name="parentPhoneNumber"
-                            value={data.parentPhoneNumber}
+                            id="parent_phone_number"
+                            name="parent_phone_number"
+                            value={data.parent_phone_number}
                             className="mt-1 block w-full"
                             onChange={(e) =>
                                 handlePhoneNumberChange(
-                                    "parentPhoneNumber",
+                                    "parent_phone_number",
                                     e.target.value
                                 )
                             }
                             required
                         />
                         <InputError
-                            message={errors.parentPhoneNumber}
+                            message={errors.parent_phone_number}
                             className="mt-2"
                         />
                     </div>
                     <div>
                         <InputLabel
-                            htmlFor="relationshipToStudent"
+                            htmlFor="relationship_to_student"
                             value="Relationship to Student"
                         />
                         <TextInput
-                            id="relationshipToStudent"
-                            name="relationshipToStudent"
-                            value={data.relationshipToStudent}
+                            id="relationship_to_student"
+                            name="relationship_to_student"
+                            value={data.relationship_to_student}
                             className="mt-1 block w-full"
                             onChange={(e) =>
-                                setData("relationshipToStudent", e.target.value)
+                                setData(
+                                    "relationship_to_student",
+                                    e.target.value
+                                )
                             }
                             required
                         />
                         <InputError
-                            message={errors.relationshipToStudent}
+                            message={errors.relationship_to_student}
                             className="mt-2"
                         />
                     </div>
@@ -416,6 +473,7 @@ export default function Register() {
                     </div>
                 </form>
             )}
+
             {currentStep === 3 && (
                 <form onSubmit={handleSubmit} className="space-y-4 px-[8%]">
                     {/* Third Part of the Form */}
@@ -426,40 +484,72 @@ export default function Register() {
                             name="grade"
                             value={grade}
                             className={`mt-1 block w-full border rounded-md p-2 ${
-                                isGradeDisabled ? "cursor-not-allowed opacity-50" : ""
+                                isGradeDisabled
+                                    ? "cursor-not-allowed opacity-50"
+                                    : ""
                             }`}
                             onChange={(e) => setGrade(e.target.value)}
                             disabled={isGradeDisabled}
                             required
                         >
-                            <option value="" disabled>Select Grade</option>
+                            <option value="" disabled>
+                                Select Grade
+                            </option>
                             {[6, 7, 8, 9, 10, 11].map((g) => (
-                                <option key={g} value={g}>{g}</option>
+                                <option key={g} value={g}>
+                                    {g}
+                                </option>
                             ))}
                             <option value="A/L">A/L</option>
                         </select>
 
-                        <InputLabel htmlFor="course" value="Add a Course" className="md:mt-2"/>
+                        <InputLabel
+                            htmlFor="course"
+                            value="Add a Course"
+                            className="md:mt-2"
+                        />
                         <div className="flex space-x-2">
                             <div className="w-full">
                                 <div className="border rounded-md p-2">
-                                    {['Math', 'Science', 'History', 'English', 'Art'].map((course) => (
-                                        <div key={course} className="flex items-center">
+                                    {[
+                                        "Math",
+                                        "Science",
+                                        "History",
+                                        "English",
+                                        "Art",
+                                    ].map((course) => (
+                                        <div
+                                            key={course}
+                                            className="flex items-center"
+                                        >
                                             <input
                                                 type="checkbox"
                                                 id={course}
                                                 value={course}
-                                                checked={courseInput.includes(course)}
-                                                onChange={() => handleCourseChange(course)}
-                                                disabled={!grade || isCourseAdded(course)}
+                                                checked={courseInput.includes(
+                                                    course
+                                                )}
+                                                onChange={() =>
+                                                    handleCourseChange(course)
+                                                }
+                                                disabled={
+                                                    !grade ||
+                                                    isCourseAdded(course)
+                                                }
                                                 className={`${
-                                                    (!grade || isCourseAdded(course)) ? 'cursor-not-allowed opacity-50' : ''
+                                                    !grade ||
+                                                    isCourseAdded(course)
+                                                        ? "cursor-not-allowed opacity-50"
+                                                        : ""
                                                 }`}
                                             />
                                             <label
                                                 htmlFor={course}
                                                 className={`ml-2 ${
-                                                    (!grade || isCourseAdded(course)) ? 'text-gray-400' : ''
+                                                    !grade ||
+                                                    isCourseAdded(course)
+                                                        ? "text-gray-400"
+                                                        : ""
                                                 }`}
                                             >
                                                 {course}
@@ -493,13 +583,23 @@ export default function Register() {
                                     <tbody>
                                         {courses.map((course) => (
                                             <tr key={course.id}>
-                                                <td className="border-t p-2">{course.id}</td>
-                                                <td className="border-t p-2">{course.name}</td>
-                                                <td className="border-t p-2">{course.grade}</td>
+                                                <td className="border-t p-2">
+                                                    {course.id}
+                                                </td>
+                                                <td className="border-t p-2">
+                                                    {course.name}
+                                                </td>
+                                                <td className="border-t p-2">
+                                                    {course.grade}
+                                                </td>
                                                 <td className="border-t p-2 text-center">
                                                     <button
                                                         type="button"
-                                                        onClick={() => handleRemoveCourse(course.id)}
+                                                        onClick={() =>
+                                                            handleRemoveCourse(
+                                                                course.id
+                                                            )
+                                                        }
                                                         className="text-red-500"
                                                     >
                                                         🗑

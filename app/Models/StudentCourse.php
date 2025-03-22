@@ -24,5 +24,10 @@ class StudentCourse extends Model
      */
     public $timestamps = false;
 
-    protected $fillable = [];
+    protected $fillable = [
+        'registered_date_time',
+        'status',
+        'student_id',
+        'course_id',
+    ];
 }

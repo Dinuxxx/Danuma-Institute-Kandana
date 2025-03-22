@@ -25,6 +25,13 @@ class Parents extends Model
      */
     public $timestamps = false;
 
+    protected $fillable = [
+        'parent_first_name',
+        'parent_last_name',
+        'parent_phone_number',
+        'relationship_type'
+    ];
+
     // Attributes not allowed for mass assignment
     protected $guarded = ['parent_id'];
 

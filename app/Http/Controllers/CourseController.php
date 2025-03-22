@@ -23,6 +23,8 @@ class CourseController extends Controller
         'monthly_fees' => $validatedData['courseFee'],
         'course_desc' => $validatedData['courseDesc'],
         'teacher_id' => $validatedData['teacherId'],
+        'grade' => $validatedData['grade'],
+        'subject' => $validatedData['subjectCode'],
     ]);
 
     return response()->json(['message' => 'Course created successfully!', 'course' => $course]);
@@ -37,6 +39,51 @@ class CourseController extends Controller
     {
         $count = Course::count(); // Assuming you have a Course model
         return response()->json(['count' => $count]);
+    }
+
+    // Add these methods to your CourseController.php
+
+    public function edit($id)
+    {
+        $course = Course::findOrFail($id);
+        return inertia('Admin/EditCourse', [
+            'course' => $course
+        ]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $course = Course::findOrFail($id);
+        
+        $validatedData = $request->validate([
+            'subjectCode' => 'required|string|max:255',
+            'subjectName' => 'required|string|max:255',
+            'teacherId' => 'required|string|max:255',
+            'grade' => 'required|string|max:10',
+            'courseFee' => 'required|numeric',
+            'courseDesc' => 'nullable|string',
+        ]);
+
+        $course->update([
+            'course_name' => $validatedData['subjectName'],
+            'monthly_fees' => $validatedData['courseFee'],
+            'course_desc' => $validatedData['courseDesc'],
+            'teacher_id' => $validatedData['teacherId'],
+            'grade' => $validatedData['grade'],
+            'subject' => $validatedData['subjectCode'],
+        ]);
+
+        return redirect()->route('courses.index')
+            ->with('message', 'Course updated successfully');
+    }
+
+    public function destroy($id)
+    {
+        $course = Course::findOrFail($id);
+        $course->delete();
+        
+        return redirect()->route('courses.index')
+            ->with('message', 'Course removed successfully');
     }
 
 }

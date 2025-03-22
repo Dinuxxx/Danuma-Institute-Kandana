@@ -9,7 +9,8 @@ use App\Models\UserRegistration;
 use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use App\Http\Controllers\Str;
+// use App\Http\Controllers\Str;
+use Illuminate\Support\Str;
 use App\Models\Course;
 use Illuminate\Support\Facades\DB;
 

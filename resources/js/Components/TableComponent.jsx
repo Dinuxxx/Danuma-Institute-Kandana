@@ -1,7 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-const Timetable = ({ columns, data, onBack }) => {
+const TableComponent = ({ columns, data, onBack }) => {
   return (
     <div className="p-4 max-w-6xl mx-auto mt-[-80px]">
       {onBack && (
@@ -50,11 +50,11 @@ const Timetable = ({ columns, data, onBack }) => {
   );
 };
 
-Timetable.propTypes = {
+TableComponent.propTypes = {
   columns: PropTypes.arrayOf(PropTypes.string).isRequired,
   data: PropTypes.arrayOf(PropTypes.object).isRequired,
   title: PropTypes.string,
   onBack: PropTypes.func,
 };
 
-export default Timetable;
+export default TableComponent;

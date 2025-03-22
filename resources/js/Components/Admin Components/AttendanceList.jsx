@@ -1,10 +1,27 @@
-import React, { useState } from "react";
-import Timetable from "../Timetable";
+import React, { useState, useEffect } from "react";
+import Axios from "axios";
+import Timetable from "../TableComponent";
 
 const AttendanceList = () => {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedGrade, setSelectedGrade] = useState("");
+  const [courses, setCourses] = useState([]); // To store courses
+  const [grades, setGrades] = useState([]); // To store grades
+
+  // Fetch courses from the backend
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await Axios.get("/courses"); // Make sure the API endpoint is correct
+        setCourses(response.data); // Assuming the response contains an array of courses
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      }
+    };
+
+    fetchCourses();
+  }, []); // Runs once when the component mounts
 
   const columns = [
     "S_id",
@@ -19,7 +36,6 @@ const AttendanceList = () => {
   ];
 
   const data = [
-    // Example data
     {
       S_id: "101",
       Name: "John Doe",
@@ -36,7 +52,6 @@ const AttendanceList = () => {
         </div>
       ),
     },
-    // Add more rows here
   ];
 
   return (
@@ -66,8 +81,11 @@ const AttendanceList = () => {
               className="border border-gray-300 rounded-lg p-2 w-[200px]"
             >
               <option value="">Select Course</option>
-              <option value="Math">Math</option>
-              <option value="Science">Science</option>
+              {courses.map((course) => (
+                <option key={course.id} value={course.subject}>
+                  {course.subject} - {course.course_name}
+                </option>
+              ))}
             </select>
           </div>
           <div>
@@ -77,6 +95,7 @@ const AttendanceList = () => {
               className="border border-gray-300 rounded-lg p-2 w-[200px]"
             >
               <option value="">Select Grade</option>
+              {/* Assuming you want to hardcode grades or get them dynamically as well */}
               <option value="A">A</option>
               <option value="B">B</option>
             </select>

@@ -4,7 +4,7 @@ import Footer from "@/Components/Public-access/Footer";
 import Title from "@/Components/Public-access/Title";
 import AddressInfo from "@/Components/Public-access/AddressInfo";
 import ContactForm from "@/Components/Public-access/ContactForm";
-import Timetable from "@/Components/Timetable";
+import Timetable from "@/Components/TableComponent";
 import { Head, Link } from "@inertiajs/react";
 import { useState } from "react";
 import { BsSearch, BsChevronDown } from 'react-icons/bs';
@@ -13,7 +13,7 @@ import TeacherDetails from "@/Components/Public-access/TeacherDetails";
 import Dropdown from '@/Components/Dropdown';
 import AboutUs from "@/Components/Public-access/AboutUs";
 
-export default function Welcome({ auth, laravelVersion, phpVersion }) {
+export default function Welcome({ auth}) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const toggleMenu = () => {

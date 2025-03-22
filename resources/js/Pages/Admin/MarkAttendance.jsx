@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/react';
 import Header from '@/Components/Header';
 import Sidebar from '@/Components/Sidebar';
 import { Head } from '@inertiajs/react';
+import AttendanceQR from '@/Components/Admin Components/AttendanceQR';
 
 const MarkAttendance = () => {
 
@@ -10,7 +11,7 @@ const MarkAttendance = () => {
   const [activeTab, setActiveTab] = useState('scan');
   
   return (
-    <div className="min-h-screen bg-white flex">
+    <div className="max-h-screen bg-white flex">
       <Header />
       <div className="fixed top-16 md:top-20 left-0 transition-all duration-300">
         <Sidebar isOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
@@ -21,7 +22,7 @@ const MarkAttendance = () => {
         className={`transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-20'} flex-1 mt-20 md:mt-24`}
       >
         <Head title="Mark Attendance" />
-        <div className="flex flex-col h-screen">
+        <div className="flex flex-col">
           {/* Fixed Header */}
           <header
             className={`bg-white shadow-md px-6 pt-4 fixed top-20 md:top-24 z-10 transition-all duration-300 ${
@@ -55,10 +56,10 @@ const MarkAttendance = () => {
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 pt-36 pb-16 px-6 overflow-y-auto bg-gray-50">
+          <main className="flex-1 pt-24 pb-8 px-6 overflow-y-auto bg-gray-50">
             {activeTab === 'scan' && (
               <div>
-
+                <AttendanceQR/>
               </div>
             )}
             {activeTab === 'manual' && (

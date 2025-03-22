@@ -17,7 +17,7 @@ const CourseCard = ({ id, title, instructor, pattern }) => {
           href={`/courses/${id}/edit`}
           className="text-orange-500 font-bold text-lg hover:underline"
         >
-          {title}
+          {id} - {title}
         </Link>
         <p className="text-gray-600">{instructor}</p>
       </div>

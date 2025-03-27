@@ -3,7 +3,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
 import { BsPlus, BsSearch } from "react-icons/bs"; // Import the search icon
 import CreateCourseModal from "@/Components/Admin Components/CreateCourseModal";
-import CourseCard from "@/Components/CourseCard";
+import CourseCard from "@/Components/Admin Components/CourseCardAdmin";
 import axios from "axios";
 
 const Courses = () => {

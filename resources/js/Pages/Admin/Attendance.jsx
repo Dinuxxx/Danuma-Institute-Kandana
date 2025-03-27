@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/react';
 import Header from '@/Components/Header';
 import Sidebar from '@/Components/Sidebar';
 import { Head } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import AttendanceSummary from '@/Components/Admin Components/AttendanceSummary';
 import AttendanceList from '@/Components/Admin Components/AttendanceList';
 
@@ -14,19 +15,26 @@ const Attendance = () => {
     { course: 'COURSE', grade: 'GRADE', teacher: 'Teacher', time: 'Scheduled Time', present: 68, absent: 32 },
   ];
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { props } = usePage();
+  const user = props.auth.user;
+  const userRole = user?.role || 'admin'; // Default to 'admin' if role is undefined
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState('summary'); // Track the active tab
 
   return (
     <div className="min-h-screen bg-white flex">
       <Header />
       <div className="fixed top-16 md:top-20 left-0 transition-all duration-300">
-        <Sidebar isOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
+          <Sidebar 
+              isOpen={isSidebarOpen} 
+              toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
+              role={userRole} // Pass role to Sidebar
+          />
       </div>
 
       {/* Main Content Area */}
       <div
-        className={`transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-20'} flex-1 mt-20 md:mt-24`}
+      className={`transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-20'} flex-1 mt-20 md:mt-24`}
       >
         <Head title="Attendance" />
         <div className="flex flex-col h-screen">

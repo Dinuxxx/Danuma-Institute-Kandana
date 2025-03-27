@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, usePage } from '@inertiajs/react'; // Import Link and usePage
+import { Link, usePage } from '@inertiajs/react';
 import {
     FaHome,
     FaBook,
@@ -11,8 +11,8 @@ import {
     FaCalendarAlt,
 } from 'react-icons/fa';
 
-function Sidebar({ isOpen, toggleSidebar }) {
-    const { url } = usePage(); // Get the current URL from Inertia's usePage hook
+function Sidebar({ isOpen, toggleSidebar, role }) {
+    const { url } = usePage();
 
     const styles = {
         sidebar: {
@@ -46,10 +46,6 @@ function Sidebar({ isOpen, toggleSidebar }) {
             cursor: 'pointer',
             transition: 'padding 0.3s ease-in-out',
             fontSize: '18px',
-            // Make sure active state styles are applied before hover styles
-        },
-        menuItemHover: {
-            backgroundColor: '#add8e6', // Hover background color
         },
         menuIcon: {
             fontSize: '30px',
@@ -70,26 +66,44 @@ function Sidebar({ isOpen, toggleSidebar }) {
         },
     };
 
-    // Define the menu items with their corresponding links
-    const menuItems = [
-        { icon: <FaHome />, text: 'Dashboard', link: '/dashboard' },
-        { icon: <FaBook />, text: 'Courses', link: '/admin/courses' },
-        { icon: <FaTrophy />, text: 'Exams', link: '/admin/exams' },
-        { icon: <FaClipboardList />, text: 'Attendance', link: '/admin/attendance' },
-        { icon: <FaMoneyBill />, text: 'Payments', link: '/admin/payments' },
-        { icon: <FaUsers />, text: 'Users', link: '/admin/users' },
-        { icon: <FaBullhorn />, text: 'Notices', link: '/admin/notices' },
-        { icon: <FaCalendarAlt />, text: 'Time Tables', link: '/admin/time-tables' },
-    ];
+    const menuItemsByRole = {
+        admin: [
+            { icon: <FaHome />, text: 'Dashboard', link: '/dashboard' },
+            { icon: <FaBook />, text: 'Courses', link: '/admin/courses' },
+            { icon: <FaTrophy />, text: 'Exams', link: '/admin/exams' },
+            { icon: <FaClipboardList />, text: 'Attendance', link: '/admin/attendance' },
+            { icon: <FaMoneyBill />, text: 'Payments', link: '/admin/payments' },
+            { icon: <FaUsers />, text: 'Users', link: '/admin/users' },
+            { icon: <FaBullhorn />, text: 'Notices', link: '/admin/notices' },
+            { icon: <FaCalendarAlt />, text: 'Time Tables', link: '/admin/time-tables' },
+        ],
+        teacher: [
+            { icon: <FaHome />, text: 'Dashboard', link: '/dashboard' },
+            { icon: <FaBook />, text: 'Courses', link: '/teacher/courses' },
+            { icon: <FaTrophy />, text: 'Exams', link: '/teacher/exams' },
+            { icon: <FaClipboardList />, text: 'Attendance', link: '/teacher/attendance' },
+            { icon: <FaMoneyBill />, text: 'Payments', link: '/teacher/payments' },
+            { icon: <FaBullhorn />, text: 'Notices', link: '/teacher/notices' },
+            { icon: <FaCalendarAlt />, text: 'Time Tables', link: '/teacher/time-tables' },
+        ],
+        student: [
+            { icon: <FaHome />, text: 'Dashboard', link: '/dashboard' },
+            { icon: <FaBook />, text: 'Courses', link: '/student/courses' },
+            { icon: <FaTrophy />, text: 'Exams', link: '/student/exams' },
+            { icon: <FaClipboardList />, text: 'Attendance', link: '/student/attendance' },
+            { icon: <FaMoneyBill />, text: 'Payments', link: '/student/payments' },
+            { icon: <FaBullhorn />, text: 'Notices', link: '/student/notices' },
+            { icon: <FaCalendarAlt />, text: 'Time Tables', link: '/student/time-tables' },
+        ],
+    };
+
+    const menuItems = menuItemsByRole[role] || [];
 
     return (
         <div style={styles.sidebar}>
-            <button onClick={toggleSidebar} style={styles.toggleBtn}>
-                ☰
-            </button>
+            <button onClick={toggleSidebar} style={styles.toggleBtn}>☰</button>
             <div style={styles.menuItems}>
                 {menuItems.map((item, index) => {
-                    // Check if the current URL matches the menu item link
                     const isActive = url === item.link;
                     return (
                         <Link key={index} href={item.link} style={{ textDecoration: 'none' }}>
@@ -98,17 +112,6 @@ function Sidebar({ isOpen, toggleSidebar }) {
                                 style={{
                                     ...styles.menuItem,
                                     ...(isActive ? styles.activeMenuItem : {}),
-                                    // Keep the hover style independent of the active state
-                                }}
-                                onMouseOver={(e) => {
-                                    if (!isActive) {
-                                        e.currentTarget.style.backgroundColor = styles.menuItemHover.backgroundColor;
-                                    }
-                                }}
-                                onMouseOut={(e) => {
-                                    if (!isActive) {
-                                        e.currentTarget.style.backgroundColor = 'transparent';
-                                    }
                                 }}
                             >
                                 <div style={styles.menuIcon}>{item.icon}</div>

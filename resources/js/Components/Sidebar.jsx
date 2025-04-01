@@ -68,7 +68,7 @@ function Sidebar({ isOpen, toggleSidebar, role }) {
 
     const menuItemsByRole = {
         admin: [
-            { icon: <FaHome />, text: 'Dashboard', link: '/dashboard' },
+            { icon: <FaHome />, text: 'Dashboard', link: '/admin/dashboard' },
             { icon: <FaBook />, text: 'Courses', link: '/admin/courses' },
             { icon: <FaTrophy />, text: 'Exams', link: '/admin/exams' },
             { icon: <FaClipboardList />, text: 'Attendance', link: '/admin/attendance' },
@@ -78,7 +78,7 @@ function Sidebar({ isOpen, toggleSidebar, role }) {
             { icon: <FaCalendarAlt />, text: 'Time Tables', link: '/admin/time-tables' },
         ],
         teacher: [
-            { icon: <FaHome />, text: 'Dashboard', link: '/dashboard' },
+            { icon: <FaHome />, text: 'Dashboard', link: '/teacher/dashboard' },
             { icon: <FaBook />, text: 'Courses', link: '/teacher/courses' },
             { icon: <FaTrophy />, text: 'Exams', link: '/teacher/exams' },
             { icon: <FaClipboardList />, text: 'Attendance', link: '/teacher/attendance' },
@@ -87,7 +87,7 @@ function Sidebar({ isOpen, toggleSidebar, role }) {
             { icon: <FaCalendarAlt />, text: 'Time Tables', link: '/teacher/time-tables' },
         ],
         student: [
-            { icon: <FaHome />, text: 'Dashboard', link: '/dashboard' },
+            { icon: <FaHome />, text: 'Dashboard', link: '/student/dashboard' },
             { icon: <FaBook />, text: 'Courses', link: '/student/courses' },
             { icon: <FaTrophy />, text: 'Exams', link: '/student/exams' },
             { icon: <FaClipboardList />, text: 'Attendance', link: '/student/attendance' },

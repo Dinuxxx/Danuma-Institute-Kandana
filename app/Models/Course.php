@@ -19,6 +19,7 @@ class Course extends Model
     protected $primaryKey = 'course_id';
     
     protected $fillable = [
+        'course_id',
         'monthly_fees',
         'course_name',
         'course_desc',

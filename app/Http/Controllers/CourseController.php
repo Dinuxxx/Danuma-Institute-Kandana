@@ -19,12 +19,12 @@ class CourseController extends Controller
     ]);
 
     $course = Course::create([
+        'course_id' => $validatedData['subjectCode'],
         'course_name' => $validatedData['subjectName'],
         'monthly_fees' => $validatedData['courseFee'],
         'course_desc' => $validatedData['courseDesc'],
         'teacher_id' => $validatedData['teacherId'],
         'grade' => $validatedData['grade'],
-        'subject' => $validatedData['subjectCode'],
     ]);
 
     return response()->json(['message' => 'Course created successfully!', 'course' => $course]);

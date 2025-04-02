@@ -44,7 +44,7 @@ const EditCourse = ({ course }) => {
     if (confirm('Are you sure you want to delete this course?')) {
       router.delete(`/courses/${course.course_id}`, {
         onSuccess: () => {
-          router.visit('/admin/courses'); // Redirect to courses page after deletion
+          router.visit('/admin/courses');
         },
       });
     }

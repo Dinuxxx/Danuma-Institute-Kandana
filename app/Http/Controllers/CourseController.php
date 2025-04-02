@@ -83,7 +83,11 @@ class CourseController extends Controller
         $course = Course::findOrFail($id);
         $course->delete();
         
-        return Redirect::route('courses.index')->with('message', 'Course removed successfully');
+        if (request()->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
+        
+        return Redirect::route('admin.courses');
     }
 
 }

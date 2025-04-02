@@ -124,7 +124,7 @@ Route::middleware('auth')->group(function () {
 
 Route::get('/admin/courses', function () {
     return Inertia::render('Admin/Courses');
-});
+})->name('admin.courses');
 
 Route::post('/courses', [CourseController::class, 'store'])->name('courses.store');
 Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');

@@ -9,10 +9,10 @@ use App\Models\Student;
 use App\Models\Course;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use App\Http\Controllers\Str;
-
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Auth\Events\Registered; // for user verification
+use Illuminate\Support\Facades\Mail;
 use App\Mail\SendPasswordEmail; // You'll create this Mailable class
 
 

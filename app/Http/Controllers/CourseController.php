@@ -1,6 +1,8 @@
 <?php
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Http\Request;
 use App\Models\Course;
 
@@ -41,7 +43,6 @@ class CourseController extends Controller
         return response()->json(['count' => $count]);
     }
 
-    // Add these methods to your CourseController.php
 
     public function edit($id)
     {
@@ -65,12 +66,12 @@ class CourseController extends Controller
         ]);
 
         $course->update([
+            'course_id' => $validatedData['subjectCode'],
             'course_name' => $validatedData['subjectName'],
             'monthly_fees' => $validatedData['courseFee'],
             'course_desc' => $validatedData['courseDesc'],
             'teacher_id' => $validatedData['teacherId'],
             'grade' => $validatedData['grade'],
-            'subject' => $validatedData['subjectCode'],
         ]);
 
         return redirect()->route('courses.index')
@@ -82,8 +83,7 @@ class CourseController extends Controller
         $course = Course::findOrFail($id);
         $course->delete();
         
-        return redirect()->route('courses.index')
-            ->with('message', 'Course removed successfully');
+        return Redirect::route('courses.index')->with('message', 'Course removed successfully');
     }
 
 }

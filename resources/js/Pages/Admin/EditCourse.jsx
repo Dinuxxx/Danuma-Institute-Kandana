@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
-import { Head } from '@inertiajs/react';
+import { Head , router} from '@inertiajs/react';
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 const EditCourse = ({ course }) => {
@@ -40,10 +40,13 @@ const EditCourse = ({ course }) => {
     });
   };
 
-  const handleRemoveCourse = () => {
-    if (confirm('Are you sure you want to remove this course?')) {
-      // Implement course deletion
-      // Inertia.delete(`/courses/${course.course_id}`);
+  const handleRemoveCourse = async () => {
+    if (confirm('Are you sure you want to delete this course?')) {
+      router.delete(`/courses/${course.course_id}`, {
+        onSuccess: () => {
+          router.visit('/admin/courses'); // Redirect to courses page after deletion
+        },
+      });
     }
   };
 

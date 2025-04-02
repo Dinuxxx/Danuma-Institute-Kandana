@@ -27,6 +27,10 @@ class Course extends Model
         'grade',
     ];
 
+    protected $casts = [
+        'course_id' => 'string',
+    ];
+
     //get the teacher of the course
     public function teacher() :BelongsTo
     {

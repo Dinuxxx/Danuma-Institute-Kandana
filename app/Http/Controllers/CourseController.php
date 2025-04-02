@@ -74,7 +74,11 @@ class CourseController extends Controller
             'grade' => $validatedData['grade'],
         ]);
 
-        return redirect()->route('courses.index')
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Course updated successfully']);
+        }
+        
+        return redirect()->route('admin.courses')
             ->with('message', 'Course updated successfully');
     }
 

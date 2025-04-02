@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
-import { Head , router} from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 const EditCourse = ({ course }) => {
@@ -16,12 +16,13 @@ const EditCourse = ({ course }) => {
   const [studentCount, setStudentCount] = useState(0);
 
   useEffect(() => {
-    // You would fetch student count for this course here
-    // This is a placeholder - implement actual API call
+    // Fetch student count for this course
     const fetchStudentCount = async () => {
       try {
-        // const response = await axios.get(`/api/courses/${course.id}/student-count`);
-        // setStudentCount(response.data.count);
+        // Replace with actual API endpoint when available
+        // const response = await fetch(`/api/courses/${course.course_id}/student-count`);
+        // const data = await response.json();
+        // setStudentCount(data.count);
         setStudentCount(42); // Placeholder value
       } catch (error) {
         console.error('Failed to fetch student count:', error);
@@ -34,13 +35,18 @@ const EditCourse = ({ course }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     put(`/courses/${course.course_id}`, {
-      onSuccess: () => {
-        // Handle success
-      },
+        preserveScroll: true,
+        onSuccess: () => {
+            // Manual redirect after successful update
+            window.location.href = '/admin/courses';
+        },
+        onError: (errors) => {
+            console.error(errors);
+        }
     });
   };
 
-  const handleRemoveCourse = async () => {
+  const handleRemoveCourse = () => {
     if (confirm('Are you sure you want to delete this course?')) {
       router.delete(`/courses/${course.course_id}`, {
         onSuccess: () => {
@@ -64,11 +70,9 @@ const EditCourse = ({ course }) => {
           </div>
         </div>
 
-        
-
-        <form onSubmit={handleSubmit} className='mx-2 border-2 '>
+        <form onSubmit={handleSubmit} className='mx-2 border-2'>
           <div className="bg-gray-200 px-4 py-2 mb-6">
-            <h2 className="text-lg font-semibold">edit Course</h2>
+            <h2 className="text-lg font-semibold">Edit Course</h2>
           </div>
           <div className="grid grid-cols-2 gap-2 mx-8">
             <div>

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('exam_name',250);
             $table->date('exam_date');
             $table->string('status',50);
-            $table->unsignedInteger('course_id');
+            $table->string('course_id');
         
             $table->foreign('course_id')
                 ->references('course_id')

@@ -11,7 +11,7 @@ class CourseController extends Controller
     public function store(Request $request)
 {
     $validatedData = $request->validate([
-        'subjectCode' => 'required|string|max:255',
+        'subjectCode' => 'required|string|max:255|unique:courses,course_id',
         'subjectName' => 'required|string|max:255',
         'teacherId' => 'required|string|max:255',
         // 'teacherId' => 'nullable|integer|exists:teachers,tea_id',
@@ -19,6 +19,19 @@ class CourseController extends Controller
         'courseFee' => 'required|numeric',
         'courseDesc' => 'nullable|string',
     ]);
+
+    $existingCourse = Course::where('course_name', $validatedData['subjectName'])
+        ->where('grade', $validatedData['grade'])
+        ->exists();
+
+    if ($existingCourse) {
+        return response()->json([
+            'errors' => [
+                'subjectName' => 'This subject name and grade combination already exists.',
+                'grade' => 'This subject name and grade combination already exists.'
+                ]
+        ], 422);
+    }
 
     $course = Course::create([
         'course_id' => $validatedData['subjectCode'],

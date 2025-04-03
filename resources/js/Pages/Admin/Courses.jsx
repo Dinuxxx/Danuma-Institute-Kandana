@@ -66,8 +66,11 @@ const Courses = () => {
 
   // Filter courses based on search query
   const filteredCourses = courses.filter(course =>
-    course.course_name.toLowerCase().includes(searchQuery.toLowerCase())
+    course.course_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    course.course_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    course.grade.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  
 
   // Sort courses based on the selected method
   const sortedCourses = filteredCourses.sort((a, b) => {
@@ -76,6 +79,8 @@ const Courses = () => {
     } else if (sortMethod === "lastAccessed") {
       // Assuming 'last_accessed' is a date string or timestamp
       return new Date(b.last_accessed) - new Date(a.last_accessed);
+    } else if(sortMethod === "grade") {
+      return a.grade.localeCompare(b.grade);
     }
     return 0;
   });
@@ -115,6 +120,7 @@ const Courses = () => {
                 className="p-2 md:pr-8 border-2 rounded-md"
               >
                 <option value="name">Sort by Course Name</option>
+                <option value="grade">Sort by grade</option>
                 <option value="lastAccessed">Sort by Last Accessed</option>
               </select>
             </div>
@@ -138,6 +144,7 @@ const Courses = () => {
                   key={course.course_id}
                   id={course.course_id}
                   title={course.course_name}
+                  grade={course.grade}
                   instructor={`Instructor ID: ${course.teacher_id}`} // Replace with actual instructor details
                   pattern={course.pattern}
                 />

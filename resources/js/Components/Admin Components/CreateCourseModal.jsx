@@ -12,24 +12,34 @@ const CreateCourseModal = ({ isOpen, onClose }) => {
     courseDesc: '',
   });
 
+  const [errors, setErrors] = useState({});
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+
+    // Clear the error message when the user starts typing again
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: '' });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrors({}); // Reset errors before submitting
     try {
       const response = await axios.post('/courses', formData);
       console.log('Course created:', response.data);
       onClose();
     } catch (error) {
-      console.error('Error creating course:', error.response?.data || error.message);
-      alert('Failed to create course. Please try again.');
+      if (error.response && error.response.data.errors) {
+        setErrors(error.response.data.errors);
+      } else {
+        alert('Failed to create course. Please try again.');
+      }
     }
   };
 
-  // Reset form fields when the modal is opened
   useEffect(() => {
     if (isOpen) {
       setFormData({
@@ -40,6 +50,7 @@ const CreateCourseModal = ({ isOpen, onClose }) => {
         courseFee: '',
         courseDesc: '',
       });
+      setErrors({}); // Reset errors when modal opens
     }
   }, [isOpen]);
 
@@ -63,9 +74,10 @@ const CreateCourseModal = ({ isOpen, onClose }) => {
                 name="subjectCode"
                 value={formData.subjectCode}
                 onChange={handleChange}
-                className="max-w-xs w-full border border-gray-400 p-2 rounded mb-4 md:mb-0"
+                className={`max-w-xs w-full border p-2 rounded mb-1 ${errors.subjectCode ? 'border-red-500' : 'border-gray-400'}`}
                 placeholder="Input text"
               />
+              {errors.subjectCode && <p className="text-red-500 text-sm">{errors.subjectCode}</p>}
             </div>
             <div>
               <label className="block font-medium mb-2">Subject Name</label>
@@ -74,9 +86,10 @@ const CreateCourseModal = ({ isOpen, onClose }) => {
                 name="subjectName"
                 value={formData.subjectName}
                 onChange={handleChange}
-                className="md:max-w-xs w-full border border-gray-400 p-2 rounded mb-4 md:mb-0"
+                className={`md:max-w-xs w-full border p-2 rounded mb-1 ${errors.subjectName ? 'border-red-500' : 'border-gray-400'}`}
                 placeholder="Input text"
               />
+              {errors.subjectName && <p className="text-red-500 text-sm">{errors.subjectName}</p>}
             </div>
             <div>
               <label className="block font-medium mb-2">Teacher's ID</label>
@@ -96,9 +109,10 @@ const CreateCourseModal = ({ isOpen, onClose }) => {
                 name="grade"
                 value={formData.grade}
                 onChange={handleChange}
-                className="max-w-xs w-full border border-gray-400 p-2 rounded mb-4 md:mb-0"
+                className={`max-w-xs w-full border p-2 rounded mb-1 ${errors.grade ? 'border-red-500' : 'border-gray-400'}`}
                 placeholder="Input text"
               />
+              {errors.grade && <p className="text-red-500 text-sm">{errors.grade}</p>}
             </div>
             <div>
               <label className="block font-medium mb-2">Course Fee</label>

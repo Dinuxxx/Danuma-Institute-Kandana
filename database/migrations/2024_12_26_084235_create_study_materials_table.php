@@ -13,11 +13,13 @@ return new class extends Migration
     {
         Schema::create('study_materials', function (Blueprint $table) {
             $table->increments('material_id');
-            $table->string('material_title',200);
+            $table->string('material_title', 200);
             $table->text('material_desc')->nullable();
-            $table->string('material_path');
-            $table->boolean('is_visible')->default(false);
-            $table->unsignedInteger('course_id')->nullable();
+            $table->string('material_path')->nullable(); // File path for documents
+            $table->string('material_url')->nullable(); // URL for external links
+            $table->string('material_url_title', 100)->nullable(); // Custom title for the URL
+            $table->boolean('is_visible')->default(true);
+            $table->string('course_id')->nullable();
         
             $table->foreign('course_id')
                 ->references('course_id')

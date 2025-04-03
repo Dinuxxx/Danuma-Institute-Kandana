@@ -17,7 +17,7 @@ return new class extends Migration
             $table->decimal('amount', 10, 2);
             $table->string('status');
             $table->unsignedInteger('payment_id');
-            $table->unsignedInteger('course_id')->nullable();
+            $table->string('course_id')->nullable();
         
             $table->foreign('payment_id')
                 ->references('payment_id')

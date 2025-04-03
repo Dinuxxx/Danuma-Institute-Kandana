@@ -19,11 +19,16 @@ class Course extends Model
     protected $primaryKey = 'course_id';
     
     protected $fillable = [
+        'course_id',
         'monthly_fees',
         'course_name',
         'course_desc',
         'subject',
         'grade',
+    ];
+
+    protected $casts = [
+        'course_id' => 'string',
     ];
 
     //get the teacher of the course

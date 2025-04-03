@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 const EditCourse = ({ course }) => {
@@ -14,14 +14,16 @@ const EditCourse = ({ course }) => {
   });
 
   const [studentCount, setStudentCount] = useState(0);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    // You would fetch student count for this course here
-    // This is a placeholder - implement actual API call
+    // Fetch student count for this course
     const fetchStudentCount = async () => {
       try {
-        // const response = await axios.get(`/api/courses/${course.id}/student-count`);
-        // setStudentCount(response.data.count);
+        // Replace with actual API endpoint when available
+        // const response = await fetch(`/api/courses/${course.course_id}/student-count`);
+        // const data = await response.json();
+        // setStudentCount(data.count);
         setStudentCount(42); // Placeholder value
       } catch (error) {
         console.error('Failed to fetch student count:', error);
@@ -34,17 +36,27 @@ const EditCourse = ({ course }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     put(`/courses/${course.course_id}`, {
-      onSuccess: () => {
-        // Handle success
-      },
+        preserveScroll: true,
+        onSuccess: () => {
+            // Manual redirect after successful update
+            window.location.href = '/admin/courses';
+        },
+        onError: (errors) => {
+            console.error(errors);
+        }
     });
   };
 
+  const confirmRemoveCourse = () => {
+    setShowModal(true);
+  };
+
   const handleRemoveCourse = () => {
-    if (confirm('Are you sure you want to remove this course?')) {
-      // Implement course deletion
-      // Inertia.delete(`/courses/${course.course_id}`);
-    }
+    router.delete(`/courses/${course.course_id}`, {
+      onSuccess: () => {
+        router.visit('/admin/courses');
+      },
+    });
   };
 
   return (
@@ -61,11 +73,9 @@ const EditCourse = ({ course }) => {
           </div>
         </div>
 
-        
-
-        <form onSubmit={handleSubmit} className='mx-2 border-2 '>
+        <form onSubmit={handleSubmit} className='mx-2 border-2'>
           <div className="bg-gray-200 px-4 py-2 mb-6">
-            <h2 className="text-lg font-semibold">edit Course</h2>
+            <h2 className="text-lg font-semibold">Edit Course</h2>
           </div>
           <div className="grid grid-cols-2 gap-2 mx-8">
             <div>
@@ -171,10 +181,10 @@ const EditCourse = ({ course }) => {
           <div className="flex justify-end space-x-4 mt-6 mr-8 mb-8">
             <button
               type="button"
-              onClick={handleRemoveCourse}
-              className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded flex items-center"
+              onClick={confirmRemoveCourse}
+              className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
             >
-              <span className="mr-2">○</span> Remove Course
+              Remove Course
             </button>
             <button
               type="submit"
@@ -186,6 +196,35 @@ const EditCourse = ({ course }) => {
           </div>
         </form>
       </div>
+
+      {showModal && (
+        <div 
+          className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50"
+          onClick={() => setShowModal(false)}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-lg p-6 w-96 text-center transform scale-105 transition-all border-4 border-red-400 animate-pulse"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-bold mb-4 text-red-600">⚠️ Confirm Course Removal</h2>
+            <p className="text-md text-gray-700 mb-6">Are you sure you want to remove this course? <span className='text-red-600 italic'>This action cannot be undone.</span></p>
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={handleRemoveCourse}
+                className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded shadow-lg transform hover:scale-105 transition-all"
+              >
+                Yes, Remove
+              </button>
+              <button
+                onClick={() => setShowModal(false)}
+                className="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded shadow-lg transform hover:scale-105 transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AuthenticatedLayout>
   );
 };

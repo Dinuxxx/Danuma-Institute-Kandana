@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "@inertiajs/react";
 
-const CourseCard = ({ id, title, instructor, pattern }) => {
+const CourseCard = ({ id, title,grade, instructor, pattern }) => {
   return (
     <div className="relative bg-white shadow-md rounded-lg overflow-hidden flex flex-col bg-blue-200">
       <div
@@ -14,10 +14,10 @@ const CourseCard = ({ id, title, instructor, pattern }) => {
       ></div>
       <div className="p-4">
         <Link
-          href={`/courses/${id}/edit`}
+          href={`/admin/courses/${id}/edit`}
           className="text-orange-500 font-bold text-lg hover:underline"
         >
-          {id} - {title}
+          {id} - {title} (grade-{grade})
         </Link>
         <p className="text-gray-600">{instructor}</p>
       </div>

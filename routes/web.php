@@ -23,6 +23,14 @@ Route::get('/', function () {
 
 // teacher routes
 
+Route::get('/teacher/dashboard', function () {
+    return Inertia::render('Teacher/Dashboard'); 
+})->name('admin.viewexams');
+
+Route::get('/teacher/courses', function () {
+    return Inertia::render('Teacher/Courses'); 
+})->name('admin.viewexams');
+
 Route::get('/teacher/courses/{course_id}', function ($course_id) {
     $course = \App\Models\Course::where('course_id', $course_id)->firstOrFail();
     return Inertia::render('Teacher/TeacherLessons', [
@@ -36,21 +44,16 @@ Route::get('/teacher/lessons/create', function () {
     return Inertia::render('Teacher/CreateLesson'); 
 })->name('admin.viewexams');
 
+Route::get('/teacher/lessons/edit/{id}', function ($id) {
+    return Inertia::render('Teacher/EditLesson');
+});
+
 Route::get('/study-materials', [TeacherLessonController::class, 'index']);
 Route::post('/study-materials', [TeacherLessonController::class, 'store']);
 Route::get('/study-materials/{id}', [TeacherLessonController::class, 'show']);
 Route::put('/study-materials/{id}', [TeacherLessonController::class, 'update']);
 Route::delete('/study-materials/{id}', [TeacherLessonController::class, 'destroy']);
 Route::patch('/study-materials/{id}/toggle-visibility', [TeacherLessonController::class, 'toggleVisibility']);
-
-
-Route::get('/teacher/dashboard', function () {
-    return Inertia::render('Teacher/Dashboard'); 
-})->name('admin.viewexams');
-
-Route::get('/teacher/courses', function () {
-    return Inertia::render('Teacher/Courses'); 
-})->name('admin.viewexams');
 
 Route::get('/teacher/attendance', function () {
     return Inertia::render('Teacher/Attendance'); 
@@ -82,6 +85,15 @@ Route::get('/student/dashboard', function () {
 Route::get('/student/courses', function () {
     return Inertia::render('Student/Courses'); 
 })->name('admin.viewexams');
+
+Route::get('/student/courses/{course_id}', function ($course_id) {
+    $course = \App\Models\Course::where('course_id', $course_id)->firstOrFail();
+    return Inertia::render('Student/StudentLessons', [
+        'course_id' => $course->course_id,
+        'course_name' => $course->course_name,
+        'grade' => $course->grade
+    ]);
+})->name('teacher.lessons');
 
 Route::get('/student/attendance', function () {
     return Inertia::render('Student/Attendance'); 

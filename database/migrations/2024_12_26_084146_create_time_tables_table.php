@@ -17,6 +17,7 @@ return new class extends Migration
             $table->time('start_time');
             $table->time('end_time');
             $table->string('course_id');
+            $table->string('classroom_no', 50)->nullable();
         
             $table->foreign('course_id')
                 ->references('course_id')

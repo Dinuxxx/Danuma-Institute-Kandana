@@ -30,6 +30,7 @@ class TimeTables extends Model
         'start_time',
         'end_time',
         'course_id',
+        'classroom_no',
     ];
 
 

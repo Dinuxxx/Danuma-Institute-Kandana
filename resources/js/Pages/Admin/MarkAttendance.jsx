@@ -4,17 +4,24 @@ import Header from '@/Components/Header';
 import Sidebar from '@/Components/Sidebar';
 import { Head } from '@inertiajs/react';
 import AttendanceQR from '@/Components/Admin Components/AttendanceQR';
+import { usePage } from '@inertiajs/react';
 
 const MarkAttendance = () => {
-
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { props } = usePage();
+  const user = props.auth.user;
+  const userRole = user?.role || 'admin'; // Default to 'admin' if role is undefined
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState('scan');
   
   return (
     <div className="max-h-screen bg-white flex">
       <Header />
       <div className="fixed top-16 md:top-20 left-0 transition-all duration-300">
-        <Sidebar isOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
+        <Sidebar 
+            isOpen={isSidebarOpen} 
+            toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
+            role={userRole} // Pass role to Sidebar
+        />
       </div>
 
       {/* Main Content Area */}

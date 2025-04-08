@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\TeacherLessonController;
+use App\Http\Controllers\TimetableController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
@@ -168,6 +169,7 @@ Route::get('/admin/time-tables', function () {
 });
 Route::get('/admin/time-tables', [TimetableController::class, 'index']);
 Route::post('/admin/time-tables', [TimetableController::class, 'store']);
+Route::put('/admin/time-tables/{id}', [TimetableController::class, 'update']);
 Route::delete('/admin/time-tables/{id}', [TimetableController::class, 'destroy']);
 
 Route::get('/admin/exams', function () {

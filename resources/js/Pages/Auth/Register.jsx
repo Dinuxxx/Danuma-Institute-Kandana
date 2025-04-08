@@ -153,6 +153,7 @@ export default function Register() {
         } finally {
             setLoading(false); // Reset loading state
         }
+
     };
 
     const validateName = (name) =>

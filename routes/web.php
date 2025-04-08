@@ -11,6 +11,7 @@ use App\Http\Controllers\TeacherLessonController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
+use Illuminate\Http\Request;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -186,6 +187,13 @@ Route::post('/register', [UserRegistrationController::class, 'register'])->name(
 Route::get('/email/verify', [EmailVerificationPromptController::class, '__invoke'])
     ->middleware('auth')
     ->name('verification.notice');
+
+    // In routes/web.php
+Route::middleware('auth')->get('/verification-status', function (Request $request) {
+    return response()->json([
+        'verified' => $request->user()->hasVerifiedEmail()
+    ]);
+});
 
 // Email verification handler (this is already handled by Laravel)
 Route::get('/email/verify/{id}/{hash}', [VerifyEmailController::class, 'verify'])

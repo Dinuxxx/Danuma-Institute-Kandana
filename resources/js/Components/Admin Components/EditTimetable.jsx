@@ -2,10 +2,11 @@ import React, { useState, useEffect } from "react";
 import axios from 'axios';
 
 const EditTimetable = ({ closeModal, timetableEntry, courses }) => {
+  // Initialize formData with properly formatted time values
   const [formData, setFormData] = useState({
     day_of_week: timetableEntry.day_of_week || "",
-    start_time: timetableEntry.start_time || "",
-    end_time: timetableEntry.end_time || "",
+    start_time: formatTimeForInput(timetableEntry.start_time) || "",
+    end_time: formatTimeForInput(timetableEntry.end_time) || "",
     course_id: timetableEntry.course_id || "",
     classroom_no: timetableEntry.classroom_no || "",
     subject_name: timetableEntry.course?.course_id || ""
@@ -13,12 +14,38 @@ const EditTimetable = ({ closeModal, timetableEntry, courses }) => {
   
   const [error, setError] = useState("");
 
+  // Format time string (HH:MM:SS or any format) to HH:MM for input field
+  function formatTimeForInput(timeString) {
+    if (!timeString) return "";
+    
+    // If time already contains only hours and minutes (HH:MM), return as is
+    if (/^\d{1,2}:\d{2}$/.test(timeString)) {
+      return timeString;
+    }
+    
+    // Otherwise, try to extract hours and minutes
+    try {
+      // Split by colon to handle formats like "14:30:00"
+      const parts = timeString.split(':');
+      if (parts.length >= 2) {
+        // Ensure hours and minutes are padded with leading zeros if needed
+        const hours = parts[0].padStart(2, '0');
+        const minutes = parts[1].padStart(2, '0');
+        return `${hours}:${minutes}`;
+      }
+      return timeString; // Return as is if we can't parse it
+    } catch (e) {
+      console.error("Error formatting time:", e);
+      return timeString; // Return original in case of error
+    }
+  }
+
   useEffect(() => {
-    // Pre-populate the form with existing values
+    // Pre-populate the form with properly formatted existing values
     setFormData({
       day_of_week: timetableEntry.day_of_week || "",
-      start_time: timetableEntry.start_time || "",
-      end_time: timetableEntry.end_time || "",
+      start_time: formatTimeForInput(timetableEntry.start_time) || "",
+      end_time: formatTimeForInput(timetableEntry.end_time) || "",
       course_id: timetableEntry.course_id || "",
       classroom_no: timetableEntry.classroom_no || "",
       subject_name: timetableEntry.course?.course_id || ""
@@ -77,19 +104,21 @@ const EditTimetable = ({ closeModal, timetableEntry, courses }) => {
     // Prepare data for submission
     const submissionData = {
       day_of_week: formData.day_of_week,
-      start_time: formData.start_time,
-      end_time: formData.end_time,
+      start_time: formData.start_time, // Already formatted from state
+      end_time: formData.end_time, // Already formatted from state
       course_id: formData.course_id,
-      classroom_no: formData.classroom_no
+      classroom_no: formData.classroom_no || "" // Handle null values
     };
     
     // Get CSRF token from meta tag if using Laravel
     const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     
     // Send data to backend using axios
-    axios.put(`/timetable/${timetableEntry.ttable_id}`, submissionData, {
+    axios.put(`/admin/time-tables/${timetableEntry.ttable_id}`, submissionData, {
       headers: {
-        'X-CSRF-TOKEN': token
+        'X-CSRF-TOKEN': token,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       }
     })
       .then(response => {
@@ -114,7 +143,7 @@ const EditTimetable = ({ closeModal, timetableEntry, courses }) => {
       <div className="bg-white rounded-2xl w-full max-w-4xl shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="bg-orange-100 p-6 rounded-t-2xl">
           <h2 className="text-3xl font-bold text-orange-400 mb-0">
-            Edit Timetable - Grade {timetableEntry.course?.grade}
+            Grade - {timetableEntry.course?.grade}
           </h2>
         </div>
         
@@ -137,7 +166,6 @@ const EditTimetable = ({ closeModal, timetableEntry, courses }) => {
                     className="w-full border border-gray-300 rounded-lg p-3 pr-10 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
                     required
                   >
-                    <option value="">Select Subject Code</option>
                     {subjectCodes.map(code => (
                       <option key={code.value} value={code.value}>
                         {code.label}
@@ -157,7 +185,6 @@ const EditTimetable = ({ closeModal, timetableEntry, courses }) => {
                     className="w-full border border-gray-300 rounded-lg p-3 pr-10 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
                     required
                   >
-                    <option value="">Select Subject Name</option>
                     {subjectNames.map(subject => (
                       <option key={subject.value} value={subject.value}>
                         {subject.label}
@@ -190,7 +217,6 @@ const EditTimetable = ({ closeModal, timetableEntry, courses }) => {
                   className="w-full md:w-1/3 border border-gray-300 rounded-lg p-3 pr-10 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
                   required
                 >
-                  <option value="">Select Day</option>
                   <option value="Monday">Monday</option>
                   <option value="Tuesday">Tuesday</option>
                   <option value="Wednesday">Wednesday</option>

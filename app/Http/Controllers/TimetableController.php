@@ -6,13 +6,15 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\TimeTables;
 use App\Models\Course;
+use App\Models\StudentCourse;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Facades\Auth;
 
 class TimetableController extends Controller
 {
     /**
-     * Display the timetable.
+     * Display the admin timetable.
      */
     public function index(): Response
     {
@@ -20,6 +22,31 @@ class TimetableController extends Controller
         $courses = Course::all();
         
         return Inertia::render('Admin/Timetable', [
+            'timetables' => $timetables,
+            'courses' => $courses
+        ]);
+    }
+    
+    /**
+     * Display the student's timetable.
+     */
+    public function studentView(): Response
+    {
+        // Get the current student's ID
+        $studentId = Auth::id();
+        
+        // Get courses the student is enrolled in
+        $enrolledCourseIds = StudentCourse::where('student_id', $studentId)
+            ->pluck('course_id')
+            ->toArray();
+        
+        // Get timetable entries for enrolled courses
+        $timetables = TimeTables::whereIn('course_id', $enrolledCourseIds)->get();
+        
+        // Get course details for the enrolled courses
+        $courses = Course::whereIn('course_id', $enrolledCourseIds)->get();
+        
+        return Inertia::render('Student/TimeTables', [
             'timetables' => $timetables,
             'courses' => $courses
         ]);
@@ -40,6 +67,13 @@ class TimetableController extends Controller
         
         TimeTables::create($request->all());
         
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Timetable entry added successfully!',
+            ]);
+        }
+        
         return redirect()->back()->with('success', 'Timetable entry added successfully!');
     }
     
@@ -59,6 +93,13 @@ class TimetableController extends Controller
         $timetable = TimeTables::findOrFail($id);
         $timetable->update($request->all());
         
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Timetable entry updated successfully!'
+            ]);
+        }
+        
         return redirect()->back()->with('success', 'Timetable entry updated successfully!');
     }
     
@@ -69,6 +110,13 @@ class TimetableController extends Controller
     {
         $timetable = TimeTables::findOrFail($id);
         $timetable->delete();
+        
+        if (request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Timetable entry deleted successfully!'
+            ]);
+        }
         
         return redirect()->back()->with('success', 'Timetable entry deleted successfully!');
     }

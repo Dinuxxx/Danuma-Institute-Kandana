@@ -112,9 +112,7 @@ Route::get('/student/payments', function () {
     return Inertia::render('Student/Payments'); 
 })->name('admin.viewexams');
 
-Route::get('/student/time-tables', function () {
-    return Inertia::render('Student/TimeTables'); 
-})->name('admin.viewexams');
+Route::get('/student/time-tables', [TimetableController::class, 'studentView'])->name('student.timetables');
 
 Route::get('/aboutus', function () {
     return Inertia::render('AboutUs'); 

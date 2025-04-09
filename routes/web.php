@@ -9,6 +9,7 @@ use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\TeacherLessonController;
 use App\Http\Controllers\TimetableController;
+use App\Http\Controllers\NoticeController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
@@ -159,9 +160,11 @@ Route::get('/admin/payments', function () {
 Route::get('/admin/users', function () {
     return Inertia::render('Admin/Users');
 });
-Route::get('/admin/notices', function () {
-    return Inertia::render('Admin/Notices');
-});
+Route::get('/admin/notices', [NoticeController::class, 'index']);
+Route::post('/admin/notices', [NoticeController::class, 'store']);
+Route::put('/admin/notices/{notice}', [NoticeController::class, 'update'])->name('admin.notices.update');
+Route::delete('/admin/notices/{notice}', [NoticeController::class, 'destroy']);
+
 Route::get('/admin/time-tables', function () {
     return Inertia::render('Admin/Timetable');
 });

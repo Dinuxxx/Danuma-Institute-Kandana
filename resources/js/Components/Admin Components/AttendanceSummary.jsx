@@ -1,4 +1,3 @@
-// AttendanceSummary.js
 import React from 'react';
 
 const AttendanceSummary = ({ course, grade, teacher, time, present, absent }) => {

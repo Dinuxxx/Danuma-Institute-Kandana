@@ -16,12 +16,12 @@ class NoticeController extends Controller
     {
         $notices = Notice::latest()->get();
         
-        // For AJAX requests, return JSON data directly
-        if ($request->ajax() || $request->wantsJson()) {
+        // Check if it's an explicit API request but NOT an Inertia request
+        if (($request->ajax() || $request->wantsJson()) && !$request->header('X-Inertia')) {
             return response()->json($notices);
         }
         
-        // For normal requests, return Inertia page with notices as props
+        // For Inertia requests, return Inertia page with notices as props
         return Inertia::render('Admin/Notices', [
             'initialNotices' => $notices
         ]);
@@ -52,7 +52,7 @@ class NoticeController extends Controller
             'visibility' => $request->visibility,
         ]);
         
-        if ($request->wantsJson() || $request->ajax()) {
+        if (($request->wantsJson() || $request->ajax()) && !$request->header('X-Inertia')) {
             return response()->json([
                 'success' => true,
                 'message' => 'Notice created successfully',
@@ -94,7 +94,7 @@ class NoticeController extends Controller
         
         $notice->update($data);
         
-        if ($request->wantsJson() || $request->ajax()) {
+        if (($request->wantsJson() || $request->ajax()) && !$request->header('X-Inertia')) {
             return response()->json([
                 'success' => true,
                 'message' => 'Notice updated successfully',
@@ -117,7 +117,7 @@ class NoticeController extends Controller
             
             $notice->delete();
             
-            if ($request->wantsJson() || $request->ajax()) {
+            if (($request->wantsJson() || $request->ajax()) && !$request->header('X-Inertia')) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Notice deleted successfully'
@@ -126,7 +126,7 @@ class NoticeController extends Controller
             
             return redirect()->back()->with('success', 'Notice deleted successfully');
         } catch (\Exception $e) {
-            if ($request->wantsJson() || $request->ajax()) {
+          if (($request->wantsJson() || $request->ajax()) && !$request->header('X-Inertia')) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Failed to delete notice: ' . $e->getMessage()

@@ -44,6 +44,8 @@ class CourseController extends Controller
 
     return response()->json(['message' => 'Course created successfully!', 'course' => $course]);
 }
+
+    //The index method retrieves all courses from the database and returns them as JSON. This is used when listing all courses.
     public function index()
     {
         $courses = Course::all();
@@ -56,13 +58,34 @@ class CourseController extends Controller
         return response()->json(['count' => $count]);
     }
 
+    
 
+    //finds a course by ID and renders the EditCourse Inertia component, passing the course data to it.
     public function edit($id)
     {
         $course = Course::findOrFail($id);
         return inertia('Admin/EditCourse', [
             'course' => $course
         ]);
+    }
+
+    //Gets unique grade values from all courses. The distinct() method ensures no duplicates, and pluck('grade') extracts just the grade values. Returns the array as JSON.
+    public function getGrades()
+    {
+        $grades = Course::distinct('grade')->pluck('grade')->toArray();
+        return response()->json($grades);
+    }
+
+    public function getCoursesByGrade($grade)
+    {
+        $courses = Course::where('grade', $grade)->get([
+            'course_id', 
+            'course_name', 
+            'grade', 
+            'teacher_id'
+        ]);
+        
+        return response()->json($courses);
     }
 
     public function update(Request $request, $id)

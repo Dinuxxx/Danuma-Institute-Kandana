@@ -23,6 +23,10 @@ Route::get('/', function () {
     ]);
 });
 
+// New routes for grades and courses by grade
+Route::get('/get-grades', [CourseController::class, 'getGrades'])->name('get.grades');
+Route::get('/courses-by-grade/{grade}', [CourseController::class, 'getCoursesByGrade'])->name('courses.by.grade');
+
 // teacher routes
 
 Route::get('/teacher/dashboard', function () {

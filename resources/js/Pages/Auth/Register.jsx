@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import PrimaryButton from "@/Components/PrimaryButton";
@@ -12,11 +12,18 @@ import axios from "axios";
 
 export default function Register() {
     const [currentStep, setCurrentStep] = useState(1);
+
     const [courses, setCourses] = useState([]);
-    const [courseInput, setCourseInput] = useState("");
     const [grade, setGrade] = useState("");
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = useState(null);
+
+    //  State for available courses based on grade selection
+    const [availableGrades, setAvailableGrades] = useState([]);
+    const [availableCourses, setAvailableCourses] = useState([]);
+    const [selectedCourses, setSelectedCourses] = useState([]);
+
+    //const [courseInput, setCourseInput] = useState("");
 
     const { data, setData, post, processing, errors, reset } = useForm({
         first_name: "",
@@ -43,8 +50,54 @@ export default function Register() {
         setCurrentStep((prev) => prev + 1);
     };
 
+    // useEffect to fetch grades when component mounts
+    useEffect(() => {
+        const fetchGrades = async () => {
+            try {
+                const response = await axios.get("/get-grades");
+                setAvailableGrades(response.data); // Add this state variable: const [availableGrades, setAvailableGrades] = useState([]);
+            } catch (error) {
+                console.error("Error fetching grades:", error);
+            }
+        };
+
+        fetchGrades();
+    }, []);
+
+    // NEW: Fetch courses when grade changes
+    useEffect(() => {
+        if (!grade) {
+            setAvailableCourses([]);
+            return;
+        }
+
+        const fetchCourses = async () => {
+            try {
+                // Call to your backend API to get courses for selected grade
+                const response = await axios.get(`/courses-by-grade/${grade}`);
+                setAvailableCourses(response.data);
+            } catch (error) {
+                console.error("Error fetching courses:", error);
+                notifyError("Failed to fetch courses for this grade.");
+                setAvailableCourses([]);
+            }
+        };
+
+        fetchCourses();
+    }, [grade]);
+
     const handleAddCourse = () => {
-        if (courseInput.length && grade) {
+        if (selectedCourses.length && grade) {
+            // Add selected courses to the courses list
+            setCourses([...courses, ...selectedCourses]);
+            setSelectedCourses([]); // Clear selected courses
+            notifySuccess("Courses successfully added!");
+        } else {
+            notifyError("Please select at least one course.");
+        }
+    };
+
+    /* if (courseInput.length && grade) {
             // Add each selected course separately
             const newCourses = courseInput.map((course) => ({
                 id: Date.now() + Math.random(), // Unique ID for each course
@@ -58,29 +111,55 @@ export default function Register() {
         } else {
             notifyError("Please provide both course and grade.");
         }
-    };
+    }; */
 
-    const handleRemoveCourse = (id) => {
-        const removedCourse = courses.find((course) => course.id === id);
-        setCourses(courses.filter((course) => course.id !== id));
+    const handleRemoveCourse = (courseId) => {
+        const removedCourse = courses.find(
+            (course) => course.course_id === courseId
+        );
+        setCourses(courses.filter((course) => course.course_id !== courseId));
 
         if (removedCourse) {
-            notifySuccess(`${removedCourse.name} removed successfully.`);
+            notifySuccess(`${removedCourse.course_name} removed successfully.`);
         }
     };
 
-    const handleCourseChange = (course) => {
+    /*const handleCourseChange = (course) => {
         if (courseInput.includes(course)) {
             setCourseInput(courseInput.filter((item) => item !== course));
         } else {
             setCourseInput([...courseInput, course]);
         }
+    };*/
+
+    // MODIFIED: Handle course selection/deselection
+    const handleCourseToggle = (course) => {
+        setSelectedCourses((prevSelected) => {
+            // Check if course is already selected
+            const isAlreadySelected = prevSelected.some(
+                (c) => c.course_id === course.course_id
+            );
+
+            if (isAlreadySelected) {
+                // Remove course if it's already selected
+                return prevSelected.filter(
+                    (c) => c.course_id !== course.course_id
+                );
+            } else {
+                // Add course if it's not already selected
+                return [...prevSelected, course];
+            }
+        });
     };
 
     const isGradeDisabled = courses.length > 0;
 
-    // Helper function to check if course is already added
-    const isCourseAdded = (course) => courses.some((c) => c.name === course);
+    /*// Helper function to check if course is already added
+    const isCourseAdded = (course) => courses.some((c) => c.name === course);*/
+
+    // MODIFIED: Check if course is already added to the final courses list
+    const isCourseAdded = (courseId) =>
+        courses.some((c) => c.course_id === courseId);
 
     // Add a utility function to generate a temporary password
     const generateTemporaryPassword = () => {
@@ -129,9 +208,12 @@ export default function Register() {
             password_confirmation: generatedPassword, // Add password confirmation
         }));
 
+        // MODIFIED: Pass course IDs instead of entire course objects
+        const coursesToSubmit = courses.map((course) => course.course_id);
+
         const finalData = {
             ...data,
-            courses,
+            courses: coursesToSubmit, // Send only course IDs
             grade: grade,
             name, // Add the concatenated name
             password: generatedPassword, // Add the generated
@@ -147,13 +229,17 @@ export default function Register() {
             const response = await axios.post(route("register"), finalData);
             console.log("Registration successful", response.data);
             reset(); // Reset form fields
+            setCourses([]); // Clear selected courses
+            setGrade(""); // Reset grade
+            setCurrentStep(1); // Return to first step
+            notifySuccess("Student registered successfully!");
         } catch (error) {
             setError(error.message); // Set the error message
             console.error("Registration error:", error);
+            notifyError("Registration failed. Please try again.");
         } finally {
             setLoading(false); // Reset loading state
         }
-
     };
 
     const validateName = (name) =>
@@ -496,12 +582,11 @@ export default function Register() {
                             <option value="" disabled>
                                 Select Grade
                             </option>
-                            {[6, 7, 8, 9, 10, 11].map((g) => (
+                            {availableGrades.map((g) => (
                                 <option key={g} value={g}>
                                     {g}
                                 </option>
                             ))}
-                            <option value="A/L">A/L</option>
                         </select>
 
                         <InputLabel
@@ -511,49 +596,58 @@ export default function Register() {
                         />
                         <div className="flex space-x-2">
                             <div className="w-full">
+                                {/* MODIFIED: Display courses from database instead of hardcoded values */}
                                 <div className="border rounded-md p-2">
-                                    {[
-                                        "Math",
-                                        "Science",
-                                        "History",
-                                        "English",
-                                        "Art",
-                                    ].map((course) => (
+                                    {availableCourses.length === 0 &&
+                                        !grade && (
+                                            <p className="text-gray-500">
+                                                Please select a grade first
+                                            </p>
+                                        )}
+                                    {availableCourses.length === 0 && grade && (
+                                        <p className="text-gray-500">
+                                            No courses available for this grade
+                                        </p>
+                                    )}
+                                    {availableCourses.map((course) => (
                                         <div
-                                            key={course}
+                                            key={course.course_id}
                                             className="flex items-center"
                                         >
                                             <input
                                                 type="checkbox"
-                                                id={course}
-                                                value={course}
-                                                checked={courseInput.includes(
-                                                    course
+                                                id={course.course_id}
+                                                checked={selectedCourses.some(
+                                                    (c) =>
+                                                        c.course_id ===
+                                                        course.course_id
                                                 )}
                                                 onChange={() =>
-                                                    handleCourseChange(course)
+                                                    handleCourseToggle(course)
                                                 }
-                                                disabled={
-                                                    !grade ||
-                                                    isCourseAdded(course)
-                                                }
+                                                disabled={isCourseAdded(
+                                                    course.course_id
+                                                )}
                                                 className={`${
-                                                    !grade ||
-                                                    isCourseAdded(course)
+                                                    isCourseAdded(
+                                                        course.course_id
+                                                    )
                                                         ? "cursor-not-allowed opacity-50"
                                                         : ""
                                                 }`}
                                             />
                                             <label
-                                                htmlFor={course}
+                                                htmlFor={course.course_id}
                                                 className={`ml-2 ${
-                                                    !grade ||
-                                                    isCourseAdded(course)
+                                                    isCourseAdded(
+                                                        course.course_id
+                                                    )
                                                         ? "text-gray-400"
                                                         : ""
                                                 }`}
                                             >
-                                                {course}
+                                                {course.course_name} (
+                                                {course.course_id})
                                             </label>
                                         </div>
                                     ))}
@@ -563,7 +657,9 @@ export default function Register() {
                                 type="button"
                                 className="bg-gray-400 hover:bg-gray-500 text-black font-semibold rounded-md px-8 py-2"
                                 onClick={handleAddCourse}
-                                disabled={!grade || courseInput.length === 0}
+                                disabled={
+                                    !grade || selectedCourses.length === 0
+                                }
                             >
                                 Add
                             </button>
@@ -582,32 +678,43 @@ export default function Register() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {courses.map((course) => (
-                                            <tr key={course.id}>
-                                                <td className="border-t p-2">
-                                                    {course.id}
-                                                </td>
-                                                <td className="border-t p-2">
-                                                    {course.name}
-                                                </td>
-                                                <td className="border-t p-2">
-                                                    {course.grade}
-                                                </td>
-                                                <td className="border-t p-2 text-center">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            handleRemoveCourse(
-                                                                course.id
-                                                            )
-                                                        }
-                                                        className="text-red-500"
-                                                    >
-                                                        🗑
-                                                    </button>
+                                        {courses.length === 0 ? (
+                                            <tr>
+                                                <td
+                                                    colSpan="4"
+                                                    className="border-t p-2 text-center text-gray-500"
+                                                >
+                                                    No courses added yet
                                                 </td>
                                             </tr>
-                                        ))}
+                                        ) : (
+                                            courses.map((course) => (
+                                                <tr key={course.course_id}>
+                                                    <td className="border-t p-2">
+                                                        {course.course_id}
+                                                    </td>
+                                                    <td className="border-t p-2">
+                                                        {course.course_name}
+                                                    </td>
+                                                    <td className="border-t p-2">
+                                                        {course.grade}
+                                                    </td>
+                                                    <td className="border-t p-2 text-center">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                handleRemoveCourse(
+                                                                    course.course_id
+                                                                )
+                                                            }
+                                                            className="text-red-500"
+                                                        >
+                                                            🗑
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
                                     </tbody>
                                 </table>
                             </div>

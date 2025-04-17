@@ -107,4 +107,17 @@ class CourseController extends Controller
         return Redirect::route('admin.courses');
     }
 
+    public function teacherCourses()
+    {
+        $user = auth()->user();
+        $teacher = \App\Models\Teacher::where('user_id', $user->id)->first();
+        
+        if (!$teacher) {
+            return response()->json([]);
+        }
+        
+        $courses = Course::where('teacher_id', $teacher->tea_id)->get();
+        return response()->json($courses);
+    }
+
 }

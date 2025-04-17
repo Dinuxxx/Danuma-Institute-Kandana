@@ -99,6 +99,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return Inertia::render('Teacher/Courses');
         })->name('teacher.courses');
         
+        // New route to get teacher's courses
+        Route::get('/courses/list', [CourseController::class, 'teacherCourses'])->name('teacher.courses.list');
+        
         Route::get('/courses/{course_id}', function ($course_id) {
             $course = \App\Models\Course::where('course_id', $course_id)->firstOrFail();
             return Inertia::render('Teacher/TeacherLessons', [
@@ -112,7 +115,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return Inertia::render('Teacher/CreateLesson');
         });
         
-        Route::get('/lessons/edit/{id}', function ($id) {
+        Route::get('/lessons/edit/{id}', function () {
             return Inertia::render('Teacher/EditLesson');
         });
         

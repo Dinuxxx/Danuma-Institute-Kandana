@@ -12,6 +12,7 @@ use App\Http\Controllers\TimetableController;
 use App\Http\Controllers\NoticeController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\UsersController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
@@ -68,9 +69,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return Inertia::render('Admin/MarkAttendance');
         })->name('mark-attendance');
         
-        Route::get('/payments', function () {
-            return Inertia::render('Admin/Payments');
-        });
+        // Updated admin payments route with controller
+        Route::get('/payments', [PaymentController::class, 'adminIndex'])->name('admin.payments');
+        Route::post('/payments/{payment}/verify', [PaymentController::class, 'verifyPayment'])->name('admin.payments.verify');
         
         Route::get('/users', function () {
             return Inertia::render('Admin/Users');
@@ -172,10 +173,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/notices', function () {
             return Inertia::render('Student/Notices');
         });
+        Route::get('/registered-courses', [PaymentController::class, 'getRegisteredCourses'])->name('student.registered-courses');
         
-        Route::get('/payments', function () {
-            return Inertia::render('Student/Payments');
-        });
+        // Updated student payments routes with controller
+        Route::get('/payments', [PaymentController::class, 'index'])->name('student.payments');
+        Route::get('/bank-transfer', [PaymentController::class, 'bankTransfer'])->name('student.bank-transfer');
+        Route::post('/payments', [PaymentController::class, 'store'])->name('student.payments.store');
         
         Route::get('/time-tables', [TimetableController::class, 'studentView'])->name('student.timetables');
     });

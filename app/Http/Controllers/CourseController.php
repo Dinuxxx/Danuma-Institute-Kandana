@@ -180,10 +180,10 @@ class CourseController extends Controller
             $student = Student::where('user_id', $user->id)->first();
             
             if (!$student) {
-                return response()->json([], 200); // Return empty array with 200 status if no student found
+                return response()->json(['courses' => [], 'totalDue' => 0], 200);
             }
             
-            // Get the courses this student is registered for - using a simpler query to avoid join issues
+            // Get the courses this student is registered for
             $registeredCourseIds = StudentCourse::where('student_id', $student->student_id)
                 ->where('status', 'active')
                 ->pluck('course_id');
@@ -205,8 +205,18 @@ class CourseController extends Controller
                     
                     return $course;
                 });
+            
+            // Calculate total due (you'll need to implement this logic based on your payment system)
+            $totalDue = 0;
+            // Example: Sum up the monthly fees of all courses
+            foreach ($courses as $course) {
+                $totalDue += $course->monthly_fees;
+            }
                 
-            return response()->json($courses);
+            return response()->json([
+                'courses' => $courses,
+                'totalDue' => $totalDue
+            ]);
             
         } catch (\Exception $e) {
             // Log the error for debugging

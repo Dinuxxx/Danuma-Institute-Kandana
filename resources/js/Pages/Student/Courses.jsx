@@ -10,21 +10,34 @@ const Courses = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortMethod, setSortMethod] = useState("name");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Fetch courses from the backend
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         setLoading(true);
+        setError(null);
         // Change to fetch only the student's registered courses
         const response = await axios.get("/student/registered-courses");
-        const coursesWithImages = response.data.map((course) => ({
-          ...course,
-          pattern: getOrAssignImage(course.course_id),
-        }));
-        setCourses(coursesWithImages);
+        
+        // Check if response.data exists and has a courses property
+        if (response.data && response.data.courses && Array.isArray(response.data.courses)) {
+          const coursesWithImages = response.data.courses.map((course) => ({
+            ...course,
+            pattern: getOrAssignImage(course.course_id),
+          }));
+          setCourses(coursesWithImages);
+          
+        } else {
+          // Handle case where response.data.courses is not an array
+          console.error("API response format is unexpected:", response.data);
+          setError("Invalid response format from server");
+          setCourses([]);
+        }
       } catch (error) {
         console.error("Error fetching courses:", error);
+        setError("Failed to fetch courses");
       } finally {
         setLoading(false);
       }
@@ -82,6 +95,7 @@ const Courses = () => {
         <h1 className="md:text-3xl text-2xl font-bold text-orange-500 md:mb-12 mb-8">
           My Courses
         </h1>
+        
         <div className="border-2 border-gray-300">
           <h1 className="md:text-2xl text-xl font-bold bg-gray-300 p-2 pl-6">
             Course Overview
@@ -115,20 +129,27 @@ const Courses = () => {
             </div>
           </div>
           
+          {/* Error state */}
+          {error && (
+            <div className="p-4 text-red-500">
+              Error: {error}. Please try refreshing the page or contact support.
+            </div>
+          )}
+          
           {/* Loading state */}
-          {loading && (
+          {loading && !error && (
             <div className="p-4 text-gray-500">Loading your courses...</div>
           )}
           
           {/* Display No Results Found if no courses match the search query */}
-          {!loading && filteredCourses.length === 0 && (
+          {!loading && !error && filteredCourses.length === 0 && (
             <div className="p-4 text-gray-500">
               {searchQuery ? "No results found" : "You are not registered for any courses"}
             </div>
           )}
           
           {/* Display courses */}
-          {!loading && filteredCourses.length > 0 && (
+          {!loading && !error && filteredCourses.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
               {sortedCourses.map((course) => (
                 <CourseCardStudent

@@ -150,6 +150,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return Inertia::render('Student/Courses');
         })->name('student.courses');
         
+        // New route to get student's registered courses
+        Route::get('/registered-courses', [CourseController::class, 'studentRegisteredCourses']);
+        
         Route::get('/courses/{course_id}', function ($course_id) {
             $course = \App\Models\Course::where('course_id', $course_id)->firstOrFail();
             return Inertia::render('Student/StudentLessons', [

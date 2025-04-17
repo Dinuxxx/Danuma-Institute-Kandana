@@ -1,36 +1,32 @@
 import React, { useState, useEffect } from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
-import { BsPlus, BsSearch } from "react-icons/bs"; // Import the search icon
+import { BsSearch } from "react-icons/bs";
 import axios from "axios";
 import CourseCardStudent from "@/Components/Student Components/CourseCardStudent";
 
 const Courses = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [courses, setCourses] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortMethod, setSortMethod] = useState("name"); // Default to sorting by name
-
-  const handleCreateClick = () => {
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-  };
+  const [sortMethod, setSortMethod] = useState("name");
+  const [loading, setLoading] = useState(true);
 
   // Fetch courses from the backend
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await axios.get("/courses"); // Update the URL as needed
+        setLoading(true);
+        // Change to fetch only the student's registered courses
+        const response = await axios.get("/student/registered-courses");
         const coursesWithImages = response.data.map((course) => ({
           ...course,
-          pattern: getOrAssignImage(course.course_id), // Assign or retrieve image for each course
+          pattern: getOrAssignImage(course.course_id),
         }));
         setCourses(coursesWithImages);
       } catch (error) {
         console.error("Error fetching courses:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -81,10 +77,10 @@ const Courses = () => {
 
   return (
     <AuthenticatedLayout>
-      <Head title="Courses" />
+      <Head title="My Courses" />
       <div className="p-4">
         <h1 className="md:text-3xl text-2xl font-bold text-orange-500 md:mb-12 mb-8">
-          All Courses
+          My Courses
         </h1>
         <div className="border-2 border-gray-300">
           <h1 className="md:text-2xl text-xl font-bold bg-gray-300 p-2 pl-6">
@@ -99,7 +95,7 @@ const Courses = () => {
                   placeholder="Search courses..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="p-2 border-2 rounded-md pl-8" // Added padding-left for icon space
+                  className="p-2 border-2 rounded-md pl-8"
                 />
                 <BsSearch
                   size={20}
@@ -118,17 +114,28 @@ const Courses = () => {
               </select>
             </div>
           </div>
+          
+          {/* Loading state */}
+          {loading && (
+            <div className="p-4 text-gray-500">Loading your courses...</div>
+          )}
+          
           {/* Display No Results Found if no courses match the search query */}
-          {filteredCourses.length === 0 ? (
-            <div className="p-4 text-gray-500">No results found</div>
-          ) : (
+          {!loading && filteredCourses.length === 0 && (
+            <div className="p-4 text-gray-500">
+              {searchQuery ? "No results found" : "You are not registered for any courses"}
+            </div>
+          )}
+          
+          {/* Display courses */}
+          {!loading && filteredCourses.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
               {sortedCourses.map((course) => (
                 <CourseCardStudent
                   key={course.course_id}
                   id={course.course_id}
                   title={course.course_name}
-                  instructor={`Instructor ID: ${course.teacher_id}`} // Replace with actual instructor details
+                  instructor={course.teacher_name || `Instructor ID: ${course.teacher_id}`}
                   pattern={course.pattern}
                 />
               ))}

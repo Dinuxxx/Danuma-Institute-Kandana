@@ -24,6 +24,7 @@ class Course extends Model
         'course_name',
         'course_desc',
         'subject',
+        'teacher_id',
         'grade',
     ];
 

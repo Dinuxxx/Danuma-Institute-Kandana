@@ -32,11 +32,22 @@ class TimetableController extends Controller
      */
     public function studentView(): Response
     {
-        // Get the current student's ID
-        $studentId = Auth::id();
+        // Get the current user's ID
+        $userId = Auth::id();
         
-        // Get courses the student is enrolled in
-        $enrolledCourseIds = StudentCourse::where('student_id', $studentId)
+        // Get the student record for this user
+        $student = \App\Models\Student::where('user_id', $userId)->first();
+        
+        if (!$student) {
+            // Handle case where user is not a student
+            return Inertia::render('Student/TimeTables', [
+                'timetables' => [],
+                'courses' => []
+            ]);
+        }
+        
+        // Get courses the student is enrolled in using the correct student_id
+        $enrolledCourseIds = StudentCourse::where('student_id', $student->student_id)
             ->pluck('course_id')
             ->toArray();
         

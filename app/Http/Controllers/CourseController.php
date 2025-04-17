@@ -13,8 +13,8 @@ class CourseController extends Controller
     $validatedData = $request->validate([
         'subjectCode' => 'required|string|max:255|unique:courses,course_id',
         'subjectName' => 'required|string|max:255',
-        'teacherId' => 'required|string|max:255',
-        // 'teacherId' => 'nullable|integer|exists:teachers,tea_id',
+        // 'teacherId' => 'required|string|max:255',
+        'teacherId' => 'nullable|integer|exists:teachers,tea_id',
         'grade' => 'required|string|max:10',
         'courseFee' => 'required|numeric',
         'courseDesc' => 'nullable|string',
@@ -72,7 +72,7 @@ class CourseController extends Controller
         $validatedData = $request->validate([
             'subjectCode' => 'required|string|max:255',
             'subjectName' => 'required|string|max:255',
-            'teacherId' => 'required|string|max:255',
+            'teacherId' => 'nullable|integer|exists:teachers,tea_id',
             'grade' => 'required|string|max:10',
             'courseFee' => 'required|numeric',
             'courseDesc' => 'nullable|string',

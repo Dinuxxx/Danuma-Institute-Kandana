@@ -135,9 +135,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return Inertia::render('Teacher/Payments');
         });
         
-        Route::get('/time-tables', function () {
-            return Inertia::render('Teacher/TimeTables');
-        });
+        // Updated route for teacher timetables
+        Route::get('/time-tables', [TimetableController::class, 'teacherView'])->name('teacher.timetables');
     });
 
     // Student routes

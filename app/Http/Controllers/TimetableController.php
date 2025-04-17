@@ -64,6 +64,42 @@ class TimetableController extends Controller
     }
     
     /**
+     * Display the teacher's timetable.
+     */
+    public function teacherView(): Response
+    {
+        // Get the current user's ID
+        $userId = Auth::id();
+        
+        // Get the teacher record for this user
+        $teacher = \App\Models\Teacher::where('user_id', $userId)->first();
+        
+        if (!$teacher) {
+            // Handle case where user is not a teacher
+            return Inertia::render('Teacher/TimeTables', [
+                'timetables' => [],
+                'courses' => []
+            ]);
+        }
+        
+        // Get courses the teacher is assigned to
+        $teacherCourseIds = Course::where('teacher_id', $teacher->tea_id)
+            ->pluck('course_id')
+            ->toArray();
+        
+        // Get timetable entries for teacher's courses
+        $timetables = TimeTables::whereIn('course_id', $teacherCourseIds)->get();
+        
+        // Get course details for the teacher's courses
+        $courses = Course::whereIn('course_id', $teacherCourseIds)->get();
+        
+        return Inertia::render('Teacher/TimeTables', [
+            'timetables' => $timetables,
+            'courses' => $courses
+        ]);
+    }
+    
+    /**
      * Store a new timetable entry.
      */
     public function store(Request $request)

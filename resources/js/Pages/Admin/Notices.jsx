@@ -53,12 +53,16 @@ const Notices = ({ auth, initialNotices = [] }) => {
       
       if (response.data) {
         if (Array.isArray(response.data)) {
-          setNotices(response.data);
+          // Filter notices to show only those created by the current admin
+          const currentUserNotices = response.data.filter(notice => notice.user_id === auth.user.id);
+          setNotices(currentUserNotices);
         } else if (typeof response.data === 'object') {
           // Try to find any array in the response
           const possibleNotices = Object.values(response.data).find(val => Array.isArray(val));
           if (possibleNotices) {
-            setNotices(possibleNotices);
+            // Filter notices to show only those created by the current admin
+            const currentUserNotices = possibleNotices.filter(notice => notice.user_id === auth.user.id);
+            setNotices(currentUserNotices);
           } else {
             console.error('No array found in response:', response.data);
             setError('Response format not recognized.');
@@ -300,13 +304,13 @@ const Notices = ({ auth, initialNotices = [] }) => {
 
   return (
     <AuthenticatedLayout auth={auth}>
-      <Head title="Notices" />
+      <Head title="My Notices" />
       <div className="p-4">
         <CreateNotice onNoticeCreated={handleNoticeCreated} />
         
         <div className="mt-8">
           <div className="border-b text-gray-600 text-sm font-medium pb-2 w-fit ml-8">
-            Manage Notice
+            My Notices
           </div>
           
           {error && (

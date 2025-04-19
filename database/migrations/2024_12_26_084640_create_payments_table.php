@@ -18,6 +18,7 @@ return new class extends Migration
             $table->decimal('amount', 10, 2);
             $table->unsignedBigInteger('verified_by')->nullable();
             $table->unsignedInteger('student_id')->nullable();
+            $table->string('proof_path')->nullable();
         
             $table->foreign('verified_by')
                 ->references('id')

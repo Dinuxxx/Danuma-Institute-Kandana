@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('status',50);
             $table->unsignedInteger('for_slot'); 
             $table->unsignedInteger('att_id'); 
+            $table->string('course_id');
 
             
             $table->foreign('for_slot')
@@ -29,6 +30,12 @@ return new class extends Migration
                 ->on('attendances')
                 ->onDelete('cascade')
                 ->onUpdate('cascade');
+
+            $table->foreign('course_id')
+            ->references('course_id')
+            ->on('courses')
+            ->onDelete('cascade')
+            ->onUpdate('cascade');
         });
     }
 

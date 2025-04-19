@@ -7,8 +7,8 @@ import axios from "axios";
 
 export default function Dashboard() {
   const [widgetData, setWidgetData] = useState([
-    { title: "Teachers", value: 8 },
-    { title: "Students", value: 120 },
+    { title: "Teachers", value: 0 },
+    { title: "Students", value: 0 },
     { title: "Fees", value: "$9,000" },
     { title: "Courses", value: 0 }, // Placeholder for courses count
   ]);

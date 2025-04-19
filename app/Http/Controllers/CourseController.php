@@ -1,62 +1,89 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Http\Request;
 use App\Models\Course;
+use App\Models\Student;
+use App\Models\StudentCourse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class CourseController extends Controller
 {
+    /**
+     * Store a newly created course in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
     public function store(Request $request)
-{
-    $validatedData = $request->validate([
-        'subjectCode' => 'required|string|max:255|unique:courses,course_id',
-        'subjectName' => 'required|string|max:255',
-        'teacherId' => 'required|string|max:255',
-        // 'teacherId' => 'nullable|integer|exists:teachers,tea_id',
-        'grade' => 'required|string|max:10',
-        'courseFee' => 'required|numeric',
-        'courseDesc' => 'nullable|string',
-    ]);
-
-    $existingCourse = Course::where('course_name', $validatedData['subjectName'])
-        ->where('grade', $validatedData['grade'])
-        ->exists();
-
-    if ($existingCourse) {
-        return response()->json([
-            'errors' => [
-                'subjectName' => 'This subject name and grade combination already exists.',
-                'grade' => 'This subject name and grade combination already exists.'
+    {
+        $validatedData = $request->validate([
+            'subjectCode' => 'required|string|max:255|unique:courses,course_id',
+            'subjectName' => 'required|string|max:255',
+            // 'teacherId' => 'required|string|max:255',
+            'teacherId' => 'nullable|integer|exists:teachers,tea_id',
+            'grade' => 'required|string|max:10',
+            'courseFee' => 'required|numeric',
+            'courseDesc' => 'nullable|string',
+        ]);
+        
+        $existingCourse = Course::where('course_name', $validatedData['subjectName'])
+            ->where('grade', $validatedData['grade'])
+            ->exists();
+        
+        if ($existingCourse) {
+            return response()->json([
+                'errors' => [
+                    'subjectName' => 'This subject name and grade combination already exists.',
+                    'grade' => 'This subject name and grade combination already exists.'
                 ]
-        ], 422);
+            ], 422);
+        }
+        
+        $course = Course::create([
+            'course_id' => $validatedData['subjectCode'],
+            'course_name' => $validatedData['subjectName'],
+            'monthly_fees' => $validatedData['courseFee'],
+            'course_desc' => $validatedData['courseDesc'],
+            'teacher_id' => $validatedData['teacherId'],
+            'grade' => $validatedData['grade'],
+        ]);
+        
+        return response()->json(['message' => 'Course created successfully!', 'course' => $course]);
     }
 
-    $course = Course::create([
-        'course_id' => $validatedData['subjectCode'],
-        'course_name' => $validatedData['subjectName'],
-        'monthly_fees' => $validatedData['courseFee'],
-        'course_desc' => $validatedData['courseDesc'],
-        'teacher_id' => $validatedData['teacherId'],
-        'grade' => $validatedData['grade'],
-    ]);
-
-    return response()->json(['message' => 'Course created successfully!', 'course' => $course]);
-}
+    /**
+     * Display a listing of the courses.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function index()
     {
         $courses = Course::all();
         return response()->json($courses);
     }
 
+    /**
+     * Get count of all courses.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function getCoursesCount()
     {
         $count = Course::count(); // Assuming you have a Course model
         return response()->json(['count' => $count]);
     }
 
-
+    /**
+     * Show the form for editing the specified course.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
     public function edit($id)
     {
         $course = Course::findOrFail($id);
@@ -65,6 +92,13 @@ class CourseController extends Controller
         ]);
     }
 
+    /**
+     * Update the specified course in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
     public function update(Request $request, $id)
     {
         $course = Course::findOrFail($id);
@@ -72,12 +106,12 @@ class CourseController extends Controller
         $validatedData = $request->validate([
             'subjectCode' => 'required|string|max:255',
             'subjectName' => 'required|string|max:255',
-            'teacherId' => 'required|string|max:255',
+            'teacherId' => 'nullable|integer|exists:teachers,tea_id',
             'grade' => 'required|string|max:10',
             'courseFee' => 'required|numeric',
             'courseDesc' => 'nullable|string',
         ]);
-
+        
         $course->update([
             'course_id' => $validatedData['subjectCode'],
             'course_name' => $validatedData['subjectName'],
@@ -86,7 +120,7 @@ class CourseController extends Controller
             'teacher_id' => $validatedData['teacherId'],
             'grade' => $validatedData['grade'],
         ]);
-
+        
         if ($request->wantsJson()) {
             return response()->json(['message' => 'Course updated successfully']);
         }
@@ -95,6 +129,12 @@ class CourseController extends Controller
             ->with('message', 'Course updated successfully');
     }
 
+    /**
+     * Remove the specified course from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
     public function destroy($id)
     {
         $course = Course::findOrFail($id);
@@ -107,4 +147,114 @@ class CourseController extends Controller
         return Redirect::route('admin.courses');
     }
 
+    /**
+     * Get courses for the authenticated teacher.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function teacherCourses()
+    {
+        $user = auth()->user();
+        $teacher = \App\Models\Teacher::where('user_id', $user->id)->first();
+        
+        if (!$teacher) {
+            return response()->json([]);
+        }
+        
+        $courses = Course::where('teacher_id', $teacher->tea_id)->get();
+        return response()->json($courses);
+    }
+
+    /**
+     * Get courses registered by the authenticated student
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function studentRegisteredCourses()
+    {
+        try {
+            // Get the current user
+            $user = Auth::user();
+            
+            // Find the student record for this user
+            $student = Student::where('user_id', $user->id)->first();
+            
+            if (!$student) {
+                return response()->json(['courses' => [], 'totalDue' => 0], 200);
+            }
+            
+            // Get the courses this student is registered for
+            $registeredCourseIds = StudentCourse::where('student_id', $student->student_id)
+                ->where('status', 'active')
+                ->pluck('course_id');
+                
+            $courses = Course::whereIn('course_id', $registeredCourseIds)
+                ->get()
+                ->map(function($course) {
+                    // Add teacher name if available
+                    if ($course->teacher_id) {
+                        $teacher = \App\Models\Teacher::find($course->teacher_id);
+                        if ($teacher && $teacher->user) {
+                            $course->teacher_name = $teacher->user->first_name . ' ' . $teacher->user->last_name;
+                        } else {
+                            $course->teacher_name = "Unknown Teacher";
+                        }
+                    } else {
+                        $course->teacher_name = "No Teacher Assigned";
+                    }
+                    
+                    return $course;
+                });
+            
+            // Calculate total due (you'll need to implement this logic based on your payment system)
+            $totalDue = 0;
+            // Example: Sum up the monthly fees of all courses
+            foreach ($courses as $course) {
+                $totalDue += $course->monthly_fees;
+            }
+                
+            return response()->json([
+                'courses' => $courses,
+                'totalDue' => $totalDue
+            ]);
+            
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            \Log::error('Error fetching student courses: ' . $e->getMessage());
+            
+            // Return a formatted error response
+            return response()->json(['error' => 'Failed to retrieve courses'], 500);
+        }
+    }
+
+    public function getTeacherGrades()
+    {
+        try {
+            $user = Auth::user();
+            $teacher = \App\Models\Teacher::where('user_id', $user->id)->first();
+            
+            if (!$teacher) {
+                return response()->json(['grades' => []], 200);
+            }
+            
+            // Get unique grades from courses taught by this teacher
+            $grades = Course::where('teacher_id', $teacher->tea_id)
+                ->distinct()
+                ->pluck('grade')
+                ->toArray();
+            
+            // Always include "All Students" option
+            $gradeOptions = ['All Students'];
+            
+            // Format the grades as "Grade X"
+            foreach ($grades as $grade) {
+                $gradeOptions[] = "Grade $grade";
+            }
+            
+            return response()->json(['grades' => $gradeOptions], 200);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching teacher grades: ' . $e->getMessage());
+            return response()->json(['grades' => [], 'error' => $e->getMessage()], 500);
+        }
+    }
 }

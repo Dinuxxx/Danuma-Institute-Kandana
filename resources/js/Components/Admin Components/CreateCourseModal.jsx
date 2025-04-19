@@ -31,6 +31,7 @@ const CreateCourseModal = ({ isOpen, onClose }) => {
       const response = await axios.post('/courses', formData);
       console.log('Course created:', response.data);
       onClose();
+      window.location.reload();
     } catch (error) {
       if (error.response && error.response.data.errors) {
         setErrors(error.response.data.errors);

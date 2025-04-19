@@ -261,7 +261,7 @@ public function store(Request $request)
 }
     
     /**
-     * Admin verification for payments
+     * Admin verification for payments - Approve payment
      */
     public function verifyPayment(Request $request, $paymentId)
     {
@@ -274,8 +274,26 @@ public function store(Request $request)
         PaymentCourse::where('payment_id', $paymentId)
             ->update(['status' => 'Completed']);
         
-        return redirect()->back()->with('success', 'Payment verified successfully');
+        return redirect()->back()->with('success', 'Payment approved successfully');
     }
+    
+    /**
+     * Admin rejection for payments - Reject payment
+     */
+    public function rejectPayment(Request $request, $paymentId)
+  {
+      $payment = Payment::findOrFail($paymentId);
+      $payment->status = 'Rejected'; // Changed from 'Failed' to 'Rejected'
+      // $payment->rejected_by = Auth::id();
+      // $payment->rejection_reason = $request->input('reason', 'Payment rejected by administrator');
+      $payment->save();
+      
+      // Also update the status in payments_courses
+      PaymentCourse::where('payment_id', $paymentId)
+          ->update(['status' => 'Rejected']);
+      
+      return redirect()->back()->with('success', 'Payment rejected successfully');
+  }
     
     /**
      * Display admin payment management page

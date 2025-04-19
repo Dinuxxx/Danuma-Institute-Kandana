@@ -226,4 +226,35 @@ class CourseController extends Controller
             return response()->json(['error' => 'Failed to retrieve courses'], 500);
         }
     }
+
+    public function getTeacherGrades()
+    {
+        try {
+            $user = Auth::user();
+            $teacher = \App\Models\Teacher::where('user_id', $user->id)->first();
+            
+            if (!$teacher) {
+                return response()->json(['grades' => []], 200);
+            }
+            
+            // Get unique grades from courses taught by this teacher
+            $grades = Course::where('teacher_id', $teacher->tea_id)
+                ->distinct()
+                ->pluck('grade')
+                ->toArray();
+            
+            // Always include "All Students" option
+            $gradeOptions = ['All Students'];
+            
+            // Format the grades as "Grade X"
+            foreach ($grades as $grade) {
+                $gradeOptions[] = "Grade $grade";
+            }
+            
+            return response()->json(['grades' => $gradeOptions], 200);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching teacher grades: ' . $e->getMessage());
+            return response()->json(['grades' => [], 'error' => $e->getMessage()], 500);
+        }
+    }
 }

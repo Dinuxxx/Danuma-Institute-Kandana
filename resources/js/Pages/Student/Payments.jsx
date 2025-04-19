@@ -73,16 +73,16 @@ const Payments = ({ auth, payments = [], dueAmount = 0, lastPayment = 0 }) => {
   // Get payment status badge color
   const getStatusBadgeColor = (status) => {
     switch (status) {
-      case 'Completed':
-        return 'bg-green-100 text-green-800';
-      case 'Pending':
-        return 'bg-amber-100 text-amber-800';
-      case 'Failed':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+        case 'Completed':
+            return 'bg-green-100 text-green-800';
+        case 'Pending':
+            return 'bg-amber-100 text-amber-800';
+        case 'Rejected': // Changed from Failed to Rejected
+            return 'bg-red-100 text-red-800';
+        default:
+            return 'bg-gray-100 text-gray-800';
     }
-  };
+};
 
   // Helper to display course names from payment_courses
   const getCoursesForPayment = (payment) => {

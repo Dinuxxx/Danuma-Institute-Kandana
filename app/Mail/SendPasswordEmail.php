@@ -31,7 +31,7 @@ class SendPasswordEmail extends Mailable
         return new Envelope(
             subject: 'Your Account Password',
         );
-    }
+    } 
 
     /**
      * Get the message content definition.

@@ -20,6 +20,7 @@ use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Middleware\CheckRole;
 
+
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -261,6 +262,15 @@ Route::post('/register', [UserRegistrationController::class, 'register'])->name(
 Route::get('/email/verify', [EmailVerificationPromptController::class, '__invoke'])
     ->middleware('auth')
     ->name('verification.notice');
+
+    // In routes/web.php
+Route::middleware('auth')->get('/verification-status', function (Request $request) {
+    return response()->json([
+        'verified' => $request->user()->hasVerifiedEmail()
+    ]);
+});
+
+// Email verification handler (this is already handled by Laravel)
 
 Route::get('/email/verify/{id}/{hash}', [VerifyEmailController::class, 'verify'])
     ->middleware(['auth', 'signed'])

@@ -156,7 +156,7 @@ const Courses = () => {
                   key={course.course_id}
                   id={course.course_id}
                   title={course.course_name}
-                  instructor={course.teacher_name || `Instructor ID: ${course.teacher_id}`}
+                  instructor={course.teacher_name || ` ${course.teacher_id}`}
                   pattern={course.pattern}
                 />
               ))}

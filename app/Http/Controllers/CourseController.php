@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Http\Request;
 use App\Models\Course;
 use App\Models\Student;
+use App\Models\Teacher;
 use App\Models\StudentCourse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -65,6 +66,23 @@ class CourseController extends Controller
     {
         $courses = Course::all();
         return response()->json($courses);
+    }
+
+    /**
+     * Get teacher details including user registration info
+     *
+     * @param int $id Teacher ID
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        $teacher = Teacher::with(['user.registration'])->find($id);
+        
+        if (!$teacher) {
+            return response()->json(['error' => 'Teacher not found'], 404);
+        }
+        
+        return response()->json($teacher);
     }
 
     /**

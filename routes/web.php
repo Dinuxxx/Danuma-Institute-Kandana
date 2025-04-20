@@ -13,7 +13,9 @@ use App\Http\Controllers\AdminNoticeController;
 use App\Http\Controllers\TeacherNoticeController;
 use App\Http\Controllers\StudentNoticeController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\StudentAttendanceController;
 use App\Http\Controllers\UsersController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
@@ -81,7 +83,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/payments', [PaymentController::class, 'adminIndex'])->name('admin.payments');
         Route::post('/payments/{payment}/verify', [PaymentController::class, 'verifyPayment'])->name('admin.payments.verify');
         Route::post('/payments/{payment}/reject', [PaymentController::class, 'rejectPayment'])->name('admin.payments.reject');
-        
+        Route::post('/attendance/process-payment', [PaymentController::class, 'processManualPayment'])->name('admin.attendance.process-payment');
+        Route::get('/payments/student/{student_id}', [PaymentController::class, 'getStudentPaymentHistory'])->name('admin.payments.student');
+
         Route::get('/users', function () {
             return Inertia::render('Admin/Users');
         });
@@ -176,6 +180,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/attendance', function () {
             return Inertia::render('Student/Attendance');
         });
+
+        Route::get('/attendance', [StudentAttendanceController::class, 'index'])->name('student.attendance');
+        Route::get('/attendance/report', [StudentAttendanceController::class, 'getAttendanceReport'])->name('student.attendance.report');
+        Route::get('/attendance/stats', [StudentAttendanceController::class, 'getAttendanceStats'])->name('student.attendance.stats');
+        Route::get('/getStudentCourses', [StudentAttendanceController::class, 'getStudentCourses'])->name('student.courses');
         
         Route::get('/exams', function () {
             return Inertia::render('Student/Exams');
@@ -207,6 +216,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
     Route::put('/courses/{id}', [CourseController::class, 'update'])->name('courses.update');
     Route::delete('/courses/{id}', [CourseController::class, 'destroy'])->name('courses.destroy');
+    Route::get('/teachers-id/{id}', [CourseController::class, 'show']);
     
     Route::get('/study-materials', [TeacherLessonController::class, 'index']);
     Route::post('/study-materials', [TeacherLessonController::class, 'store']);
@@ -229,7 +239,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/teacher/notices/{notice}', [TeacherNoticeController::class, 'destroy'])->name('teacher.notices.delete');
 
     Route::get('/student/notices', [StudentNoticeController::class, 'index'])->name('student.notices');
-    Route::get('/student/registered-courses', [StudentNoticeController::class, 'getRegisteredCourses'])->name('student.registered-courses');
+    // Route::get('/student/registered-courses', [StudentNoticeController::class, 'getRegisteredCourses'])->name('student.registered-courses');
     Route::get('/student/registered-grades', [StudentNoticeController::class, 'getRegisteredGrades']);
 
     Route::get('/admin/time-tables', [TimetableController::class, 'index']);
@@ -242,6 +252,14 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/admin/attendance/check-in', [AttendanceController::class, 'checkIn']);
     Route::post('/admin/attendance/check-out', [AttendanceController::class, 'checkOut']);
     Route::post('/admin/attendance/qr', [AttendanceController::class, 'markQRAttendance']);
+
+    Route::get('/teachers/count', [DashboardController::class, 'getTeachersCount']);
+    Route::get('/students/count', [DashboardController::class, 'getStudentsCount']);
+    Route::get('/payments/total', [DashboardController::class, 'getTotalRevenue']);
+    Route::get('/payments/monthly', [DashboardController::class, 'getMonthlyPayments']);
+    Route::get('/payments/revenue-by-month', [DashboardController::class, 'getRevenueByMonth']);
+    Route::get('/students/monthly-registrations', [DashboardController::class, 'getMonthlyRegistrations']);
+    Route::get('/courses/distribution', [DashboardController::class, 'getCourseDistribution']);
 });
 
 // Profile management

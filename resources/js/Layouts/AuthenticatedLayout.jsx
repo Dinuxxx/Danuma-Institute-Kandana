@@ -10,16 +10,20 @@ export default function AuthenticatedLayout({ children, title }) {
     const userRole = user?.role || 'guest'; // Using the role we added in HandleInertiaRequests
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     
-    // Helper function to check if the current path matches the user's role
+    // Helper function to check if the current path matches the user's role or is exempt
     const isValidPath = () => {
         const currentPath = window.location.pathname;
         const rolePrefix = `/${userRole}`;
+        
+        // List of paths exempt from role-based path checking
+        const exemptPaths = ['/profile', '/test-profile'];
         
         if (userRole === 'guest') {
             return false;
         }
         
-        return currentPath.startsWith(rolePrefix);
+        // Return true if path starts with role prefix OR is in the exempt paths list
+        return currentPath.startsWith(rolePrefix) || exemptPaths.some(path => currentPath.startsWith(path));
     };
     
     // Redirect if user is accessing a path not meant for their role

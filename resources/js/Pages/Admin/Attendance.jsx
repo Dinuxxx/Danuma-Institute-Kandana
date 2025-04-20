@@ -85,7 +85,7 @@ const Attendance = () => {
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 pt-36 pb-16 px-6 overflow-y-auto bg-gray-50">
+          <main className="flex-1 px-6 overflow-y-auto bg-gray-50">
             {activeTab === 'summary' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {mockData.map((data, index) => (

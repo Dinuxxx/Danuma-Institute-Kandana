@@ -13,10 +13,15 @@ class StudentNoticeController extends Controller
     /**
      * Display notices relevant to the student (from admin to students or from teachers of student's courses).
      */
+    /**
+     * Display notices relevant to the student (from admin to students, from teachers of student's courses, or grade-specific).
+     */
     public function index(Request $request)
     {
-        // Get student ID from auth user
-        $studentId = Auth::user()->student->student_id ?? null;
+        // Get student ID and grade from auth user
+        $student = Auth::user()->student ?? null;
+        $studentId = $student ? $student->student_id : null;
+        $studentGrade = $student ? $student->grade : null;
         
         if (!$studentId) {
             return $this->handleErrorResponse($request, 'Student profile not found');
@@ -25,7 +30,7 @@ class StudentNoticeController extends Controller
         try {
             // Get courses the student is registered for
             $registeredCourseIds = StudentCourse::where('student_id', $studentId)
-                ->where('status', 'active') // Assuming there's a status field
+                ->where('status', 'active')
                 ->pluck('course_id')
                 ->toArray();
                 
@@ -41,17 +46,16 @@ class StudentNoticeController extends Controller
                 ->pluck('user_id')
                 ->toArray();
                 
-            // Get admin notices visible to students - REMOVED roles relationship
+            // Get admin notices visible to students
             $adminNotices = Notice::whereJsonContains('visibility', 'All Students')
-              ->orWhereJsonContains('visibility', 'Students')
-              ->orWhereJsonContains('visibility', 'All')
-              ->with(['user' => function($query) {
-                  $query->select('id', 'name');
-                  // Load admin relationship instead of roles
-                  $query->with('admin:user_id,admin_id'); 
-              }])
-              ->get();
-              
+            ->orWhereJsonContains('visibility', 'Students')
+            ->orWhereJsonContains('visibility', 'All')
+            ->with(['user' => function($query) {
+                $query->select('id', 'name');
+                $query->with('admin:user_id,admin_id'); 
+            }])
+            ->get();
+            
             // Add role_name for admin users
             foreach ($adminNotices as $notice) {
                 if ($notice->user && $notice->user->admin) {
@@ -59,18 +63,20 @@ class StudentNoticeController extends Controller
                 }
             }
                 
-            // Get notices from teachers of student's registered courses
+            // Get all teacher notices that might be relevant (includes grade-specific notices)
             $teacherNotices = Notice::whereIn('user_id', $teacherUserIds)
-              ->where(function($query) {
-                  $query->whereJsonContains('visibility', 'All Students')
-                      ->orWhereJsonContains('visibility', 'Students')
-                      ->orWhereJsonContains('visibility', 'All');
-              })
-              ->with(['user' => function($query) {
-                  $query->select('id', 'name')
-                      ->with('teacher:user_id,tea_id'); // Include teacher information
-              }])
-              ->get();
+            ->where(function($query) use ($studentGrade) {
+                $query->whereJsonContains('visibility', 'All Students')
+                    ->orWhereJsonContains('visibility', 'Students')
+                    ->orWhereJsonContains('visibility', 'All')
+                    // Add check for grade-specific visibility
+                    ->orWhereJsonContains('visibility', $studentGrade);
+            })
+            ->with(['user' => function($query) {
+                $query->select('id', 'name')
+                    ->with('teacher:user_id,tea_id');
+            }])
+            ->get();
                 
             // Merge the collections
             $notices = $adminNotices->merge($teacherNotices)->sortByDesc('created_at')->values();
@@ -86,12 +92,31 @@ class StudentNoticeController extends Controller
                     $courseInfo = \DB::table('courses')
                         ->where('teacher_id', $teacherId)
                         ->whereIn('course_id', $registeredCourseIds)
-                        ->select('course_id', 'course_name')
+                        ->select('course_id', 'course_name', 'grade')
                         ->first();
                         
                     if ($courseInfo) {
                         $notice->course_id = $courseInfo->course_id;
                         $notice->course_name = $courseInfo->course_name;
+                        $notice->course_grade = $courseInfo->grade;
+                    }
+                    
+                    // If this is a grade-specific notice, tag it
+                    if ($notice->visibility && is_array($notice->visibility)) {
+                        $isGradeSpecific = false;
+                        $gradeSpecificFor = [];
+                        
+                        foreach ($notice->visibility as $item) {
+                            if ($item !== 'All Students' && $item !== 'Students' && $item !== 'All') {
+                                $isGradeSpecific = true;
+                                $gradeSpecificFor[] = $item;
+                            }
+                        }
+                        
+                        if ($isGradeSpecific) {
+                            $notice->is_grade_specific = true;
+                            $notice->grade_name = implode(', ', $gradeSpecificFor);
+                        }
                     }
                 }
             }
@@ -167,7 +192,7 @@ class StudentNoticeController extends Controller
             }
             
             // Get grades from courses the student is registered for
-            $grades = \DB::table('student_courses')
+            $courseGrades = \DB::table('student_courses')
                 ->join('courses', 'student_courses.course_id', '=', 'courses.course_id')
                 ->where('student_courses.student_id', $student->student_id)
                 ->where('student_courses.status', 'active')
@@ -176,6 +201,11 @@ class StudentNoticeController extends Controller
                 ->values()
                 ->toArray();
             
+            // Always include the student's own grade
+            if ($student->grade && !in_array($student->grade, $courseGrades)) {
+                $courseGrades[] = $student->grade;
+            }
+            
             // Always include the default visibility options that apply to all students
             $grades[] = 'All Students';
             $grades[] = 'Students';
@@ -183,7 +213,7 @@ class StudentNoticeController extends Controller
             
             return response()->json([
                 'success' => true,
-                'grades' => array_unique($grades)
+                'grades' => array_values(array_unique(array_merge($courseGrades, $grades)))
             ]);
             
         } catch (\Exception $e) {

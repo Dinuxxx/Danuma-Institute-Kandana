@@ -1,36 +1,264 @@
+import React, { useState, useEffect } from 'react';
+import { Head, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
-import DeleteUserForm from './Partials/DeleteUserForm';
-import UpdatePasswordForm from './Partials/UpdatePasswordForm';
-import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
+import InputError from '@/Components/InputError';
+import InputLabel from '@/Components/InputLabel';
+import PrimaryButton from '@/Components/PrimaryButton';
+import TextInput from '@/Components/TextInput';
+import SelectInput from '@/Components/SelectInput';
+import Message from '@/Components/Message';
+import AdminProfile from './Partials/AdminProfile';
+import TeacherProfile from './Partials/TeacherProfile';
+import StudentProfile from './Partials/StudentProfile';
 
-export default function Edit({ mustVerifyEmail, status }) {
+export default function Edit({ auth, user, userRegistration, userRole, roleSpecificData, flash }) {
+    // Check if userRegistration exists, if not provide default values
+    const registration = userRegistration || {};
+    
+    const [profileImage, setProfileImage] = useState(null);
+    const [imagePreview, setImagePreview] = useState(
+        registration.image 
+            ? `/storage/profiles/${registration.image}` 
+            : '/images/default-profile.png'
+    );
+    
+    const { data, setData, post,patch, errors, processing } = useForm({
+        title: registration.title || '',
+        first_name: registration.first_name || '',
+        last_name: registration.last_name || '',
+        email: user.email || '',
+        tel_no: registration.tel_no || '',
+        address: registration.address || '',
+        image: null,
+        ...getRoleSpecificFormData(userRole, roleSpecificData)
+    });
+    
+    function getRoleSpecificFormData(role, roleData) {
+        if (!roleData) return {};
+        
+        switch (role) {
+            case 'admin':
+                return {
+                    nic: roleData.nic || '',
+                };
+            case 'teacher':
+                return {
+                    nic: roleData.nic || '',
+                    qualifications: roleData.qualifications || '',
+                };
+            case 'student':
+                return {
+                    grade: roleData.grade || '',
+                    parent_info: roleData.parent ? {
+                        first_name: roleData.parent.first_name || '',
+                        last_name: roleData.parent.last_name || '',
+                        tel_no: roleData.parent.tel_no || '',
+                        relationship_type: roleData.parent.relationship_type || '',
+                    } : {}
+                };
+            default:
+                return {};
+        }
+    }
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setProfileImage(file);
+            setData('image', file);
+            setImagePreview(URL.createObjectURL(file));
+        }
+    };
+
+    const submit = (e) => {
+        e.preventDefault();
+        patch(route('profile.update'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                // Reset image form field
+                setData('image', null);
+            },
+        });
+    };
+
+    const renderRoleSpecificForm = () => {
+        switch (userRole) {
+            case 'admin':
+                return <AdminProfile data={data} setData={setData} errors={errors} />;
+            case 'teacher':
+                return <TeacherProfile data={data} setData={setData} errors={errors} roleSpecificData={roleSpecificData} />;
+            case 'student':
+                return <StudentProfile data={data} setData={setData} errors={errors} roleSpecificData={roleSpecificData} />;
+            default:
+                return null;
+        }
+    };
+
+    // Info message for users without role-specific data
+    const renderInfoMessage = () => {
+        if (!userRegistration || !userRegistration.role) {
+            return (
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+                    <div className="flex">
+                        <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                            </svg>
+                        </div>
+                        <div className="ml-3">
+                            <p className="text-sm text-blue-700">
+                                Your profile is incomplete. Please contact an administrator to complete your registration.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        return null;
+    };
+
     return (
         <AuthenticatedLayout
-            header={
-                <h2 className="text-xl font-semibold leading-tight text-gray-800">
-                    Profile
-                </h2>
-            }
+            user={auth.user}
+            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Profile</h2>}
         >
             <Head title="Profile" />
 
             <div className="py-12">
-                <div className="mx-auto max-w-7xl space-y-6 sm:px-6 lg:px-8">
-                    <div className="bg-white p-4 shadow sm:rounded-lg sm:p-8">
-                        <UpdateProfileInformationForm
-                            mustVerifyEmail={mustVerifyEmail}
-                            status={status}
-                            className="max-w-xl"
-                        />
-                    </div>
+                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+                    {flash.message && <Message message={flash.message} />}
+                    {renderInfoMessage()}
+                    
+                    <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+                        <section className="max-w-xl">
+                            <header>
+                                <h2 className="text-lg font-medium text-gray-900">Profile Information</h2>
+                                <p className="mt-1 text-sm text-gray-600">
+                                    Update your account's profile information and email address.
+                                </p>
+                            </header>
 
-                    <div className="bg-white p-4 shadow sm:rounded-lg sm:p-8">
-                        <UpdatePasswordForm className="max-w-xl" />
-                    </div>
+                            <form onSubmit={submit} className="mt-6 space-y-6">
+                                <div className="flex flex-col md:flex-row md:space-x-6">
+                                    {/* Profile Image Section */}
+                                    <div className="mb-6 md:mb-0">
+                                        <div className="mb-4">
+                                            <img 
+                                                src={imagePreview} 
+                                                alt="Profile" 
+                                                className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                                            />
+                                        </div>
+                                        <div>
+                                            <input
+                                                type="file"
+                                                id="image"
+                                                accept="image/*"
+                                                onChange={handleImageChange}
+                                                className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
+                                                file:rounded-md file:border-0 file:text-sm file:font-semibold
+                                                file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                                            />
+                                        </div>
+                                    </div>
 
-                    <div className="bg-white p-4 shadow sm:rounded-lg sm:p-8">
-                        <DeleteUserForm className="max-w-xl" />
+                                    {/* Basic Information Section */}
+                                    <div className="flex-1">
+                                        <div className="mb-6">
+                                            <InputLabel htmlFor="email" value="Email" />
+                                            <TextInput
+                                                id="email"
+                                                type="email"
+                                                className="mt-1 block w-full"
+                                                value={data.email}
+                                                onChange={(e) => setData('email', e.target.value)}
+                                                required
+                                            />
+                                            <InputError message={errors.email} className="mt-2" />
+                                        </div>
+
+                                        {userRegistration && (
+                                            <>
+                                                <div className="mb-6">
+                                                    <InputLabel htmlFor="title" value="Title" />
+                                                    <SelectInput
+                                                        id="title"
+                                                        className="mt-1 block w-full"
+                                                        value={data.title}
+                                                        onChange={(e) => setData('title', e.target.value)}
+                                                        options={[
+                                                            { value: '', label: 'Select Title' },
+                                                            { value: 'Mr', label: 'Mr' },
+                                                            { value: 'Mrs', label: 'Mrs' },
+                                                            { value: 'Miss', label: 'Miss' },
+                                                            { value: 'Dr', label: 'Dr' },
+                                                            { value: 'Prof', label: 'Prof' }
+                                                        ]}
+                                                    />
+                                                    <InputError message={errors.title} className="mt-2" />
+                                                </div>
+
+                                                <div className="mb-6">
+                                                    <InputLabel htmlFor="first_name" value="First Name" />
+                                                    <TextInput
+                                                        id="first_name"
+                                                        className="mt-1 block w-full"
+                                                        value={data.first_name}
+                                                        onChange={(e) => setData('first_name', e.target.value)}
+                                                        required
+                                                    />
+                                                    <InputError message={errors.first_name} className="mt-2" />
+                                                </div>
+
+                                                <div className="mb-6">
+                                                    <InputLabel htmlFor="last_name" value="Last Name" />
+                                                    <TextInput
+                                                        id="last_name"
+                                                        className="mt-1 block w-full"
+                                                        value={data.last_name}
+                                                        onChange={(e) => setData('last_name', e.target.value)}
+                                                        required
+                                                    />
+                                                    <InputError message={errors.last_name} className="mt-2" />
+                                                </div>
+
+                                                <div className="mb-6">
+                                                    <InputLabel htmlFor="tel_no" value="Phone Number" />
+                                                    <TextInput
+                                                        id="tel_no"
+                                                        className="mt-1 block w-full"
+                                                        value={data.tel_no}
+                                                        onChange={(e) => setData('tel_no', e.target.value)}
+                                                        required
+                                                    />
+                                                    <InputError message={errors.tel_no} className="mt-2" />
+                                                </div>
+
+                                                <div className="mb-6">
+                                                    <InputLabel htmlFor="address" value="Address" />
+                                                    <textarea
+                                                        id="address"
+                                                        className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                                        value={data.address}
+                                                        onChange={(e) => setData('address', e.target.value)}
+                                                        rows="3"
+                                                        required
+                                                    />
+                                                    <InputError message={errors.address} className="mt-2" />
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Role Specific Form Fields */}
+                                {userRegistration && userRegistration.role && renderRoleSpecificForm()}
+
+                                <div className="flex items-center gap-4">
+                                    <PrimaryButton disabled={processing}>Save</PrimaryButton>
+                                </div>
+                            </form>
+                        </section>
                     </div>
                 </div>
             </div>

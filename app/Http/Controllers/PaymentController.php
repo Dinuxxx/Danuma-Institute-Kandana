@@ -90,17 +90,27 @@ public function index()
     /**
  * Get registered courses for a student.
  */
-public function getRegisteredCourses()
+public function getRegisteredCourses(Request $request)
 {
-    $user = Auth::user();
-    $student = Student::where('user_id', $user->id)->first();
+    $studentId = null;
     
-    if (!$student) {
-        return response()->json(['error' => 'Student profile not found'], 404);
+    // Check if request is coming from admin with student_id parameter
+    if ($request->has('student_id')) {
+        $studentId = $request->student_id;
+    } else {
+        // Original flow - get student ID from auth user
+        $user = Auth::user();
+        $student = Student::where('user_id', $user->id)->first();
+        
+        if (!$student) {
+            return response()->json(['error' => 'Student profile not found'], 404);
+        }
+        
+        $studentId = $student->student_id;
     }
     
     // Get student's active courses
-    $registeredCourses = StudentCourse::where('student_id', $student->student_id)
+    $registeredCourses = StudentCourse::where('student_id', $studentId)
         ->where('status', 'active')
         ->get();
         
@@ -112,7 +122,7 @@ public function getRegisteredCourses()
         if ($course) {
             // Calculate paid amount for this course this month
             $paidForCourse = Payment::join('payments_courses', 'payments.payment_id', '=', 'payments_courses.payment_id')
-                ->where('payments.student_id', $student->student_id)
+                ->where('payments.student_id', $studentId)
                 ->where('payments.status', 'Completed')
                 ->where('payments_courses.course_id', $course->course_id)
                 ->whereMonth('payments.created_at', Carbon::now()->month)
@@ -121,7 +131,7 @@ public function getRegisteredCourses()
             
             // Check if there's a pending payment for this course
             $pendingPayment = Payment::join('payments_courses', 'payments.payment_id', '=', 'payments_courses.payment_id')
-                ->where('payments.student_id', $student->student_id)
+                ->where('payments.student_id', $studentId)
                 ->where('payments.status', 'Pending')
                 ->where('payments_courses.course_id', $course->course_id)
                 ->whereMonth('payments.created_at', Carbon::now()->month)
@@ -305,6 +315,98 @@ public function store(Request $request)
             ->get();
         
         return Inertia::render('Admin/Payments', [
+            'payments' => $payments
+        ]);
+    }
+
+    /**
+     * Process manual cash payment by admin
+     */
+    public function processManualPayment(Request $request)
+    {
+        $request->validate([
+            'student_id' => 'required|exists:students,student_id',
+            'amount' => 'required|numeric|min:0',
+            'course_ids' => 'required|array',
+            'course_ids.*' => 'exists:courses,course_id',
+            'method' => 'required|string'
+        ]);
+        
+        // Create new payment record
+        $payment = new Payment();
+        $payment->method = $request->method;
+        $payment->status = 'Completed'; // Direct cash payments are marked as completed immediately
+        $payment->amount = $request->amount;
+        $payment->student_id = $request->student_id;
+        $payment->verified_by = Auth::id(); // Admin who processed the payment
+        $payment->save();
+        
+        // Get the selected courses
+        $selectedCourses = Course::whereIn('course_id', $request->course_ids)->get();
+        
+        // Calculate total fees of selected courses for proportional distribution
+        $totalSelectedFees = $selectedCourses->sum('monthly_fees');
+        
+        // Create payment course records for each selected course
+        foreach ($selectedCourses as $course) {
+            // Calculate proportional amount for this course
+            $proportion = $totalSelectedFees > 0 ? $course->monthly_fees / $totalSelectedFees : 0;
+            $courseAmount = round($request->amount * $proportion, 2);
+            
+            $paymentCourse = new PaymentCourse();
+            $paymentCourse->payment_id = $payment->payment_id;
+            $paymentCourse->course_id = $course->course_id;
+            $paymentCourse->month = Carbon::now()->format('F Y');
+            $paymentCourse->amount = $courseAmount;
+            $paymentCourse->status = 'Completed';
+            $paymentCourse->save();
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment processed successfully',
+            'payment_id' => $payment->payment_id
+        ]);
+    }
+
+    public function getStudentData($id)
+    {
+        $student = Student::where('student_id', $id)
+            ->orWhere('first_name', 'like', "%{$id}%")
+            ->orWhere('last_name', 'like', "%{$id}%")
+            ->first();
+        
+        if (!$student) {
+            return response()->json(['message' => 'Student not found'], 404);
+        }
+        
+        // Get courses for this student
+        $courses = StudentCourse::where('student_id', $student->student_id)
+            ->where('status', 'active')
+            ->join('courses', 'student_courses.course_id', '=', 'courses.course_id')
+            ->select('courses.*')
+            ->get();
+        
+        return response()->json([
+            'student' => $student,
+            'courses' => $courses
+        ]);
+    }
+
+    public function getStudentPaymentHistory($studentId)
+    {
+        // Get payment history with course information
+        $payments = Payment::where('payments.student_id', $studentId)
+            ->with(['paymentCourses' => function($query) {
+                $query->join('courses', 'payments_courses.course_id', '=', 'courses.course_id')
+                    ->select('payments_courses.*', 'courses.course_name');
+            }])
+            ->where('status', 'Completed')  // Only show completed payments
+            ->orderBy('created_at', 'desc')
+            ->limit(5)  // Limit to most recent 5 payments
+            ->get();
+        
+        return response()->json([
             'payments' => $payments
         ]);
     }

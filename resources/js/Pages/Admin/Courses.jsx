@@ -145,7 +145,7 @@ const Courses = () => {
                   id={course.course_id}
                   title={course.course_name}
                   grade={course.grade}
-                  instructor={`Instructor ID: ${course.teacher_id}`} // Replace with actual instructor details
+                  instructor={` ${course.teacher_id}`} // Replace with actual instructor details
                   pattern={course.pattern}
                 />
               ))}

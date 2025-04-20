@@ -2,10 +2,12 @@ import React from 'react';
 
 const AttendanceSummary = ({ course, grade, teacher, time, present, absent }) => {
   return (
-    <div className="bg-orange-50 border border-gray-200 rounded-lg p-4 shadow-md">
-      <h3 className="text-lg font-semibold">{course}-{grade}</h3>
-      <p className="text-sm text-gray-600">{teacher}</p>
-      <p className="text-sm text-gray-600">{time}</p>
+    <div className="bg-orange-50 border border-gray-200 rounded-lg p-4 shadow-md mt-36">
+      <div className='text-center'>
+        <h3 className="text-lg font-semibold">{course}-{grade}</h3>
+        <p className="text-sm text-gray-600">{teacher}</p>
+        <p className="text-sm text-gray-600">{time}</p>
+      </div>
       <div className="flex justify-between items-center my-4">
         <div className="text-center">
           <span className="text-xl font-bold text-green-600">{present}%</span>

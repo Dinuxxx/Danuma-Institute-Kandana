@@ -9,10 +9,10 @@ use App\Models\Student;
 use App\Models\Course;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use App\Http\Controllers\Str;
-
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Auth\Events\Registered; // for user verification
+use Illuminate\Support\Facades\Mail;
 use App\Mail\SendPasswordEmail; // You'll create this Mailable class
 
 
@@ -172,12 +172,19 @@ private function generateTemporaryPassword($length = 12)
          }
 
          // Redirect to the email verification notice page
-    return redirect()->route('verification.notice')->with('status', 'verification-link-sent');
+    //return redirect()->route('verification.notice')->with('status', 'verification-link-sent');
          // Return a success response
         // return redirect()->back()->with('success', 'User registered successfully!');
         // return redirect()->route('dashboard')->with('success', 'Registration successful!');
 
         //return response()->json(['message' => 'User registered successfully.']);
+
+        return response()->json([
+            'message' => 'User registered successfully. Please verify your email.',
+            'status' => 'verification-link-sent'
+        ]);
+
+
 
     }
 }

@@ -89,6 +89,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/users', function () {
             return Inertia::render('Admin/Users');
         });
+
+        Route::delete('/users/delete', [UsersController::class, 'destroy']);
         
         Route::get('/notices', function () {
             return Inertia::render('Admin/Notices');
@@ -260,6 +262,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/payments/revenue-by-month', [DashboardController::class, 'getRevenueByMonth']);
     Route::get('/students/monthly-registrations', [DashboardController::class, 'getMonthlyRegistrations']);
     Route::get('/courses/distribution', [DashboardController::class, 'getCourseDistribution']);
+
+    Route::get('/settings', function () {
+        return Inertia::render('Settings');
+    });
 });
 
 // Profile management

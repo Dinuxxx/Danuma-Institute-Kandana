@@ -16,6 +16,14 @@ const Users = () => {
   const [rowsPerPage, setRowsPerPage] = useState(25); // Default rows per page
   const [selectedUsers, setSelectedUsers] = useState([]); // State for selected rows
   const [currentPage, setCurrentPage] = useState(1); // Current page for pagination
+  const [deleteLoading, setDeleteLoading] = useState(false); // Loading state for delete operations
+  
+  // Added states for delete confirmation dialog
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState({
+    type: null, // 'single' or 'multiple'
+    id: null,
+  });
 
   // Fetch users with filters from backend
   const fetchUsers = () => {
@@ -26,7 +34,7 @@ const Users = () => {
           search: searchTerm,
           role: roleFilter,
           sort: sortBy,
-          limit: rowsPerPage, // Add rowsPerPage to API request
+          limit: rowsPerPage,
         },
       })
       .then((response) => {
@@ -74,6 +82,100 @@ const Users = () => {
     }
   };
 
+  // Show delete confirmation for a single user
+  const confirmDeleteUser = (userId) => {
+    setDeleteTarget({ type: 'single', id: userId });
+    setShowDeleteDialog(true);
+  };
+
+  // Show delete confirmation for multiple users
+  const confirmBulkDelete = () => {
+    if (selectedUsers.length === 0) return;
+    setDeleteTarget({ type: 'multiple', id: selectedUsers });
+    setShowDeleteDialog(true);
+  };
+
+  // Delete a single user
+  const handleDeleteUser = async (userId) => {
+    setDeleteLoading(true);
+    try {
+      await axios.delete('/admin/users/delete', {
+        data: { id: userId }
+      });
+      
+      // Remove the user from the UI
+      setUsers(prev => prev.filter(user => user.id !== userId));
+      // Remove from selected users if present
+      setSelectedUsers(prev => prev.filter(id => id !== userId));
+      
+      // Show success message
+      const successToast = document.createElement('div');
+      successToast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg';
+      successToast.textContent = 'User deleted successfully';
+      document.body.appendChild(successToast);
+      setTimeout(() => successToast.remove(), 3000);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      // Show error message
+      const errorToast = document.createElement('div');
+      errorToast.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg';
+      errorToast.textContent = 'Failed to delete user';
+      document.body.appendChild(errorToast);
+      setTimeout(() => errorToast.remove(), 3000);
+    } finally {
+      setDeleteLoading(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
+  // Delete multiple users
+  const handleBulkDelete = async (userIds) => {
+    setDeleteLoading(true);
+    try {
+      await axios.delete('/admin/users/delete', {
+        data: { ids: userIds }
+      });
+      
+      // Remove the users from the UI
+      setUsers(prev => prev.filter(user => !userIds.includes(user.id)));
+      // Clear selection
+      setSelectedUsers([]);
+      
+      // Show success message
+      const successToast = document.createElement('div');
+      successToast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg';
+      successToast.textContent = `${userIds.length} users deleted successfully`;
+      document.body.appendChild(successToast);
+      setTimeout(() => successToast.remove(), 3000);
+    } catch (error) {
+      console.error('Error deleting users:', error);
+      // Show error message
+      const errorToast = document.createElement('div');
+      errorToast.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg';
+      errorToast.textContent = 'Failed to delete users';
+      document.body.appendChild(errorToast);
+      setTimeout(() => errorToast.remove(), 3000);
+    } finally {
+      setDeleteLoading(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
+  // Proceed with delete based on type
+  const handleConfirmDelete = () => {
+    if (deleteTarget.type === 'single') {
+      handleDeleteUser(deleteTarget.id);
+    } else if (deleteTarget.type === 'multiple') {
+      handleBulkDelete(deleteTarget.id);
+    }
+  };
+
+  // Cancel delete
+  const handleCancelDelete = () => {
+    setShowDeleteDialog(false);
+    setDeleteTarget({ type: null, id: null });
+  };
+
   // Pagination calculation
   const totalPages = Math.ceil(users.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
@@ -110,6 +212,7 @@ const Users = () => {
               checked={selectedUsers.includes(user.id)}
               onChange={() => toggleUserSelection(user.id)}
               className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              disabled={deleteLoading}
             />
           </div>
         ),
@@ -120,7 +223,11 @@ const Users = () => {
         Option: (
           <div className="flex items-center justify-center gap-4">
             <BsPencilSquare className="text-blue-600 cursor-pointer text-lg" />
-            <AiFillDelete className="text-red-600 cursor-pointer text-lg" />
+            <AiFillDelete 
+              className="text-red-600 cursor-pointer text-lg hover:text-red-800 transition-colors duration-300" 
+              onClick={() => confirmDeleteUser(user.id)}
+              style={{ opacity: deleteLoading ? 0.5 : 1 }}
+            />
           </div>
         ),
       }))
@@ -210,21 +317,18 @@ const Users = () => {
                 <TableComponent columns={columns} data={enhancedData} />
                 {/* Show bulk action button when rows are selected */}
                 {selectedUsers.length > 0 && (
-                  <div className="flex items-center">
+                  <div className="flex items-center mt-4 px-6">
                     <span className="mr-2 text-gray-600">
                       {selectedUsers.length} selected
                     </span>
                     <button
-                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition-colors duration-200"
-                      onClick={() => {
-                        if (window.confirm(`Are you sure you want to delete ${selectedUsers.length} selected users?`)) {
-                          console.log("Delete users with IDs:", selectedUsers);
-                          // Implement actual deletion here
-                          setSelectedUsers([]);
-                        }
-                      }}
+                      className={`bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition-colors duration-200 ${
+                        deleteLoading ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                      onClick={confirmBulkDelete}
+                      disabled={deleteLoading}
                     >
-                      Delete
+                      {deleteLoading ? "Deleting..." : "Delete Selected"}
                     </button>
                   </div>
                 )}
@@ -282,6 +386,48 @@ const Users = () => {
             )}
           </div>
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        {showDeleteDialog && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md transform transition-all scale-100 animate-fade-in">
+              <div className="flex justify-center mb-4">
+                <div className="bg-red-100 p-3 rounded-full">
+                  <svg className="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                  </svg>
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 text-center mb-4">Confirm Deletion</h3>
+              <p className="text-gray-600 text-center mb-6">
+                {deleteTarget.type === 'single' 
+                  ? "Are you sure you want to delete this user? This action cannot be undone."
+                  : `Are you sure you want to delete ${deleteTarget.id.length} users? This action cannot be undone.`
+                }
+              </p>
+              <div className="flex justify-between gap-4">
+                <button
+                  onClick={handleCancelDelete}
+                  className="w-1/2 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  className="w-1/2 px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-50"
+                  disabled={deleteLoading}
+                >
+                  {deleteLoading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      Deleting...
+                    </div>
+                  ) : "Yes, Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AuthenticatedLayout>
   );

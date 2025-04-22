@@ -42,14 +42,68 @@ class ProfileController extends Controller
             // Get role-specific data
             if ($userRole === 'admin') {
                 $roleSpecificData = Admin::where('user_id', $user->id)->first();
+                
+                // Add registration ID and join date for admin
+                if ($roleSpecificData) {
+                    $roleSpecificData->admin_id = $userRegistration->registration_id;
+                    $roleSpecificData->created_at = $userRegistration->created_at;
+                }
             } elseif ($userRole === 'teacher') {
                 $roleSpecificData = Teacher::where('user_id', $user->id)->first();
-                // Get teacher's courses
-                $roleSpecificData->courses = $roleSpecificData->courses ?? [];
+                
+                // Add teacher registration ID and join date
+                if ($userRegistration) {
+                    $roleSpecificData->teacher_id = $userRegistration->registration_id; // Use registration_id as teacher_id
+                    $roleSpecificData->created_at = $userRegistration->created_at;
+                }
+                
+                // Get teacher's courses with students count and timetables - ensure timetables are loaded
+                if ($roleSpecificData) {
+                    // Use eager loading to get courses with related data
+                    $courses = $roleSpecificData->courses()
+                        ->with(['students', 'timeTables']) // Make sure timeTables relationship is loaded
+                        ->get();
+                    
+                    // Debug logging to verify timetables data
+                    \Log::debug('Teacher courses with timetables:', [
+                        'teacher_id' => $roleSpecificData->tea_id,
+                        'courses_count' => $courses->count(),
+                        'first_course_timetables' => $courses->first() ? $courses->first()->timeTables->toArray() : 'No courses'
+                    ]);
+                    
+                    // Add students count to each course
+                    $courses = $courses->map(function($course) {
+                        $course->students_count = $course->students->count();
+                        
+                        // Make sure timeTables is accessible as a property
+                        $course->timeTables = $course->timeTables;
+                        
+                        return $course;
+                    });
+                    
+                    $roleSpecificData->courses = $courses;
+                } else {
+                    $roleSpecificData->courses = [];
+                }
             } elseif ($userRole === 'student') {
                 $roleSpecificData = Student::where('user_id', $user->id)->first();
-                // Get student's registered courses
-                $roleSpecificData->courses = $roleSpecificData->registeredCourses ?? [];
+                
+                // Get student's registered courses with status from pivot table
+                if ($roleSpecificData) {
+                    $roleSpecificData->courses = $roleSpecificData->courses()->get()->map(function($course) {
+                        return [
+                            'course_id' => $course->course_id,
+                            'course_name' => $course->course_name,
+                            'grade' => $course->grade,
+                            'status' => $course->pivot->status // Get status from pivot table
+                        ];
+                    })->toArray();
+                    
+                    // Load parent information
+                    if ($roleSpecificData->parent_id) {
+                        $roleSpecificData->parent = $roleSpecificData->parent;
+                    }
+                }
             }
         }
         
@@ -104,10 +158,17 @@ class ProfileController extends Controller
             if ($userRegistration->role) {
                 $userRole = strtolower($userRegistration->role->role_name);
                 
-                if ($userRole === 'admin' && $request->has('nic')) {
-                    Admin::where('user_id', $user->id)->update([
-                        'nic' => $request->nic,
+                if ($userRole === 'admin') {
+                    // Validate admin-specific fields
+                    $adminValidated = $request->validate([
+                        'nic' => 'required|string|max:25',
                     ]);
+                    
+                    // Update admin data
+                    Admin::updateOrCreate(
+                        ['user_id' => $user->id],
+                        ['nic' => $adminValidated['nic']]
+                    );
                 } elseif ($userRole === 'teacher') {
                     if ($request->has('nic') && $request->has('qualifications')) {
                         Teacher::where('user_id', $user->id)->update([
@@ -117,11 +178,19 @@ class ProfileController extends Controller
                     }
                 } elseif ($userRole === 'student') {
                     if ($request->has('parent_info')) {
-                        // Handle parent information update
-                        $student = Student::where('user_id', $user->id)->first();
-                        if ($student && $student->parent_id) {
-                            $parent = $student->parent;
-                            $parent->update($request->parent_info);
+                        $studentModel = Student::where('user_id', $user->id)->first();
+                        
+                        if ($studentModel && $studentModel->parent_id) {
+                            // Get parent model
+                            $parent = $studentModel->parent;
+                            
+                            // Update with the correct field names
+                            $parent->update([
+                                'parent_first_name' => $request->parent_info['first_name'],
+                                'parent_last_name' => $request->parent_info['last_name'],
+                                'parent_phone_number' => $request->parent_info['tel_no'],
+                                'relationship_type' => $request->parent_info['relationship_type']
+                            ]);
                         }
                     }
                 }

@@ -37,7 +37,7 @@ class Student extends Model
     // get the parent of the student
     public function parent() :BelongsTo
     {
-        return $this->belongsTo(Parent::class, 'parent_id', 'parent_id');
+        return $this->belongsTo(Parents::class, 'parent_id', 'parent_id');
     }
 
     // get the QR of the student

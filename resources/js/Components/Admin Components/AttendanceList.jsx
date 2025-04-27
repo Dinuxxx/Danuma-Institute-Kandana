@@ -19,6 +19,7 @@ const AttendanceList = () => {
   const [selectAll, setSelectAll] = useState(false);
   const [attendanceData, setAttendanceData] = useState([]);
   const [error, setError] = useState(null);
+  const [formErrors, setFormErrors] = useState({});
 
   // Modal state for edit/delete
   const [showEditModal, setShowEditModal] = useState(false);
@@ -136,12 +137,6 @@ const AttendanceList = () => {
       const grade = item?.student?.grade || 'N/A';
       const studentId = item?.student?.student_id || 'N/A';
       
-      // Get course info
-      const courseAttendance = item?.courseAttendances?.[0] || {};
-      const course = courseAttendance?.course || {};
-      const courseId = course?.course_id || 'N/A';
-      const courseName = course?.course_name || 'N/A';
-      
       // Format dates and times
       const attendanceDate = item?.date ? new Date(item.date).toLocaleDateString() : 'N/A';
       
@@ -154,11 +149,28 @@ const AttendanceList = () => {
         ? new Date(item.check_out_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
         : "Not checked out";
       
-      // Format status
-      const status = courseAttendance?.status || "N/A";
+      // Get course info with better handling for missing data
+      let courseDisplay = "Not enrolled";
+      let status = "N/A";
+      let statusClass = "inline-block px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800";
+      
+      // First check if we have formatted course info from backend
+      if (item?.formatted_course_info) {
+        courseDisplay = `${item.formatted_course_info.course_id} - ${item.formatted_course_info.course_name}`;
+        status = item.formatted_course_info.status;
+      } else {
+        // Fallback to original method if needed
+        const courseAttendance = item?.courseAttendances?.[0];
+        if (courseAttendance && courseAttendance.course) {
+          const course = courseAttendance.course;
+          if (course.course_id && course.course_name) {
+            courseDisplay = `${course.course_id} - ${course.course_name}`;
+            status = courseAttendance.status || "N/A";
+          }
+        }
+      }
       
       // Handle status styling
-      let statusClass = "";
       switch (status.toLowerCase()) {
         case "present":
           statusClass = "inline-block px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800";
@@ -182,7 +194,7 @@ const AttendanceList = () => {
         Name: `${firstName} ${lastName}`,
         Grade: grade,
         Date: attendanceDate,
-        Course: `${courseId} - ${courseName}`,
+        Course: courseDisplay,
         "Check-In Time": checkInTime,
         "Check-Out Time": checkOutTime,
         Status: <span className={statusClass}>{status}</span>,
@@ -292,36 +304,38 @@ const AttendanceList = () => {
     
     setCurrentRecord(record);
     
-    // Parse times for the form
-    let checkInTime = '';
-    if (record.check_in_time) {
+    // Format times for the form - improve time parsing
+    const formatTimeForInput = (timeString) => {
+      if (!timeString) return '';
+      
       try {
-        const checkInDate = new Date(record.check_in_time);
-        checkInTime = checkInDate instanceof Date && !isNaN(checkInDate) ? 
-          checkInDate.toTimeString().slice(0, 5) : "";
+        // Handle various time formats that might come from the API
+        const time = typeof timeString === 'string' 
+          ? new Date(timeString) 
+          : timeString;
+          
+        if (time instanceof Date && !isNaN(time)) {
+          return time.toTimeString().slice(0, 5); // HH:MM format for input[type="time"]
+        }
       } catch (e) {
-        console.error("Error parsing check-in time:", e);
+        console.error("Error parsing time:", e);
       }
+      return '';
+    };
+    
+    // Get status with better handling
+    let status = "Present";
+    if (record.courseAttendances && record.courseAttendances.length > 0) {
+      status = record.courseAttendances[0].status || "Present";
+    } else if (record.formatted_course_info) {
+      status = record.formatted_course_info.status || "Present";
     }
     
-    let checkOutTime = '';
-    if (record.check_out_time) {
-      try {
-        const checkOutDate = new Date(record.check_out_time);
-        checkOutTime = checkOutDate instanceof Date && !isNaN(checkOutDate) ? 
-          checkOutDate.toTimeString().slice(0, 5) : "";
-      } catch (e) {
-        console.error("Error parsing check-out time:", e);
-      }
-    }
-    
-    // Set form data
+    // Set form data with better time parsing
     setEditForm({
-      checkInTime: checkInTime,
-      checkOutTime: checkOutTime,
-      status: record.courseAttendances && record.courseAttendances.length > 0 
-        ? record.courseAttendances[0].status 
-        : "Present"
+      checkInTime: formatTimeForInput(record["Check-In Time"] !== "Not checked in" ? record["Check-In Time"] : ''),
+      checkOutTime: formatTimeForInput(record["Check-Out Time"] !== "Not checked out" ? record["Check-Out Time"] : ''),
+      status: status.charAt(0).toUpperCase() + status.slice(1).toLowerCase() // Normalize capitalization
     });
     
     setShowEditModal(true);
@@ -334,32 +348,57 @@ const AttendanceList = () => {
     setShowDeleteModal(true);
   }
 
-  // Handle edit form changes
-  function handleEditFormChange(e) {
-    const { name, value } = e.target;
-    setEditForm({
-      ...editForm,
-      [name]: value
-    });
+  function validateForm(form) {
+    const errors = {};
+    
+    // Check if check-out time is after check-in time if both are provided
+    if (form.checkInTime && form.checkOutTime) {
+      const checkIn = new Date(`2000-01-01T${form.checkInTime}`);
+      const checkOut = new Date(`2000-01-01T${form.checkOutTime}`);
+      
+      if (checkOut < checkIn) {
+        errors.checkOutTime = "Check-out time must be after check-in time";
+      }
+    }
+    
+    return errors;
   }
-
-  // Handle edit save
+  
   async function handleEditSave() {
     if (!currentRecord?.att_id) {
       toast.error("Invalid record ID");
       return;
     }
     
+    const errors = validateForm(editForm);
+    if (Object.keys(errors).length > 0) {
+      // Show validation errors
+      Object.values(errors).forEach(error => toast.error(error));
+      return;
+    }
+    
     try {
       setLoading(true);
+      
+      // Get course ID with better handling
+      let courseId = null;
+      if (currentRecord.formatted_course_info) {
+        courseId = currentRecord.formatted_course_info.course_id;
+      } else if (currentRecord.courseAttendances?.[0]?.course_id) {
+        courseId = currentRecord.courseAttendances[0].course_id;
+      }
       
       // Format data for submission
       const formData = {
         check_in_time: editForm.checkInTime,
         check_out_time: editForm.checkOutTime,
-        status: editForm.status,
-        course_id: currentRecord.courseAttendances?.[0]?.course_id
+        status: editForm.status
       };
+      
+      // Only include course_id if we have one
+      if (courseId) {
+        formData.course_id = courseId;
+      }
       
       console.log("Updating attendance with data:", formData);
       
@@ -381,6 +420,14 @@ const AttendanceList = () => {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleEditFormChange(e) {
+    const { name, value } = e.target;
+    setEditForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
   }
 
   // Handle delete confirmation
@@ -751,10 +798,13 @@ const AttendanceList = () => {
               <input 
                 type="time" 
                 name="checkOutTime"
-                className="border rounded w-full py-2 px-3" 
+                className={`border rounded w-full py-2 px-3 ${formErrors.checkOutTime ? 'border-red-500' : ''}`}
                 value={editForm.checkOutTime}
                 onChange={handleEditFormChange}
               />
+              {formErrors.checkOutTime && (
+                <p className="text-red-500 text-xs italic">{formErrors.checkOutTime}</p>
+              )}
             </div>
             
             <div className="mb-4">
@@ -770,7 +820,6 @@ const AttendanceList = () => {
                 <option value="Present">Present</option>
                 <option value="Absent">Absent</option>
                 <option value="Late">Late</option>
-                <option value="Excused">Excused</option>
               </select>
             </div>
             
@@ -778,14 +827,24 @@ const AttendanceList = () => {
               <button 
                 className="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded"
                 onClick={() => setShowEditModal(false)}
+                disabled={loading}
               >
                 Cancel
               </button>
               <button 
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center ${loading ? 'opacity-75' : ''}`}
                 onClick={handleEditSave}
+                disabled={loading}
               >
-                Save Changes
+                {loading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving...
+                  </>
+                ) : 'Save Changes'}
               </button>
             </div>
           </div>

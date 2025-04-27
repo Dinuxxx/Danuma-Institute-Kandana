@@ -45,39 +45,71 @@ class StudentAttendanceController extends Controller
                 ], 404);
             }
             
-            // Start with a base query for this student only
-            $query = Attendance::with([
-                'student', 
-                'student.user', 
-                'student.user.registration', 
-                'courseAttendances', 
-                'courseAttendances.course'
-            ])->where('student_id', $student->student_id);
+            // Create a query to join the necessary tables directly
+            $query = DB::table('attendances')
+                ->select(
+                    'attendances.att_id',
+                    'attendances.date',
+                    'attendances.check_in_time',
+                    'attendances.check_out_time',
+                    'course_attendances.status',
+                    'courses.course_id',
+                    'courses.course_name',
+                    'time_tables.start_time',
+                    'time_tables.end_time'
+                )
+                ->leftJoin('course_attendances', 'attendances.att_id', '=', 'course_attendances.att_id')
+                ->leftJoin('courses', 'course_attendances.course_id', '=', 'courses.course_id')
+                ->leftJoin('time_tables', 'course_attendances.for_slot', '=', 'time_tables.ttable_id')
+                ->where('attendances.student_id', $student->student_id);
             
             // Apply filters
             if ($request->has('date') && $request->date) {
-                $query->whereDate('date', $request->date);
+                $query->whereDate('attendances.date', $request->date);
             }
             
             if ($request->has('course_id') && $request->course_id) {
-                $query->whereHas('courseAttendances', function($q) use ($request) {
-                    $q->where('course_id', $request->course_id);
-                });
+                $query->where('courses.course_id', $request->course_id);
             }
+            
+            // Sort by date descending
+            $query->orderBy('attendances.date', 'desc');
             
             // Get pagination parameters from request or use defaults
             $perPage = $request->input('perPage', 10);
             $page = $request->input('page', 1);
             
-            $attendances = $query->orderBy('date', 'desc')->paginate($perPage, ['*'], 'page', $page);
+            // Paginate the results
+            $total = $query->count();
+            $attendances = $query->forPage($page, $perPage)->get();
+            
+            // Format the results
+            $formattedAttendances = $attendances->map(function($item) {
+                return [
+                    'att_id' => $item->att_id,
+                    'date' => $item->date,
+                    'check_in_time' => $item->check_in_time,
+                    'check_out_time' => $item->check_out_time,
+                    'courseAttendances' => [
+                        [
+                            'status' => $item->status ?? 'Not Marked',
+                            'course' => $item->course_id ? [
+                                'course_id' => $item->course_id,
+                                'course_name' => $item->course_name
+                            ] : null
+                        ]
+                    ]
+                ];
+            });
             
             return response()->json([
-                'data' => $attendances->items(),
-                'total' => $attendances->total(),
-                'current_page' => $attendances->currentPage(),
-                'per_page' => $attendances->perPage(),
-                'last_page' => $attendances->lastPage()
+                'data' => $formattedAttendances,
+                'total' => $total,
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'last_page' => ceil($total / $perPage)
             ]);
+            
         } catch (\Exception $e) {
             // Log the error for server-side debugging
             \Log::error('Student attendance report error: ' . $e->getMessage());
@@ -138,39 +170,29 @@ class StudentAttendanceController extends Controller
                 ], 404);
             }
             
-            // Today's attendance count
-            $today = Carbon::today()->toDateString();
-            $todayAttendance = Attendance::where('student_id', $student->student_id)
-                ->whereDate('date', $today)
-                ->with('courseAttendances')
-                ->first();
-            
             // This month's attendance stats
             $thisMonthStart = Carbon::now()->startOfMonth()->toDateString();
             $thisMonthEnd = Carbon::now()->endOfMonth()->toDateString();
             
-            $monthlyAttendances = CourseAttendance::join('attendances', 'course_attendances.att_id', '=', 'attendances.att_id')
+            $monthlyAttendances = DB::table('course_attendances')
+                ->join('attendances', 'course_attendances.att_id', '=', 'attendances.att_id')
                 ->where('attendances.student_id', $student->student_id)
                 ->whereBetween('attendances.date', [$thisMonthStart, $thisMonthEnd])
+                ->select('course_attendances.status')
                 ->get();
             
             // Calculate statistics
             $present = $monthlyAttendances->where('status', 'present')->count();
             $absent = $monthlyAttendances->where('status', 'absent')->count();
             $late = $monthlyAttendances->where('status', 'late')->count();
-            $excused = $monthlyAttendances->where('status', 'excused')->count();
             $total = $monthlyAttendances->count();
             
             return response()->json([
-                'today_status' => $todayAttendance && $todayAttendance->courseAttendances->isNotEmpty() 
-                    ? $todayAttendance->courseAttendances[0]->status 
-                    : 'Not marked',
                 'present' => $present,
                 'absent' => $absent,
                 'late' => $late,
-                'excused' => $excused,
                 'total' => $total,
-                'attendance_rate' => $total > 0 ? round(($present / $total) * 100, 2) : 0
+                'attendance_rate' => $total > 0 ? round((($present + $late) / $total) * 100, 2) : 0
             ]);
         } catch (\Exception $e) {
             return response()->json([

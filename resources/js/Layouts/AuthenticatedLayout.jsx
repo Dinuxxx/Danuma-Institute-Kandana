@@ -16,7 +16,7 @@ export default function AuthenticatedLayout({ children, title }) {
         const rolePrefix = `/${userRole}`;
         
         // List of paths exempt from role-based path checking
-        const exemptPaths = ['/profile', '/test-profile'];
+        const exemptPaths = ['/profile', '/test-profile', '/settings'];
         
         if (userRole === 'guest') {
             return false;

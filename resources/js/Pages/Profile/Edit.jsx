@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import InputError from '@/Components/InputError';
@@ -15,14 +15,14 @@ export default function Edit({ auth, user, userRegistration, userRole, roleSpeci
     // Check if userRegistration exists, if not provide default values
     const registration = userRegistration || {};
     
-    const [profileImage, setProfileImage] = useState(null);
+    const fileInputRef = useRef(null);
     const [imagePreview, setImagePreview] = useState(
         registration.image 
             ? `/storage/profiles/${registration.image}` 
-            : '/images/default-profile.png'
+            : '/images/default-avatar-svg.svg'
     );
     
-    const { data, setData, post,patch, errors, processing } = useForm({
+    const { data, setData, patch, errors, processing, reset } = useForm({
         title: registration.title || '',
         first_name: registration.first_name || '',
         last_name: registration.last_name || '',
@@ -50,9 +50,9 @@ export default function Edit({ auth, user, userRegistration, userRole, roleSpeci
                 return {
                     grade: roleData.grade || '',
                     parent_info: roleData.parent ? {
-                        first_name: roleData.parent.first_name || '',
-                        last_name: roleData.parent.last_name || '',
-                        tel_no: roleData.parent.tel_no || '',
+                        first_name: roleData.parent.parent_first_name || '',
+                        last_name: roleData.parent.parent_last_name || '',
+                        tel_no: roleData.parent.parent_phone_number || '',
                         relationship_type: roleData.parent.relationship_type || '',
                     } : {}
                 };
@@ -61,10 +61,13 @@ export default function Edit({ auth, user, userRegistration, userRole, roleSpeci
         }
     }
 
+    const handleImageClick = () => {
+        fileInputRef.current.click();
+    };
+
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setProfileImage(file);
             setData('image', file);
             setImagePreview(URL.createObjectURL(file));
         }
@@ -73,18 +76,19 @@ export default function Edit({ auth, user, userRegistration, userRole, roleSpeci
     const submit = (e) => {
         e.preventDefault();
         patch(route('profile.update'), {
-            preserveScroll: true,
             onSuccess: () => {
-                // Reset image form field
+                // Reset image form field only
                 setData('image', null);
             },
+            preserveScroll: true,
+            forceFormData: true, // Force FormData for file upload
         });
     };
 
     const renderRoleSpecificForm = () => {
         switch (userRole) {
             case 'admin':
-                return <AdminProfile data={data} setData={setData} errors={errors} />;
+                return <AdminProfile data={data} setData={setData} errors={errors} roleSpecificData={roleSpecificData} />;
             case 'teacher':
                 return <TeacherProfile data={data} setData={setData} errors={errors} roleSpecificData={roleSpecificData} />;
             case 'student':
@@ -124,13 +128,13 @@ export default function Edit({ auth, user, userRegistration, userRole, roleSpeci
         >
             <Head title="Profile" />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+            <div className="py-4">
+                <div className="mx-auto sm:px-6 lg:px-8 space-y-6">
                     {flash.message && <Message message={flash.message} />}
                     {renderInfoMessage()}
                     
                     <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                        <section className="max-w-xl">
+                        <section>
                             <header>
                                 <h2 className="text-lg font-medium text-gray-900">Profile Information</h2>
                                 <p className="mt-1 text-sm text-gray-600">
@@ -138,33 +142,83 @@ export default function Edit({ auth, user, userRegistration, userRole, roleSpeci
                                 </p>
                             </header>
 
-                            <form onSubmit={submit} className="mt-6 space-y-6">
-                                <div className="flex flex-col md:flex-row md:space-x-6">
-                                    {/* Profile Image Section */}
-                                    <div className="mb-6 md:mb-0">
-                                        <div className="mb-4">
-                                            <img 
-                                                src={imagePreview} 
-                                                alt="Profile" 
-                                                className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
-                                            />
+                            <form onSubmit={submit} className="mt-6 space-y-6" encType="multipart/form-data">
+                                {/* Centered Profile Image Section */}
+                                <div className="flex justify-center mb-8">
+                                    <div 
+                                        className="relative rounded-full overflow-hidden cursor-pointer group"
+                                        onClick={handleImageClick}
+                                    >
+                                        <img 
+                                            src={imagePreview} 
+                                            alt="Profile" 
+                                            className="w-40 h-40 object-cover rounded-full border-4 border-gray-200"
+                                        />
+                                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <span className="text-white text-sm font-medium">Change Photo</span>
                                         </div>
+                                    </div>
+                                    <input
+                                        type="file"
+                                        id="image"
+                                        ref={fileInputRef}
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={handleImageChange}
+                                    />
+                                </div>
+
+                                {/* Profile Information Layout */}
+                                <div className="space-y-6">
+                                    {/* First Row - Title, First Name, Last Name */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <div>
-                                            <input
-                                                type="file"
-                                                id="image"
-                                                accept="image/*"
-                                                onChange={handleImageChange}
-                                                className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
-                                                file:rounded-md file:border-0 file:text-sm file:font-semibold
-                                                file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                                            <InputLabel htmlFor="title" value="Title" />
+                                            <SelectInput
+                                                id="title"
+                                                className="mt-1 block w-full"
+                                                value={data.title}
+                                                onChange={(e) => setData('title', e.target.value)}
+                                                options={[
+                                                    { value: '', label: 'Select Title' },
+                                                    { value: 'Mr', label: 'Mr' },
+                                                    { value: 'Mrs', label: 'Mrs' },
+                                                    { value: 'Miss', label: 'Miss' },
+                                                    { value: 'Dr', label: 'Dr' },
+                                                    { value: 'Prof', label: 'Prof' }
+                                                ]}
                                             />
+                                            <InputError message={errors.title} className="mt-2" />
+                                        </div>
+
+                                        <div>
+                                            <InputLabel htmlFor="first_name" value="First Name" />
+                                            <TextInput
+                                                id="first_name"
+                                                className="mt-1 block w-full"
+                                                value={data.first_name}
+                                                onChange={(e) => setData('first_name', e.target.value)}
+                                                required
+                                            />
+                                            <InputError message={errors.first_name} className="mt-2" />
+                                        </div>
+
+                                        <div>
+                                            <InputLabel htmlFor="last_name" value="Last Name" />
+                                            <TextInput
+                                                id="last_name"
+                                                className="mt-1 block w-full"
+                                                value={data.last_name}
+                                                onChange={(e) => setData('last_name', e.target.value)}
+                                                required
+                                            />
+                                            <InputError message={errors.last_name} className="mt-2" />
                                         </div>
                                     </div>
 
-                                    {/* Basic Information Section */}
-                                    <div className="flex-1">
-                                        <div className="mb-6">
+                                    {/* Second Row - Email and Phone */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
                                             <InputLabel htmlFor="email" value="Email" />
                                             <TextInput
                                                 id="email"
@@ -177,77 +231,31 @@ export default function Edit({ auth, user, userRegistration, userRole, roleSpeci
                                             <InputError message={errors.email} className="mt-2" />
                                         </div>
 
-                                        {userRegistration && (
-                                            <>
-                                                <div className="mb-6">
-                                                    <InputLabel htmlFor="title" value="Title" />
-                                                    <SelectInput
-                                                        id="title"
-                                                        className="mt-1 block w-full"
-                                                        value={data.title}
-                                                        onChange={(e) => setData('title', e.target.value)}
-                                                        options={[
-                                                            { value: '', label: 'Select Title' },
-                                                            { value: 'Mr', label: 'Mr' },
-                                                            { value: 'Mrs', label: 'Mrs' },
-                                                            { value: 'Miss', label: 'Miss' },
-                                                            { value: 'Dr', label: 'Dr' },
-                                                            { value: 'Prof', label: 'Prof' }
-                                                        ]}
-                                                    />
-                                                    <InputError message={errors.title} className="mt-2" />
-                                                </div>
+                                        <div>
+                                            <InputLabel htmlFor="tel_no" value="Phone Number" />
+                                            <TextInput
+                                                id="tel_no"
+                                                className="mt-1 block w-full"
+                                                value={data.tel_no}
+                                                onChange={(e) => setData('tel_no', e.target.value)}
+                                                required
+                                            />
+                                            <InputError message={errors.tel_no} className="mt-2" />
+                                        </div>
+                                    </div>
 
-                                                <div className="mb-6">
-                                                    <InputLabel htmlFor="first_name" value="First Name" />
-                                                    <TextInput
-                                                        id="first_name"
-                                                        className="mt-1 block w-full"
-                                                        value={data.first_name}
-                                                        onChange={(e) => setData('first_name', e.target.value)}
-                                                        required
-                                                    />
-                                                    <InputError message={errors.first_name} className="mt-2" />
-                                                </div>
-
-                                                <div className="mb-6">
-                                                    <InputLabel htmlFor="last_name" value="Last Name" />
-                                                    <TextInput
-                                                        id="last_name"
-                                                        className="mt-1 block w-full"
-                                                        value={data.last_name}
-                                                        onChange={(e) => setData('last_name', e.target.value)}
-                                                        required
-                                                    />
-                                                    <InputError message={errors.last_name} className="mt-2" />
-                                                </div>
-
-                                                <div className="mb-6">
-                                                    <InputLabel htmlFor="tel_no" value="Phone Number" />
-                                                    <TextInput
-                                                        id="tel_no"
-                                                        className="mt-1 block w-full"
-                                                        value={data.tel_no}
-                                                        onChange={(e) => setData('tel_no', e.target.value)}
-                                                        required
-                                                    />
-                                                    <InputError message={errors.tel_no} className="mt-2" />
-                                                </div>
-
-                                                <div className="mb-6">
-                                                    <InputLabel htmlFor="address" value="Address" />
-                                                    <textarea
-                                                        id="address"
-                                                        className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                                        value={data.address}
-                                                        onChange={(e) => setData('address', e.target.value)}
-                                                        rows="3"
-                                                        required
-                                                    />
-                                                    <InputError message={errors.address} className="mt-2" />
-                                                </div>
-                                            </>
-                                        )}
+                                    {/* Third Row - Address */}
+                                    <div>
+                                        <InputLabel htmlFor="address" value="Address" />
+                                        <textarea
+                                            id="address"
+                                            className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                            value={data.address}
+                                            onChange={(e) => setData('address', e.target.value)}
+                                            rows="3"
+                                            required
+                                        />
+                                        <InputError message={errors.address} className="mt-2" />
                                     </div>
                                 </div>
 
@@ -256,6 +264,10 @@ export default function Edit({ auth, user, userRegistration, userRole, roleSpeci
 
                                 <div className="flex items-center gap-4">
                                     <PrimaryButton disabled={processing}>Save</PrimaryButton>
+                                    
+                                    {flash.message && processing === false && (
+                                        <p className="text-sm text-green-600">Saved.</p>
+                                    )}
                                 </div>
                             </form>
                         </section>

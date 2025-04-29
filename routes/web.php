@@ -15,6 +15,7 @@ use App\Http\Controllers\StudentNoticeController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\StudentAttendanceController;
 use App\Http\Controllers\UsersController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\Auth\VerifyEmailController;
@@ -74,7 +75,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/attendance/stats', [AttendanceController::class, 'getAttendanceStats'])->name('admin.attendance.stats');
         Route::put('/attendance/{attendance}', [AttendanceController::class, 'updateAttendance'])->name('admin.attendance.update');
         Route::delete('/attendance/{attendance}', [AttendanceController::class, 'deleteAttendance'])->name('admin.attendance.delete');
-        
+        Route::get('/attendance/summary', [AttendanceController::class, 'getAttendanceSummary'])->name('admin.attendance.summary');
+
         // Legacy route - can be removed or redirected
         Route::get('/attendance/mark-attendance', function () {
             return Inertia::render('Admin/MarkAttendance');
@@ -89,6 +91,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/users', function () {
             return Inertia::render('Admin/Users');
         });
+
+        Route::delete('/users/delete', [UsersController::class, 'destroy']);
         
         Route::get('/notices', function () {
             return Inertia::render('Admin/Notices');
@@ -184,7 +188,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/attendance', [StudentAttendanceController::class, 'index'])->name('student.attendance');
         Route::get('/attendance/report', [StudentAttendanceController::class, 'getAttendanceReport'])->name('student.attendance.report');
         Route::get('/attendance/stats', [StudentAttendanceController::class, 'getAttendanceStats'])->name('student.attendance.stats');
-        Route::get('/getStudentCourses', [StudentAttendanceController::class, 'getStudentCourses'])->name('student.courses');
+        Route::get('/courses/list', [StudentAttendanceController::class, 'getStudentCourses'])->name('student.courses.list');
         
         Route::get('/exams', function () {
             return Inertia::render('Student/Exams');
@@ -252,6 +256,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/admin/attendance/check-in', [AttendanceController::class, 'checkIn']);
     Route::post('/admin/attendance/check-out', [AttendanceController::class, 'checkOut']);
     Route::post('/admin/attendance/qr', [AttendanceController::class, 'markQRAttendance']);
+    
+    Route::get('/admin/attendance/registered-courses', [PaymentController::class, 'getRegisteredCourses']);
+    Route::get('/admin/payments/student/{studentId}', [PaymentController::class, 'getStudentPaymentHistory']);
+    Route::post('/admin/attendance/process-payment', [PaymentController::class, 'processManualPayment']);
 
     Route::get('/teachers/count', [DashboardController::class, 'getTeachersCount']);
     Route::get('/students/count', [DashboardController::class, 'getStudentsCount']);
@@ -260,6 +268,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/payments/revenue-by-month', [DashboardController::class, 'getRevenueByMonth']);
     Route::get('/students/monthly-registrations', [DashboardController::class, 'getMonthlyRegistrations']);
     Route::get('/courses/distribution', [DashboardController::class, 'getCourseDistribution']);
+
+    Route::get('/notifications', [NotificationController::class, 'getUserNotifications']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+    Route::get('/notifications/{id}/notice', [NotificationController::class, 'showNoticeFromNotification']);
+
+    Route::get('/settings', function () {
+        return Inertia::render('Settings');
+    });
 });
 
 // Profile management

@@ -396,8 +396,8 @@ public function getAttendanceReport(Request $request)
             'student', 
             'student.user', 
             'student.user.registration', 
-            'courseAttendances', 
-            'courseAttendances.course'
+            'courseAttendances.course', // Make sure the course relationship is loaded
+            'courseAttendances.timeSlot' // Load the time slot relationship
         ]);
         
         // Apply filters
@@ -427,8 +427,31 @@ public function getAttendanceReport(Request $request)
         
         $attendances = $query->orderBy('date', 'desc')->paginate($perPage, ['*'], 'page', $page);
         
+        // Format the response data to ensure course information is properly included
+        $formattedItems = collect($attendances->items())->map(function($attendance) {
+            // Extract course information if available
+            $courseInfo = null;
+            if ($attendance->courseAttendances->isNotEmpty()) {
+                $courseAttendance = $attendance->courseAttendances->first();
+                if ($courseAttendance->course) {
+                    $courseInfo = [
+                        'course_id' => $courseAttendance->course->course_id,
+                        'course_name' => $courseAttendance->course->course_name,
+                        'status' => $courseAttendance->status,
+                        'time_slot' => $courseAttendance->timeSlot ? 
+                            $courseAttendance->timeSlot->start_time . ' - ' . $courseAttendance->timeSlot->end_time : 
+                            null
+                    ];
+                }
+            }
+            
+            // Add course info to the attendance data
+            $attendance->formatted_course_info = $courseInfo;
+            return $attendance;
+        });
+        
         return response()->json([
-            'data' => $attendances->items(),
+            'data' => $formattedItems,
             'total' => $attendances->total(),
             'current_page' => $attendances->currentPage(),
             'per_page' => $attendances->perPage(),
@@ -565,58 +588,85 @@ public function getAttendanceReport(Request $request)
     }
 
     /**
-     * Update an attendance record
-     */
-    public function updateAttendance(Request $request, $attendanceId)
-    {
-        $request->validate([
-            'check_in_time' => 'nullable|date',
-            'check_out_time' => 'nullable|date',
-            'status' => 'required|string',
-            'course_id' => 'nullable|exists:courses,course_id',
-        ]);
+ * Update an attendance record
+ */
+public function updateAttendance(Request $request, $attendanceId)
+{
+    $request->validate([
+        'check_in_time' => 'nullable|date',
+        'check_out_time' => 'nullable|date',
+        'status' => 'required|string|in:Present,Absent,Late,Excused', // Validate status values
+        'course_id' => 'nullable|exists:courses,course_id',
+    ]);
 
-        DB::beginTransaction();
-        try {
-            // Find the attendance record
-            $attendance = Attendance::findOrFail($attendanceId);
-            
-            // Update attendance record
-            if ($request->has('check_in_time')) {
-                $attendance->check_in_time = $request->check_in_time;
-            }
-            
-            if ($request->has('check_out_time')) {
-                $attendance->check_out_time = $request->check_out_time;
-            }
-            
-            $attendance->save();
-            
-            // Update course attendance status if course_id is provided
-            if ($request->has('course_id') && $request->course_id) {
-                $courseAttendance = CourseAttendance::where('att_id', $attendanceId)
-                    ->where('course_id', $request->course_id)
-                    ->first();
-                
-                if ($courseAttendance) {
-                    $courseAttendance->status = $request->status;
-                    $courseAttendance->save();
-                }
-            }
-            
-            DB::commit();
-            
-            return response()->json([
-                'message' => 'Attendance record updated successfully',
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'message' => 'Failed to update attendance record',
-                'error' => $e->getMessage()
-            ], 500);
+    DB::beginTransaction();
+    try {
+        // Find the attendance record
+        $attendance = Attendance::findOrFail($attendanceId);
+        
+        // Update attendance record
+        if ($request->has('check_in_time')) {
+            $attendance->check_in_time = $request->check_in_time;
         }
+        
+        if ($request->has('check_out_time')) {
+            $attendance->check_out_time = $request->check_out_time;
+        }
+        
+        // Make sure we record who made the edit
+        $attendance->marked_by = Auth::id();
+        
+        $attendance->save();
+        
+        // Update course attendance status if course_id is provided
+        if ($request->has('course_id') && $request->course_id) {
+            $courseAttendance = CourseAttendance::where('att_id', $attendanceId)
+                ->where('course_id', $request->course_id)
+                ->first();
+            
+            if ($courseAttendance) {
+                $courseAttendance->status = strtolower($request->status); // Ensure lowercase for consistency
+                $courseAttendance->save();
+            } else {
+                // Create a new course attendance record if it doesn't exist
+                // Find an appropriate time slot for this course
+                $timeSlotId = $this->findTimeSlot($request->course_id);
+                
+                CourseAttendance::create([
+                    'att_id' => $attendanceId,
+                    'course_id' => $request->course_id,
+                    'status' => strtolower($request->status),
+                    'for_slot' => $timeSlotId
+                ]);
+            }
+        }
+        
+        DB::commit();
+        
+        // Return updated record for frontend
+        $updatedAttendance = Attendance::with([
+            'student', 
+            'student.user', 
+            'student.user.registration', 
+            'courseAttendances.course',
+            'courseAttendances.timeSlot'
+        ])->findOrFail($attendanceId);
+        
+        return response()->json([
+            'message' => 'Attendance record updated successfully',
+            'data' => $updatedAttendance
+        ]);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Error updating attendance: ' . $e->getMessage());
+        \Log::error($e->getTraceAsString());
+        
+        return response()->json([
+            'message' => 'Failed to update attendance record',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
 
     /**
      * Delete an attendance record
@@ -637,5 +687,114 @@ public function getAttendanceReport(Request $request)
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Get attendance summary data for the specified date
+     */
+    public function getAttendanceSummary(Request $request)
+    {
+        $request->validate([
+            'date' => 'nullable|date',
+        ]);
+
+        // Use the specified date or default to today
+        $date = $request->date ?? Carbon::today()->toDateString();
+        
+        try {
+            // Get courses with scheduled classes for the specified date
+            $dayOfWeek = Carbon::parse($date)->format('l');
+            
+            $courseSummaries = DB::table('courses')
+                ->join('time_tables', 'courses.course_id', '=', 'time_tables.course_id')
+                ->join('teachers', 'courses.teacher_id', '=', 'teachers.tea_id')
+                ->join('users', 'teachers.user_id', '=', 'users.id')
+                ->join('user_registrations', 'users.id', '=', 'user_registrations.user_id')
+                ->where('time_tables.day_of_week', $dayOfWeek)
+                ->select(
+                    'courses.course_id',
+                    'courses.course_name',
+                    'courses.grade',
+                    DB::raw("CONCAT(user_registrations.first_name, ' ', user_registrations.last_name) as teacher_name"),
+                    DB::raw("CONCAT(time_tables.start_time, ' - ', time_tables.end_time) as schedule_time"),
+                    'time_tables.ttable_id'
+                )
+                ->get();
+            
+            // For each course, calculate attendance percentages
+            $summaries = [];
+            foreach ($courseSummaries as $course) {
+                // Count registered students for this course
+                $totalStudents = DB::table('student_courses')
+                    ->where('course_id', $course->course_id)
+                    ->where('status', 'active')
+                    ->count();
+                
+                if ($totalStudents > 0) {
+                    // Count present students for this course on the specified date
+                    $presentStudents = DB::table('attendances')
+                        ->join('course_attendances', 'attendances.att_id', '=', 'course_attendances.att_id')
+                        ->where('course_attendances.course_id', $course->course_id)
+                        ->where('course_attendances.for_slot', $course->ttable_id)
+                        ->whereDate('attendances.date', $date)
+                        ->whereIn('course_attendances.status', ['present', 'late'])
+                        ->count();
+                    
+                    // Count absent students for this course on the specified date
+                    $absentStudents = DB::table('attendances')
+                        ->join('course_attendances', 'attendances.att_id', '=', 'course_attendances.att_id')
+                        ->where('course_attendances.course_id', $course->course_id)
+                        ->where('course_attendances.for_slot', $course->ttable_id)
+                        ->whereDate('attendances.date', $date)
+                        ->where('course_attendances.status', 'absent')
+                        ->count();
+                    
+                    // Calculate percentages
+                    $presentPercentage = min(100, round(($presentStudents / $totalStudents) * 100));
+                    $absentPercentage = min(100, round(($absentStudents / $totalStudents) * 100));
+                    
+                    // Add to summaries array
+                    $summaries[] = [
+                        'course' => $course->course_name,
+                        'grade' => $course->grade,
+                        'teacher' => $course->teacher_name,
+                        'time' => $course->schedule_time,
+                        'present' => $presentPercentage,
+                        'absent' => $absentPercentage,
+                        'total_students' => $totalStudents,
+                        'course_id' => $course->course_id,
+                        'ttable_id' => $course->ttable_id
+                    ];
+                }
+            }
+            
+            return response()->json([
+                'date' => $date,
+                'formatted_date' => Carbon::parse($date)->format('Y/m/d'),
+                'summaries' => $summaries
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching attendance summary: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to fetch attendance summary',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function processPayment(Request $request)
+    {
+        // Validate request
+        $request->validate([
+            'student_id' => 'required|exists:students,student_id',
+            'amount' => 'required|numeric|min:0',
+            'course_ids' => 'required|array',
+            'course_ids.*' => 'exists:courses,course_id',
+            'method' => 'required|string'
+        ]);
+        
+        // Use the PaymentController's processManualPayment method
+        $paymentController = app()->make(PaymentController::class);
+        return $paymentController->processManualPayment($request);
     }
 }

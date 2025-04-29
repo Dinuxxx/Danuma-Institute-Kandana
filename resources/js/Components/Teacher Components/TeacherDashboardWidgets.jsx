@@ -4,7 +4,7 @@ const TeacherDashboardWidgets = ({ data }) => {
   const colors = ["bg-red-500", "bg-purple-500", "bg-green-500", "bg-yellow-500"];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 ">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 ">
       {data.map((item, index) => (
         <div
           key={index}

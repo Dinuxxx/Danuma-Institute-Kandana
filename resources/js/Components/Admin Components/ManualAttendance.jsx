@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Clock, LogIn, LogOut, UserCheck, ArrowLeft, FileCheck, DollarSign, CreditCard, CheckCircle } from 'lucide-react';
+import { Search, Clock, LogIn, LogOut, UserCheck, ArrowLeft, FileCheck, DollarSign, CreditCard, CheckCircle, ChevronRight } from 'lucide-react';
 
 const ManualAttendance = () => {
   const [studentId, setStudentId] = useState('');
@@ -20,6 +20,7 @@ const ManualAttendance = () => {
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [selectedTimeTable, setSelectedTimeTable] = useState(null);
+  const [showPaymentPortal, setShowPaymentPortal] = useState(false);
 
   useEffect(() => {
     // Get the current date
@@ -44,6 +45,11 @@ const ManualAttendance = () => {
       setStudentData(response.data.student);
       setCourses(response.data.courses || []);
       setLoading(false);
+
+      if (response.data.student) {
+        fetchStudentPaymentData(response.data.student.student_id);
+        fetchPaymentHistory(response.data.student.student_id);
+      }
       
       // Clear course selection if there are no courses
       if (response.data.courses?.length === 0) {
@@ -87,12 +93,10 @@ const ManualAttendance = () => {
 
   const fetchStudentPaymentData = async (studentId) => {
     try {
-      // Use the correct API endpoint based on routes file
-      const response = await axios.get(`/student/registered-courses`, {
+      const response = await axios.get(`/admin/attendance/registered-courses`, {
         params: { student_id: studentId }
       });
       
-      // If the endpoint doesn't exist, fall back to dummy data for development
       const paymentCourses = (response.data?.courses || []).map(course => ({
         ...course,
         selected: false
@@ -102,14 +106,6 @@ const ManualAttendance = () => {
       setTotalDue(response.data?.totalDue || 0);
     } catch (error) {
       console.error('Error fetching payment data:', error);
-      
-      // For development: Set dummy data when API fails
-      setSelectedPaymentCourses([
-        { course_id: '1', course_name: 'Mathematics', grade: '10', monthly_fees: 50, selected: false },
-        { course_id: '2', course_name: 'English Language', grade: '10', monthly_fees: 45, selected: false }
-      ]);
-      setTotalDue(95);
-      
       setMessage({ 
         text: 'Unable to fetch payment information', 
         type: 'error' 
@@ -206,6 +202,50 @@ const ManualAttendance = () => {
     }
   };
 
+  const handleCourseChange = (e) => {
+    const courseId = e.target.value;
+    setCourse(courseId);
+    
+    // Find the selected course to get its time table ID
+    if (courseId) {
+      const selectedCourse = courses.find(c => c.course_id === courseId);
+      if (selectedCourse) {
+        setSelectedTimeTable(selectedCourse.ttable_id);
+      }
+    } else {
+      setSelectedTimeTable(null);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      fetchStudentData();
+    }
+  };
+
+  const togglePaymentPortal = () => {
+    setShowPaymentPortal(!showPaymentPortal);
+  };
+
+  const fetchPaymentHistory = async (studentId) => {
+    try {
+      const response = await axios.get(`/admin/payments/student/${studentId}`);
+      
+      const formattedPayments = (response.data?.payments || []).map(payment => ({
+        ...payment,
+        amount: parseFloat(payment.amount || 0)
+      }));
+      
+      setPaymentHistory(formattedPayments);
+    } catch (error) {
+      console.error('Error fetching payment history:', error);
+      setMessage({ 
+        text: 'Unable to fetch payment history', 
+        type: 'error' 
+      });
+    }
+  };
+
   const toggleCourseSelection = (courseId) => {
     const updatedCourses = selectedPaymentCourses.map(course => {
       if (course.course_id === courseId) {
@@ -223,23 +263,8 @@ const ManualAttendance = () => {
     
     setPaymentAmount(selectedAmount);
   };
-
-  const handleCourseChange = (e) => {
-    const courseId = e.target.value;
-    setCourse(courseId);
-    
-    // Find the selected course to get its time table ID
-    if (courseId) {
-      const selectedCourse = courses.find(c => c.course_id === courseId);
-      if (selectedCourse) {
-        setSelectedTimeTable(selectedCourse.ttable_id);
-      }
-    } else {
-      setSelectedTimeTable(null);
-    }
-  };
   
-
+  // Add this to process the payment
   const handlePayment = async () => {
     if (!studentData || paymentAmount <= 0) {
       setMessage({ text: 'Please select at least one course to pay for', type: 'error' });
@@ -268,7 +293,7 @@ const ManualAttendance = () => {
         course_ids: courseIds
       };
       
-      // Use the existing endpoint from the PaymentController
+      // Use the endpoint from the PaymentController
       const response = await axios.post('/admin/attendance/process-payment', paymentData);
       
       setMessage({ 
@@ -301,69 +326,54 @@ const ManualAttendance = () => {
     }
   };
 
-  const fetchPaymentHistory = async (studentId) => {
-    try {
-      const response = await axios.get(`/admin/payments/student/${studentId}`);
-      
-      // Ensure amount values are numbers
-      const formattedPayments = (response.data?.payments || []).map(payment => ({
-        ...payment,
-        amount: parseFloat(payment.amount || 0)
-      }));
-      
-      setPaymentHistory(formattedPayments);
-    } catch (error) {
-      console.error('Error fetching payment history:', error);
-      
-      // For development: Set dummy data when API fails
-      setPaymentHistory([
-        { payment_id: '1', amount: 95, method: 'Cash', created_at: new Date().toISOString(), courses: [{ course_name: 'Mathematics' }, { course_name: 'English Language' }] },
-        { payment_id: '2', amount: 45, method: 'Bank Transfer', created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), courses: [{ course_name: 'English Language' }] }
-      ]);
-    }
-  };
-
   return (
-    <div className="bg-gradient-to-b from-amber-50 to-amber-100 px-6 pt-4 pb-20">
+    <div className=" min-h-screen">
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-xl shadow-xl overflow-hidden">
-          {/* Search Section */}
-          <div className="py-4 px-6 bg-gradient-to-r from-amber-500 to-amber-600">
-            <div className="flex flex-col md:flex-row md:items-end gap-4">
-              <div className="flex-grow">
-                <label htmlFor="studentId" className="block text-white font-medium mb-1 text-lg">
-                  Student ID
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    id="studentId"
-                    className="w-full px-4 py-3 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                    value={studentId}
-                    onChange={handleStudentIdChange}
-                    placeholder="Enter student ID or name"
-                  />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <Search className="h-5 w-5 text-gray-400" />
+          {/* Header with Search Section */}
+          <div className="bg-white rounded-t-xl py-5 px-6 shadow-sm relative overflow-hidden border-b border-gray-200">
+            
+            <div className="flex flex-col md:flex-row justify-between items-end gap-4 relative z-10">
+              <div className="w-full md:w-auto flex flex-col md:flex-row items-end gap-3">
+                <div className="w-full md:w-64 relative group">
+                  <label htmlFor="studentId" className="block text-gray-700 font-medium mb-1 flex items-center">
+                    <span className="mr-2">Student ID</span>
+                    <span className="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full">Required</span>
+                  </label>
+                  <div className="relative transition-all duration-300 transform group-hover:scale-[1.01]">
+                    <input
+                      type="text"
+                      id="studentId"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 focus:outline-none transition-all duration-300"
+                      value={studentId}
+                      onChange={handleStudentIdChange}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Enter Student ID"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <Search className="h-5 w-5 text-gray-400" />
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div>
+                
                 <button 
-                  onClick={fetchStudentData}
-                  className="w-full md:w-auto px-6 py-3 bg-amber-800 text-white rounded-lg shadow-md hover:bg-amber-900 transition-colors flex items-center justify-center gap-2 font-medium"
+                  onClick={() => {
+                    fetchStudentData();
+                    setStudentId(''); // Clear the student ID field after searching
+                  }}
+                  className="px-6 py-3 bg-amber-600 text-white rounded-lg shadow-md hover:bg-amber-700 transition-all duration-300 flex items-center justify-center gap-2 font-medium flex-shrink-0 transform hover:-translate-y-0.5 hover:shadow-lg group"
                   disabled={loading}
                 >
                   {loading ? (
                     <>
-                      <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                      <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
                       <span>Searching...</span>
                     </>
                   ) : (
                     <>
-                      <UserCheck className="h-5 w-5" />
-                      <span>Find Student</span>
+                      <span className="group-hover:scale-105 transition-transform duration-300">Find Student</span>
+                      <ChevronRight className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </>
                   )}
                 </button>
@@ -373,7 +383,7 @@ const ManualAttendance = () => {
 
           {/* Message Section */}
           {message.text && (
-            <div className={`px-6 py-4 ${message.type === 'error' ? 'bg-red-50 text-red-700 border-l-4 border-red-500' : 'bg-green-50 text-green-700 border-l-4 border-green-500'}`}>
+            <div className={`px-6 py-3 ${message.type === 'error' ? 'bg-red-50 text-red-700 border-l-4 border-red-500' : 'bg-green-50 text-green-700 border-l-4 border-green-500'}`}>
               <div className="flex items-center">
                 <div className={`h-8 w-8 flex items-center justify-center rounded-full ${message.type === 'error' ? 'bg-red-100' : 'bg-green-100'} mr-4`}>
                   {message.type === 'error' ? (
@@ -395,11 +405,11 @@ const ManualAttendance = () => {
           <div className="p-6">
             {studentData ? (
               <>
-                {/* Student Info Card */}
+                {/* Student Info Card - Improved design */}
                 <div className="bg-gradient-to-r from-amber-50 to-amber-100 p-4 rounded-lg shadow-sm mb-6">
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="flex-shrink-0">
-                      <div className="w-24 h-24 md:w-28 md:h-28 rounded-lg overflow-hidden shadow-md bg-white flex items-center justify-center border-2 border-amber-200">
+                      <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md bg-white flex items-center justify-center border-2 border-amber-200">
                         {studentData.image ? (
                           <img
                             src={studentData.image}
@@ -408,7 +418,7 @@ const ManualAttendance = () => {
                           />
                         ) : (
                           <div className="text-amber-500">
-                            <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
                           </div>
@@ -417,9 +427,20 @@ const ManualAttendance = () => {
                     </div>
                     
                     <div className="flex-grow space-y-1">
-                      <div className="flex justify-between items-start">
+                      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
                         <h2 className="text-2xl font-bold text-gray-800">{`${studentData.first_name} ${studentData.last_name}`}</h2>
-                        <span className="bg-amber-200 text-amber-800 text-sm px-3 py-1 rounded-full font-medium">{currentDate}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="bg-amber-200 text-amber-800 text-sm px-3 py-1 rounded-full font-medium">{currentDate}</span>
+                          {!showPaymentPortal && (
+                            <button 
+                              onClick={togglePaymentPortal}
+                              className="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-1 rounded-full font-medium flex items-center gap-1 transition-colors shadow-sm"
+                            >
+                              <DollarSign className="h-4 w-4" />
+                              <span>Payments</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                       <div className="flex flex-wrap gap-4 mt-2">
                         <p className="text-gray-600 flex items-center">
@@ -430,18 +451,33 @@ const ManualAttendance = () => {
                           <span className="font-medium mr-2">Grade:</span> 
                           <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded font-medium">{studentData.grade}</span>
                         </p>
+                        {!showPaymentPortal && (
+                          <p className="text-gray-600 flex items-center">
+                            <span className="font-medium mr-2">Balance:</span> 
+                            <span className="bg-green-100 text-green-700 px-3 py-1 rounded font-medium">Rs.{totalDue.toFixed(2)}</span>
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Split View Container */}
-                <div className="flex flex-col lg:flex-row gap-6">
-                  {/* Attendance Section - 60% width */}
-                  <div className="lg:w-3/5 bg-white border border-gray-200 rounded-lg shadow-sm p-5">
-                    <div className="flex items-center gap-2 border-b border-gray-200 pb-4 mb-5">
-                      <Clock className="h-6 w-6 text-amber-600" />
-                      <h3 className="text-xl font-semibold text-gray-800">Attendance Management</h3>
+                <div className={`flex gap-6 ${showPaymentPortal ? 'flex-col lg:flex-row' : 'justify-center'}`}>
+                  <div className={`${showPaymentPortal ? 'lg:w-3/5' : 'max-w-2xl w-full'} bg-white border border-gray-200 rounded-lg shadow-sm p-5 transition-all duration-300`}>
+                    <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-5">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-6 w-6 text-amber-600" />
+                        <h3 className="text-xl font-semibold text-gray-800">Attendance Management</h3>
+                      </div>
+                      {showPaymentPortal && (
+                        <button 
+                          onClick={togglePaymentPortal} 
+                          className="text-amber-600 hover:text-amber-800 transition-colors"
+                          title="Hide payment portal"
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                      )}
                     </div>
 
                     <div className="space-y-6">
@@ -525,171 +561,154 @@ const ManualAttendance = () => {
                           <span>Check-Out</span>
                         </button>
                       </div>
-                      
-                      {/* Recent Attendance Activity Card */}
-                      <div className="mt-8 bg-gray-50 rounded-lg p-4">
-                        <h4 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
-                          <FileCheck className="h-5 w-5 text-amber-600" />
-                          Recent Activity
-                        </h4>
-                        
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
-                            <div>
-                              <p className="font-medium">Mathematics</p>
-                              <p className="text-sm text-gray-500">Today, 09:15 AM</p>
-                            </div>
-                            <span className="bg-green-100 text-green-700 px-3 py-1 rounded text-xs font-medium">
-                              Checked In
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
-                            <div>
-                              <p className="font-medium">English Language</p>
-                              <p className="text-sm text-gray-500">Yesterday, 01:30 PM</p>
-                            </div>
-                            <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded text-xs font-medium">
-                              Checked Out
-                            </span>
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   </div>
 
-                  {/* Payment Section - 40% width */}
-                  <div className="lg:w-2/5 bg-white border border-gray-200 rounded-lg shadow-sm p-5">
-                    <div className="flex items-center gap-2 border-b border-gray-200 pb-4 mb-5">
-                      <DollarSign className="h-6 w-6 text-green-600" />
-                      <h3 className="text-xl font-semibold text-gray-800">Payment Portal</h3>
-                    </div>
-                    
-                    <div className="flex justify-between items-center mb-4">
-                      <span className="text-gray-700 font-medium">Available Balance</span>
-                      <div className="bg-green-50 text-green-700 px-4 py-2 rounded-lg font-medium">
-                        Due: ${totalDue.toFixed(2)}
+                  {/* Payment Section - Only shown when toggled */}
+                  {showPaymentPortal && (
+                    <div className="lg:w-2/5 bg-white border border-gray-200 rounded-lg shadow-sm p-5 animate-fadeIn">
+                      <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-5">
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-6 w-6 text-green-600" />
+                          <h3 className="text-xl font-semibold text-gray-800">Payment Portal</h3>
+                        </div>
+                        <button 
+                          onClick={togglePaymentPortal}
+                          className="text-gray-500 hover:text-gray-700 transition-colors"
+                          title="Close payment portal"
+                        >
+                          <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
                       </div>
-                    </div>
-
-                    <div className="bg-gray-50 rounded-lg p-4 mb-5">
-                      <h4 className="font-medium text-gray-700 mb-3">Select courses to pay for:</h4>
                       
-                      <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
-                        {selectedPaymentCourses.length > 0 ? (
-                          selectedPaymentCourses.map((course) => (
-                            <div 
-                              key={course.course_id} 
-                              className={`border rounded-lg p-3 cursor-pointer transition-all ${course.selected ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-amber-300'}`}
-                              onClick={() => toggleCourseSelection(course.course_id)}
-                            >
-                              <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-3">
-                                  <div className={`w-5 h-5 rounded border flex items-center justify-center ${course.selected ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
-                                    {course.selected && <CheckCircle className="w-4 h-4 text-white" />}
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="text-gray-700 font-medium">Available Balance</span>
+                        <div className="bg-green-50 text-green-700 px-4 py-2 rounded-lg font-medium">
+                          Due: Rs.{totalDue.toFixed(2)}
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-50 rounded-lg p-4 mb-5">
+                        <h4 className="font-medium text-gray-700 mb-3">Select courses to pay for:</h4>
+                        
+                        <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
+                          {selectedPaymentCourses.length > 0 ? (
+                            selectedPaymentCourses.map((course) => (
+                              <div 
+                                key={course.course_id} 
+                                className={`border rounded-lg p-3 cursor-pointer transition-all ${course.selected ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-amber-300'}`}
+                                onClick={() => toggleCourseSelection(course.course_id)}
+                              >
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-5 h-5 rounded border flex items-center justify-center ${course.selected ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
+                                      {course.selected && <CheckCircle className="w-4 h-4 text-white" />}
+                                    </div>
+                                    <div>
+                                      <p className="font-medium">{course.course_name}</p>
+                                      <p className="text-xs text-gray-500">Grade: {course.grade}</p>
+                                    </div>
                                   </div>
-                                  <div>
-                                    <p className="font-medium">{course.course_name}</p>
-                                    <p className="text-xs text-gray-500">Grade: {course.grade}</p>
+                                  <div className="text-right">
+                                    <p className="font-medium text-green-700">
+                                    Rs.{parseFloat(course.monthly_fees || 0).toFixed(2)}
+                                    </p>
                                   </div>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-center py-6 text-gray-500">
+                              No pending payments found for this student
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4">
+                        <div className="bg-green-50 p-3 rounded-lg mb-4 flex items-center gap-2">
+                          <DollarSign className="h-5 w-5 text-green-600" />
+                          <span className="font-medium text-green-700">Cash Payment Only</span>
+                        </div>
+
+                        <div>
+                          <label htmlFor="paymentAmount" className="block text-sm font-medium text-gray-700 mb-2">
+                            Amount to Pay <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <span className="text-gray-500">Rs.</span>
+                            </div>
+                            <input
+                              type="number"
+                              id="paymentAmount"
+                              className="w-full pl-8 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:outline-none bg-white"
+                              value={paymentAmount}
+                              onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                              placeholder="0.00"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pt-4 mt-4">
+                        <button 
+                          onClick={handlePayment}
+                          disabled={paymentAmount <= 0 || paymentProcessing}
+                          className={`w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg shadow-md transition-colors flex items-center justify-center gap-2 font-medium ${(paymentAmount <= 0 || paymentProcessing) ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        >
+                          {paymentProcessing ? (
+                            <>
+                              <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+                              <span>Processing...</span>
+                            </>
+                          ) : (
+                            <>
+                              <CreditCard className="h-5 w-5" />
+                              <span>Process Payment (Rs.{paymentAmount.toFixed(2)})</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      
+                      {/* Payment History */}
+                      <div className="mt-6">
+                        <h4 className="font-medium text-gray-700 mb-3">Recent Payments</h4>
+                        <div className="space-y-2">
+                          {paymentHistory.length > 0 ? (
+                            paymentHistory.map((payment) => (
+                              <div key={payment.payment_id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg text-sm">
+                                <div>
+                                  <p className="font-medium">{payment.courses?.map(c => c.course_name).join(', ') || 'Multiple courses'}</p>
+                                  <p className="text-xs text-gray-500">{new Date(payment.created_at).toLocaleDateString()}</p>
                                 </div>
                                 <div className="text-right">
-                                  <p className="font-medium text-green-700">
-                                    ${parseFloat(course.monthly_fees || 0).toFixed(2)}
-                                  </p>
+                                  <p className="font-medium text-green-600">Rs.{payment.amount.toFixed(2)}</p>
+                                  <p className="text-xs text-gray-500">{payment.method}</p>
                                 </div>
                               </div>
+                            ))
+                          ) : (
+                            <div className="text-center py-4 text-gray-500">
+                              No payment history available
                             </div>
-                          ))
-                        ) : (
-                          <div className="text-center py-6 text-gray-500">
-                            No pending payments found for this student
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4">
-                    <div className="bg-green-50 p-3 rounded-lg mb-4 flex items-center gap-2">
-                      <DollarSign className="h-5 w-5 text-green-600" />
-                      <span className="font-medium text-green-700">Cash Payment Only</span>
-                    </div>
-
-                      <div>
-                        <label htmlFor="paymentAmount" className="block text-sm font-medium text-gray-700 mb-2">
-                          Amount to Pay <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span className="text-gray-500">$</span>
-                          </div>
-                          <input
-                            type="number"
-                            id="paymentAmount"
-                            className="w-full pl-8 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:outline-none bg-white"
-                            value={paymentAmount}
-                            onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
-                            placeholder="0.00"
-                          />
+                          )}
                         </div>
                       </div>
                     </div>
-
-                    <div className="pt-4 mt-4">
-                      <button 
-                        onClick={handlePayment}
-                        disabled={paymentAmount <= 0 || paymentProcessing}
-                        className={`w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg shadow-md transition-colors flex items-center justify-center gap-2 font-medium ${(paymentAmount <= 0 || paymentProcessing) ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      >
-                        {paymentProcessing ? (
-                          <>
-                            <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
-                            <span>Processing...</span>
-                          </>
-                        ) : (
-                          <>
-                            <CreditCard className="h-5 w-5" />
-                            <span>Process Payment (${paymentAmount.toFixed(2)})</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                    
-                    {/* Payment History */}
-                    <div className="mt-6">
-                      <h4 className="font-medium text-gray-700 mb-3">Recent Payments</h4>
-                      <div className="space-y-2">
-                        {paymentHistory.length > 0 ? (
-                          paymentHistory.map((payment) => (
-                            <div key={payment.payment_id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg text-sm">
-                              <div>
-                                <p className="font-medium">{payment.courses?.map(c => c.course_name).join(', ') || 'Multiple courses'}</p>
-                                <p className="text-xs text-gray-500">{new Date(payment.created_at).toLocaleDateString()}</p>
-                              </div>
-                              <div className="text-right">
-                                <p className="font-medium text-green-600">${payment.amount.toFixed(2)}</p>
-                                <p className="text-xs text-gray-500">{payment.method}</p>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-center py-4 text-gray-500">
-                            No payment history available
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </>
             ) : (
               <div className="text-center py-16 bg-gray-50 rounded-lg">
-                <div className="mx-auto bg-amber-50 w-24 h-24 rounded-full flex items-center justify-center mb-4">
-                  <Search className="h-12 w-12 text-amber-500" />
+                <div className="mx-auto bg-amber-50 w-20 h-20 rounded-full flex items-center justify-center mb-4">
+                  <Search className="h-10 w-10 text-amber-500" />
                 </div>
                 <h3 className="text-xl font-medium text-gray-700 mb-2">Enter Student ID to Begin</h3>
                 <p className="text-gray-500 max-w-md mx-auto">
-                  Enter a valid Student ID in the search box above to display student information and manage attendance and payments.
+                  Enter a valid Student ID in the search box above and press Enter or click Find to display student information.
                 </p>
               </div>
             )}
@@ -705,6 +724,6 @@ const ManualAttendance = () => {
       </div>
     </div>
   );
-};
+}
 
 export default ManualAttendance;

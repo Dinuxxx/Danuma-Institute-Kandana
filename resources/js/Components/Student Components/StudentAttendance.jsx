@@ -19,7 +19,6 @@ const StudentAttendance = () => {
     present: 0,
     absent: 0,
     late: 0,
-    excused: 0,
     total: 0
   });
 
@@ -81,7 +80,6 @@ const StudentAttendance = () => {
         present: 0,
         absent: 0,
         late: 0,
-        excused: 0,
         total: 0
       });
       return;
@@ -91,7 +89,6 @@ const StudentAttendance = () => {
       present: 0,
       absent: 0,
       late: 0,
-      excused: 0,
       total: data.length
     };
 
@@ -101,7 +98,6 @@ const StudentAttendance = () => {
         if (status === 'present') stats.present++;
         else if (status === 'absent') stats.absent++;
         else if (status === 'late') stats.late++;
-        else if (status === 'excused') stats.excused++;
       }
     });
 
@@ -119,9 +115,28 @@ const StudentAttendance = () => {
     }
   };
 
+  // Fetch student's overall attendance statistics
+  const fetchAttendanceStats = async () => {
+    try {
+      const response = await axios.get("/student/attendance/stats");
+      if (response.data) {
+        setAttendanceStats({
+          present: response.data.present || 0,
+          absent: response.data.absent || 0,
+          late: response.data.late || 0,
+          total: response.data.total || 0
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching attendance statistics:", error);
+      toast.error("Failed to load attendance statistics");
+    }
+  };
+
   // Load initial data
   useEffect(() => {
     fetchCourses();
+    fetchAttendanceStats();
   }, []);
 
   // Fetch attendance data when filters or pagination changes
@@ -135,44 +150,61 @@ const StudentAttendance = () => {
       setFilteredData([]);
       return;
     }
-  
+
     // Apply search filter locally
     let filtered = [...attendanceData];
     
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(item => {
-        // Safely access properties with optional chaining
-        const courseId = item?.courseAttendances?.[0]?.course?.course_id || '';
-        const courseName = item?.courseAttendances?.[0]?.course?.course_name || '';
+        // Check if courseAttendances exists and has items with course data
+        if (!item.courseAttendances || 
+            item.courseAttendances.length === 0 || 
+            !item.courseAttendances[0].course) {
+          return false;
+        }
+        
+        const courseId = item.courseAttendances[0].course.course_id || '';
+        const courseName = item.courseAttendances[0].course.course_name || '';
         
         return courseId.toLowerCase().includes(query) || 
-               courseName.toLowerCase().includes(query);
+              courseName.toLowerCase().includes(query);
       });
     }
-  
+
     // Format data for table display
     const formattedData = filtered.map(item => {
-      // Get course info
-      const courseAttendance = item?.courseAttendances?.[0] || {};
-      const course = courseAttendance?.course || {};
-      const courseId = course?.course_id || 'N/A';
-      const courseName = course?.course_name || 'N/A';
+      // Check if courseAttendances exists and has items with valid course data
+      const hasCourseData = item.courseAttendances && 
+                         item.courseAttendances.length > 0 && 
+                         item.courseAttendances[0].course;
+      
+      // Get course info with better null checking
+      const courseAttendance = item.courseAttendances && item.courseAttendances.length > 0 ? 
+                              item.courseAttendances[0] : null;
+      const course = courseAttendance && courseAttendance.course ? courseAttendance.course : null;
+      
+      // Use null coalescing for safer property access
+      const courseId = course ? course.course_id : 'No Course ID';
+      const courseName = course ? course.course_name : 'No Course Name';
       
       // Format dates and times
-      const attendanceDate = item?.date ? new Date(item.date).toLocaleDateString() : 'N/A';
+      const attendanceDate = item.date ? new Date(item.date).toLocaleDateString() : 'N/A';
       
       // Format time
-      const checkInTime = item?.check_in_time 
+      const checkInTime = item.check_in_time 
         ? new Date(item.check_in_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
         : "Not checked in";
         
-      const checkOutTime = item?.check_out_time 
+      const checkOutTime = item.check_out_time 
         ? new Date(item.check_out_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
         : "Not checked out";
       
-      // Format status
-      const status = courseAttendance?.status || "N/A";
+      // Format status with better handling of missing values
+      let status = "Not Marked";
+      if (courseAttendance && courseAttendance.status) {
+        status = courseAttendance.status;
+      }
       
       // Handle status styling
       let statusClass = "";
@@ -186,9 +218,6 @@ const StudentAttendance = () => {
         case "late":
           statusClass = "inline-block px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800";
           break;
-        case "excused":
-          statusClass = "inline-block px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800";
-          break;
         default:
           statusClass = "inline-block px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800";
       }
@@ -196,13 +225,13 @@ const StudentAttendance = () => {
       // Create row data
       return {
         Date: attendanceDate,
-        Course: `${courseId} - ${courseName}`,
+        Course: hasCourseData ? `${courseId} - ${courseName}` : "No Course Assigned",
         "Check-In Time": checkInTime,
         "Check-Out Time": checkOutTime,
         Status: <span className={statusClass}>{status}</span>,
       };
     });
-  
+
     setFilteredData(formattedData);
   }, [attendanceData, searchQuery]);
 
@@ -346,7 +375,7 @@ const StudentAttendance = () => {
                 <p className="text-sm text-gray-500 font-medium">Attendance Rate</p>
                 <p className="text-lg font-bold">
                   {attendanceStats.total > 0 
-                    ? Math.round((attendanceStats.present / attendanceStats.total) * 100) 
+                    ? Math.round(((attendanceStats.present + attendanceStats.late) / attendanceStats.total) * 100) 
                     : 0}%
                 </p>
               </div>
@@ -467,31 +496,33 @@ const StudentAttendance = () => {
       )}
 
       {/* Pagination */}
-      <div className="flex justify-end mt-4">
-        <div className="flex items-center gap-2">
-          <button 
-            className="p-2 border rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:hover:bg-white"
-            onClick={handlePreviousPage}
-            disabled={currentPage === 1}
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-          </button>
-          <div className="text-gray-700">
-            Page {currentPage} of {totalPages}
+      {!loading && filteredData.length > 0 && (
+        <div className="flex justify-end mt-4">
+          <div className="flex items-center gap-2">
+            <button 
+              className="p-2 border rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:hover:bg-white"
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1}
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </button>
+            <div className="text-gray-700">
+              Page {currentPage} of {totalPages}
+            </div>
+            <button 
+              className="p-2 border rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:hover:bg-white"
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+            </button>
           </div>
-          <button 
-            className="p-2 border rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:hover:bg-white"
-            onClick={handleNextPage}
-            disabled={currentPage === totalPages}
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-            </svg>
-          </button>
         </div>
-      </div>
+      )}
     </div>
   );
 };

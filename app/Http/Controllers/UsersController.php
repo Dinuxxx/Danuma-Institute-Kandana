@@ -69,4 +69,52 @@ class UsersController extends Controller
         $users = $query->get();
         return response()->json($users);
     }
+
+    public function destroy(Request $request)
+    {
+        try {
+            // For single user deletion
+            if ($request->has('id')) {
+                $registration = UserRegistration::findOrFail($request->id);
+                $userId = $registration->user_id;
+                
+                // Start transaction to ensure data consistency
+                DB::beginTransaction();
+                
+                // Delete user registration
+                $registration->delete();
+                
+                // Delete user account
+                User::where('id', $userId)->delete();
+                
+                DB::commit();
+                
+                return response()->json(['message' => 'User deleted successfully'], 200);
+            }
+            
+            // For bulk deletion
+            if ($request->has('ids') && is_array($request->ids)) {
+                // Start transaction
+                DB::beginTransaction();
+                
+                foreach ($request->ids as $id) {
+                    $registration = UserRegistration::find($id);
+                    if ($registration) {
+                        $userId = $registration->user_id;
+                        $registration->delete();
+                        User::where('id', $userId)->delete();
+                    }
+                }
+                
+                DB::commit();
+                
+                return response()->json(['message' => 'Users deleted successfully'], 200);
+            }
+            
+            return response()->json(['message' => 'No users specified for deletion'], 400);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Error deleting user(s)', 'error' => $e->getMessage()], 500);
+        }
+    }
 }

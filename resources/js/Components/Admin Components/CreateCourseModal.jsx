@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BsPlus } from 'react-icons/bs';
 
-const CreateCourseModal = ({ isOpen, onClose }) => {
+const CreateCourseModal = ({ isOpen, onClose, onCourseCreated }) => {
   const [formData, setFormData] = useState({
     subjectCode: '',
     subjectName: '',
@@ -30,8 +30,24 @@ const CreateCourseModal = ({ isOpen, onClose }) => {
     try {
       const response = await axios.post('/courses', formData);
       console.log('Course created:', response.data);
+      
+      // Format the data to match the expected structure before passing to callback
+      const newCourse = {
+        course_id: formData.subjectCode,
+        course_name: formData.subjectName,
+        teacher_id: formData.teacherId || "",
+        grade: formData.grade || "",
+        course_fee: formData.courseFee || "",
+        course_desc: formData.courseDesc || "",
+        // Add other fields that might be needed
+      };
+      
+      // Call the callback function with the formatted course data
+      if (onCourseCreated) {
+        onCourseCreated(newCourse);
+      }
+      
       onClose();
-      window.location.reload();
     } catch (error) {
       if (error.response && error.response.data.errors) {
         setErrors(error.response.data.errors);

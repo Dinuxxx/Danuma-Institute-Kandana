@@ -781,4 +781,20 @@ public function updateAttendance(Request $request, $attendanceId)
             ], 500);
         }
     }
+
+    public function processPayment(Request $request)
+    {
+        // Validate request
+        $request->validate([
+            'student_id' => 'required|exists:students,student_id',
+            'amount' => 'required|numeric|min:0',
+            'course_ids' => 'required|array',
+            'course_ids.*' => 'exists:courses,course_id',
+            'method' => 'required|string'
+        ]);
+        
+        // Use the PaymentController's processManualPayment method
+        $paymentController = app()->make(PaymentController::class);
+        return $paymentController->processManualPayment($request);
+    }
 }

@@ -256,6 +256,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/admin/attendance/check-in', [AttendanceController::class, 'checkIn']);
     Route::post('/admin/attendance/check-out', [AttendanceController::class, 'checkOut']);
     Route::post('/admin/attendance/qr', [AttendanceController::class, 'markQRAttendance']);
+    
+    Route::get('/admin/attendance/registered-courses', [PaymentController::class, 'getRegisteredCourses']);
+    Route::get('/admin/payments/student/{studentId}', [PaymentController::class, 'getStudentPaymentHistory']);
+    Route::post('/admin/attendance/process-payment', [PaymentController::class, 'processManualPayment']);
 
     Route::get('/teachers/count', [DashboardController::class, 'getTeachersCount']);
     Route::get('/students/count', [DashboardController::class, 'getStudentsCount']);

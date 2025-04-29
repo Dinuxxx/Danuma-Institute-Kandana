@@ -19,7 +19,7 @@ export default function Edit({ auth, user, userRegistration, userRole, roleSpeci
     const [imagePreview, setImagePreview] = useState(
         registration.image 
             ? `/storage/profiles/${registration.image}` 
-            : '/images/default-profile.png'
+            : '/images/default-avatar-svg.svg'
     );
     
     const { data, setData, patch, errors, processing, reset } = useForm({
@@ -76,11 +76,12 @@ export default function Edit({ auth, user, userRegistration, userRole, roleSpeci
     const submit = (e) => {
         e.preventDefault();
         patch(route('profile.update'), {
-            preserveScroll: true,
             onSuccess: () => {
-                // Reset image form field
+                // Reset image form field only
                 setData('image', null);
             },
+            preserveScroll: true,
+            forceFormData: true, // Force FormData for file upload
         });
     };
 
@@ -141,7 +142,7 @@ export default function Edit({ auth, user, userRegistration, userRole, roleSpeci
                                 </p>
                             </header>
 
-                            <form onSubmit={submit} className="mt-6 space-y-6">
+                            <form onSubmit={submit} className="mt-6 space-y-6" encType="multipart/form-data">
                                 {/* Centered Profile Image Section */}
                                 <div className="flex justify-center mb-8">
                                     <div 

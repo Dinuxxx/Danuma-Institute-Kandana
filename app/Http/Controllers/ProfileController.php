@@ -123,6 +123,11 @@ class ProfileController extends Controller
         // Basic validation for all users
         $validated = $request->validate([
             'email' => 'required|email|unique:users,email,'.$user->id,
+            'title' => 'required|string|max:10',
+            'first_name' => 'required|string|max:250',
+            'last_name' => 'required|string|max:250',
+            'tel_no' => 'required|string|max:25',
+            'address' => 'required|string',
         ]);
         
         // Update user email
@@ -131,28 +136,29 @@ class ProfileController extends Controller
         
         // Only update registration details if we have a registration record
         if ($userRegistration) {
-            // Validate registration fields
-            $registrationValidated = $request->validate([
-                'title' => 'required|string|max:10',
-                'first_name' => 'required|string|max:250',
-                'last_name' => 'required|string|max:250',
-                'tel_no' => 'required|string|max:25',
-                'address' => 'required|string',
-            ]);
-            
             // Handle profile image upload
-            if ($request->hasFile('image')) {
-                $registrationValidated['image'] = $this->handleImageUpload($request, $userRegistration);
+            if ($request->hasFile('image') && $request->file('image')->isValid()) {
+                $fileName = $this->handleImageUpload($request, $userRegistration);
+                
+                // Update user registration with new image
+                $userRegistration->update([
+                    'title' => $validated['title'],
+                    'first_name' => $validated['first_name'],
+                    'last_name' => $validated['last_name'],
+                    'tel_no' => $validated['tel_no'],
+                    'address' => $validated['address'],
+                    'image' => $fileName
+                ]);
+            } else {
+                // Update user registration without changing image
+                $userRegistration->update([
+                    'title' => $validated['title'],
+                    'first_name' => $validated['first_name'],
+                    'last_name' => $validated['last_name'],
+                    'tel_no' => $validated['tel_no'],
+                    'address' => $validated['address'],
+                ]);
             }
-            
-            // Update user registration
-            $userRegistration->update([
-                'title' => $registrationValidated['title'],
-                'first_name' => $registrationValidated['first_name'],
-                'last_name' => $registrationValidated['last_name'],
-                'tel_no' => $registrationValidated['tel_no'],
-                'address' => $registrationValidated['address'],
-            ]);
             
             // Handle role-specific updates if role exists
             if ($userRegistration->role) {
@@ -211,7 +217,7 @@ class ProfileController extends Controller
         }
         
         // Store new image
-        $path = $file->storeAs('profiles', $fileName, 'public');
+        $file->storeAs('profiles', $fileName, 'public');
         
         return $fileName;
     }

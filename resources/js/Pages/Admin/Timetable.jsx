@@ -17,12 +17,18 @@ const Timetable = ({ timetables, courses }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedTimetableEntry, setSelectedTimetableEntry] = useState(null);
+  const [localTimetables, setLocalTimetables] = useState([]);
   
   // Delete confirmation state
   const [deleteConfirmation, setDeleteConfirmation] = useState({
     isOpen: false,
     id: null
   });
+
+  // Initialize local timetables with the prop value
+  useEffect(() => {
+    setLocalTimetables(timetables);
+  }, [timetables]);
 
   // Extract unique grades from courses and sort them in ascending order
   const grades = [...new Set(courses?.map(course => course.grade) || [])]
@@ -49,7 +55,7 @@ const Timetable = ({ timetables, courses }) => {
     }
 
     // Filter timetables based on selected grade
-    let filtered = timetables.filter(entry => 
+    let filtered = localTimetables.filter(entry => 
       entry.course.grade === selectedGrade
     );
 
@@ -114,7 +120,7 @@ const Timetable = ({ timetables, courses }) => {
     }));
 
     setFilteredTimetables(formattedData);
-  }, [selectedGrade, timetables, searchTerm, filterOption, sortOption]);
+  }, [selectedGrade, localTimetables, searchTerm, filterOption, sortOption]);
 
   // Format time from 24h to 12h format
   const formatTime = (timeString) => {
@@ -145,6 +151,20 @@ const Timetable = ({ timetables, courses }) => {
     setSelectedTimetableEntry(null);
   };
 
+  // Handle updated timetable entry
+  const handleUpdateSuccess = (updatedEntry) => {
+    setLocalTimetables(currentTimetables => 
+      currentTimetables.map(entry => 
+        entry.ttable_id === updatedEntry.ttable_id ? updatedEntry : entry
+      )
+    );
+  };
+
+  // Handle new timetable creation
+  const handleCreateSuccess = (newEntry) => {
+    setLocalTimetables(currentTimetables => [...currentTimetables, newEntry]);
+  };
+
   // Handle delete button click - open confirmation dialog
   const handleDeleteClick = (id) => {
     setDeleteConfirmation({
@@ -160,6 +180,10 @@ const Timetable = ({ timetables, courses }) => {
     // Use Inertia router to handle the delete request
     router.delete(`/admin/time-tables/${deleteConfirmation.id}`, {
       onSuccess: () => {
+        // Update local state after successful deletion
+        setLocalTimetables(currentTimetables => 
+          currentTimetables.filter(entry => entry.ttable_id !== deleteConfirmation.id)
+        );
         setDeleteConfirmation({
           isOpen: false,
           id: null
@@ -281,6 +305,7 @@ const Timetable = ({ timetables, courses }) => {
               closeModal={closeModal} 
               selectedGrade={selectedGrade}
               courses={courses.filter(course => course.grade === selectedGrade)}
+              onSuccess={handleCreateSuccess}
             />
           )}
           
@@ -290,6 +315,7 @@ const Timetable = ({ timetables, courses }) => {
               closeModal={closeEditModal}
               timetableEntry={selectedTimetableEntry}
               courses={courses.filter(course => course.grade === selectedTimetableEntry.course.grade)}
+              onSuccess={handleUpdateSuccess}
             />
           )}
         </div>

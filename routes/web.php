@@ -83,6 +83,8 @@ Route::get('/teacher/time-tables', function () {
 })->name('admin.viewexams');
 
 
+
+
 // student routes
 
 Route::get('/student/dashboard', function () {
@@ -125,11 +127,13 @@ Route::get('/aboutus', function () {
 })->name('admin.viewexams');
 
 
+
+
 // Admin routes
 
 Route::get('/admin/dashboard', function () {
     return Inertia::render('Admin/Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->name('dashboard');
 
 Route::get('/courses/count', [CourseController::class, 'getCoursesCount']);
 
@@ -188,6 +192,29 @@ Route::get('/register', function () {
 })->name('register');
 
 Route::post('/register', [UserRegistrationController::class, 'register'])->name('register');
+
+
+
+// Routes for registration forms
+Route::middleware(['auth', 'admin'])->group(function () {
+    // GET routes to display forms
+    Route::get('/teacher/register', function () {
+        return Inertia::render('Auth/TeacherRegister');
+    })->name('teacher.register.form');
+    
+    Route::get('/student/register', function () {
+        return Inertia::render('Auth/StudentRegister');
+    })->name('student.register.form');
+    
+    Route::get('/admin/register', function () {
+        return Inertia::render('Auth/AdminRegister');
+    })->name('admin.register.form');
+    
+    // POST routes to handle form submissions
+    Route::post('/teacher/register', [TeacherController::class, 'register'])->name('teacher.register');
+    Route::post('/student/register', [StudentController::class, 'register'])->name('student.register');
+    Route::post('/admin/register', [AdminController::class, 'register'])->name('admin.register');
+});
 
 
 // Email verification notice

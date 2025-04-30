@@ -27,7 +27,7 @@ class Teacher extends Model
     public $timestamps = false;
 
     // Attributes allowed for mass assignment
-    protected $fillable = ['qualifications','salary', 'nic'];
+    protected $fillable = ['user_id','qualifications','salary', 'nic'];
 
     // get the user details of teacher
     public function user():BelongsTo

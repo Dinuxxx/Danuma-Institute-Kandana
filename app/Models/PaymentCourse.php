@@ -10,6 +10,13 @@ class PaymentCourse extends Model
 {
     /** @use HasFactory<\Database\Factories\PaymentCourseFactory> */
     use HasFactory;
+    
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'payments_courses';
 
     /**
      * The primary key associated with the table.
@@ -26,12 +33,18 @@ class PaymentCourse extends Model
     public $timestamps = false;
 
     // Mass-assignable attributes
-    protected $fillable = ['month','amount','course_id'];
+    protected $fillable = [
+        'month',
+        'amount',
+        'status',
+        'payment_id',
+        'course_id',
+    ];
 
     //get the payments records
     public function payments():BelongsTo
     {
-        return $this->belongsTo(Payments::class, 'payment_id', 'payment_id');
+        return $this->belongsTo(Payment::class, 'payment_id', 'payment_id');
     }
 
     //get the course of the record

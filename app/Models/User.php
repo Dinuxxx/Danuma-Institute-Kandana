@@ -76,7 +76,7 @@ class User extends Authenticatable implements MustVerifyEmail
     //get the teacher details if a user is a teacher
     public function teacher():HasOne
     {
-        return $this->hasOne(Student::class, 'user_id', 'id');
+        return $this->hasOne(Teacher::class, 'user_id', 'id');
     }
 
     // get the users added by current user

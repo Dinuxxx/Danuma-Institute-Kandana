@@ -26,7 +26,12 @@ class CourseAttendance extends Model
     public $timestamps = false;
 
     // Mass-assignable attributes
-    protected $fillable = [ ];
+    protected $fillable = [
+        'att_id', 
+        'course_id',
+        'status',
+        'for_slot'
+    ];
 
     //get the attendance records
     public function attendance():BelongsTo
@@ -38,6 +43,11 @@ class CourseAttendance extends Model
     public function timeSlot()
     {
         return $this->belongsTo(TimeTables::class, 'for_slot', 'ttable_id');
+    }
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class, 'course_id', 'course_id');
     }
 
 }

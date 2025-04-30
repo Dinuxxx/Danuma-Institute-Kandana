@@ -32,11 +32,22 @@ class TimetableController extends Controller
      */
     public function studentView(): Response
     {
-        // Get the current student's ID
-        $studentId = Auth::id();
+        // Get the current user's ID
+        $userId = Auth::id();
         
-        // Get courses the student is enrolled in
-        $enrolledCourseIds = StudentCourse::where('student_id', $studentId)
+        // Get the student record for this user
+        $student = \App\Models\Student::where('user_id', $userId)->first();
+        
+        if (!$student) {
+            // Handle case where user is not a student
+            return Inertia::render('Student/TimeTables', [
+                'timetables' => [],
+                'courses' => []
+            ]);
+        }
+        
+        // Get courses the student is enrolled in using the correct student_id
+        $enrolledCourseIds = StudentCourse::where('student_id', $student->student_id)
             ->pluck('course_id')
             ->toArray();
         
@@ -47,6 +58,42 @@ class TimetableController extends Controller
         $courses = Course::whereIn('course_id', $enrolledCourseIds)->get();
         
         return Inertia::render('Student/TimeTables', [
+            'timetables' => $timetables,
+            'courses' => $courses
+        ]);
+    }
+    
+    /**
+     * Display the teacher's timetable.
+     */
+    public function teacherView(): Response
+    {
+        // Get the current user's ID
+        $userId = Auth::id();
+        
+        // Get the teacher record for this user
+        $teacher = \App\Models\Teacher::where('user_id', $userId)->first();
+        
+        if (!$teacher) {
+            // Handle case where user is not a teacher
+            return Inertia::render('Teacher/TimeTables', [
+                'timetables' => [],
+                'courses' => []
+            ]);
+        }
+        
+        // Get courses the teacher is assigned to
+        $teacherCourseIds = Course::where('teacher_id', $teacher->tea_id)
+            ->pluck('course_id')
+            ->toArray();
+        
+        // Get timetable entries for teacher's courses
+        $timetables = TimeTables::whereIn('course_id', $teacherCourseIds)->get();
+        
+        // Get course details for the teacher's courses
+        $courses = Course::whereIn('course_id', $teacherCourseIds)->get();
+        
+        return Inertia::render('Teacher/TimeTables', [
             'timetables' => $timetables,
             'courses' => $courses
         ]);

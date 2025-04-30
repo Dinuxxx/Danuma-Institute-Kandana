@@ -11,28 +11,14 @@ const CreateNotice = ({ onNoticeCreated }) => {
   const [error, setError] = useState("");
 
   const handleVisibilityChange = (option) => {
-    if (option === "All") {
-      // If All is clicked, toggle between selecting all and selecting none
-      setVisibility((prev) =>
-        prev.includes("All") ? [] : ["All", "Students", "Teachers"]
-      );
-    } else {
-      // For Students or Teachers options
-      setVisibility((prev) => {
-        // Remove or add the clicked option
-        const withoutOption = prev.filter(item => item !== option);
-        const newVisibility = prev.includes(option) ? withoutOption : [...withoutOption, option];
-        
-        // Check if both Students and Teachers are selected - if so, add "All"
-        if (newVisibility.includes("Students") && newVisibility.includes("Teachers")) {
-          return ["All", "Students", "Teachers"];
-        } 
-        // If not both selected, ensure "All" is not included
-        else {
-          return newVisibility.filter(item => item !== "All");
-        }
-      });
-    }
+    // Toggle the selected option (add or remove)
+    setVisibility(prev => {
+      if (prev.includes(option)) {
+        return prev.filter(item => item !== option);
+      } else {
+        return [...prev, option];
+      }
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -135,7 +121,7 @@ const CreateNotice = ({ onNoticeCreated }) => {
           <div className="flex items-start gap-4">
             <label className="w-1/4 text-gray-700">Visibility</label>
             <div className="w-3/4 flex flex-col gap-2 bg-white p-3 rounded-lg shadow-sm">
-              {['All', 'Students', 'Teachers'].map((option) => (
+              {['Students', 'Teachers'].map((option) => (
                 <label key={option} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
                   <input
                     type="checkbox"

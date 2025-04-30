@@ -31,6 +31,8 @@ class Attendance extends Model
         'check_in_time',
         'check_out_time',
         'date',
+        'marked_method',
+        'marked_by',
         'student_id',
     ];
 

@@ -53,12 +53,16 @@ const Notices = ({ auth, initialNotices = [] }) => {
       
       if (response.data) {
         if (Array.isArray(response.data)) {
-          setNotices(response.data);
+          // Filter notices to show only those created by the current admin
+          const currentUserNotices = response.data.filter(notice => notice.user_id === auth.user.id);
+          setNotices(currentUserNotices);
         } else if (typeof response.data === 'object') {
           // Try to find any array in the response
           const possibleNotices = Object.values(response.data).find(val => Array.isArray(val));
           if (possibleNotices) {
-            setNotices(possibleNotices);
+            // Filter notices to show only those created by the current admin
+            const currentUserNotices = possibleNotices.filter(notice => notice.user_id === auth.user.id);
+            setNotices(currentUserNotices);
           } else {
             console.error('No array found in response:', response.data);
             setError('Response format not recognized.');
@@ -224,7 +228,7 @@ const Notices = ({ auth, initialNotices = [] }) => {
     }, obj);
   };
 
-  // Format visibility to exclude "All" and just display "Students" and/or "Teachers"
+  // Format visibility to display "Students" and/or "Teachers"
   const formatVisibility = (visibility) => {
     if (!visibility) return 'Not specified';
     
@@ -241,9 +245,9 @@ const Notices = ({ auth, initialNotices = [] }) => {
       visibilityArray = Object.values(visibility);
     }
     
-    // Filter out "All" and return just "Students" and/or "Teachers"
+    // Filter out any "All" values that might exist in data
     return visibilityArray
-      .filter(item => item !== 'All')
+      .filter(item => item === 'Students' || item === 'Teachers')
       .join(' / ') || 'Not specified';
   };
 
@@ -300,13 +304,13 @@ const Notices = ({ auth, initialNotices = [] }) => {
 
   return (
     <AuthenticatedLayout auth={auth}>
-      <Head title="Notices" />
+      <Head title="My Notices" />
       <div className="p-4">
         <CreateNotice onNoticeCreated={handleNoticeCreated} />
         
         <div className="mt-8">
           <div className="border-b text-gray-600 text-sm font-medium pb-2 w-fit ml-8">
-            Manage Notice
+            My Notices
           </div>
           
           {error && (
@@ -449,7 +453,7 @@ const Notices = ({ auth, initialNotices = [] }) => {
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">Visibility</label>
               <div className="flex space-x-4">
-                {['Students', 'Teachers', 'All'].map(option => {
+                {['Students', 'Teachers'].map(option => {
                   // Determine if this option is checked
                   let isChecked = false;
                   

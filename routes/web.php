@@ -18,6 +18,7 @@ use App\Http\Controllers\UsersController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\StripePaymentController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
@@ -203,6 +204,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/payments', [PaymentController::class, 'index'])->name('student.payments');
         Route::get('/bank-transfer', [PaymentController::class, 'bankTransfer'])->name('student.bank-transfer');
         Route::post('/payments', [PaymentController::class, 'store'])->name('student.payments.store');
+
+        Route::get('/stripe-payment', [StripePaymentController::class, 'showStripePayment'])->name('student.stripe-payment');
         
         Route::get('/time-tables', [TimetableController::class, 'studentView'])->name('student.timetables');
     });
@@ -274,10 +277,19 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
     Route::get('/notifications/{id}/notice', [NotificationController::class, 'showNoticeFromNotification']);
 
-    Route::get('/settings', function () {
-        return Inertia::render('Settings');
-    });
+    Route::get('/settings', [App\Http\Controllers\SettingsController::class, 'index'])->name('settings');
+    Route::post('/settings/account', [App\Http\Controllers\SettingsController::class, 'updateAccount'])->name('settings.account');
+    Route::post('/settings/password', [App\Http\Controllers\SettingsController::class, 'updatePassword'])->name('settings.password');
+    Route::post('/settings/notifications', [App\Http\Controllers\SettingsController::class, 'updateNotifications'])->name('settings.notifications');
+    Route::post('/settings/appearance', [App\Http\Controllers\SettingsController::class, 'updateAppearance'])->name('settings.appearance');
+
+    Route::post('/create-payment-intent', [StripePaymentController::class, 'createPaymentIntent']);
+    Route::post('/student/payments/stripe', [StripePaymentController::class, 'recordPayment'])
+        ->name('student.payments.stripe.record');
+
 });
+
+Route::post('/webhook/stripe', [StripePaymentController::class, 'handleWebhook']);
 
 // Profile management
 Route::middleware('auth')->group(function () {

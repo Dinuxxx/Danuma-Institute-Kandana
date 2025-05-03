@@ -14,6 +14,7 @@ use App\Http\Controllers\TeacherNoticeController;
 use App\Http\Controllers\StudentNoticeController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\StudentAttendanceController;
+use App\Http\Controllers\TeacherAttendanceController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\DashboardController;
@@ -138,9 +139,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return Inertia::render('Teacher/EditLesson');
         });
         
-        Route::get('/attendance', function () {
-            return Inertia::render('Teacher/Attendance');
-        });
+        Route::get('/attendance', [TeacherAttendanceController::class, 'index'])->name('teacher.attendance');
+        Route::get('/attendance/report', [TeacherAttendanceController::class, 'getAttendanceReport']);
+        Route::get('/attendance/courses', [TeacherAttendanceController::class, 'getTeacherCourses']);
+        Route::get('/attendance/students', [TeacherAttendanceController::class, 'getStudentsInCourses']);
+        Route::get('/attendance/stats', [TeacherAttendanceController::class, 'getAttendanceStats']);
+        Route::get('/attendance/monthly-stats', [TeacherAttendanceController::class, 'getMonthlyStats']);
         
         Route::get('/exams', function () {
             return Inertia::render('Teacher/Exams');

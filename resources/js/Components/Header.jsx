@@ -227,7 +227,7 @@ export default function Header() {
                     
                     {/* Profile Image */}
                     <img
-                        src={user.profile_photo_url || "/api/placeholder/40/40"}
+                        src={user.profile_photo_url || "/images/default-avatar-svg.svg"}
                         alt="Profile"
                         className="w-10 h-10 rounded-full"
                         onClick={toggleDropdown}

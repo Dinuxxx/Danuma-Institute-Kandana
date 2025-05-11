@@ -18,6 +18,7 @@ use App\Http\Controllers\TeacherAttendanceController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\TeacherSearchController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\StripePaymentController;
 use App\Http\Controllers\Auth\VerifyEmailController;
@@ -294,6 +295,8 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::post('/webhook/stripe', [StripePaymentController::class, 'handleWebhook']);
+
+Route::get('/teachers/search', [App\Http\Controllers\TeacherSearchController::class, 'search']);
 
 // Profile management
 Route::middleware('auth')->group(function () {

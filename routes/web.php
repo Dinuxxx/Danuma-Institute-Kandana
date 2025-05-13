@@ -20,6 +20,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TeacherSearchController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StripePaymentController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
@@ -282,11 +283,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
     Route::get('/notifications/{id}/notice', [NotificationController::class, 'showNoticeFromNotification']);
 
-    Route::get('/settings', [App\Http\Controllers\SettingsController::class, 'index'])->name('settings');
-    Route::post('/settings/account', [App\Http\Controllers\SettingsController::class, 'updateAccount'])->name('settings.account');
-    Route::post('/settings/password', [App\Http\Controllers\SettingsController::class, 'updatePassword'])->name('settings.password');
-    Route::post('/settings/notifications', [App\Http\Controllers\SettingsController::class, 'updateNotifications'])->name('settings.notifications');
-    Route::post('/settings/appearance', [App\Http\Controllers\SettingsController::class, 'updateAppearance'])->name('settings.appearance');
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+    Route::post('/settings/account', [SettingsController::class, 'updateAccount']);
+    Route::post('/settings/password', [SettingsController::class, 'updatePassword']);
+    Route::post('/settings/appearance', [SettingsController::class, 'updateAppearance']);
+    Route::delete('/profile', [SettingsController::class, 'deleteAccount']);
 
     Route::post('/create-payment-intent', [StripePaymentController::class, 'createPaymentIntent']);
     Route::post('/student/payments/stripe', [StripePaymentController::class, 'recordPayment'])

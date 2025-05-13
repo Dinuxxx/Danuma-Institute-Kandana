@@ -10,6 +10,7 @@ import Message from '@/Components/Message';
 import AdminProfile from './Partials/AdminProfile';
 import TeacherProfile from './Partials/TeacherProfile';
 import StudentProfile from './Partials/StudentProfile';
+import axios from 'axios';
 
 export default function Edit({ auth, user, userRegistration, userRole, roleSpecificData, flash }) {
     // Check if userRegistration exists, if not provide default values
@@ -21,6 +22,10 @@ export default function Edit({ auth, user, userRegistration, userRole, roleSpeci
             ? `/storage/profiles/${registration.image}` 
             : '/images/default-avatar-svg.svg'
     );
+
+    
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitSuccess, setSubmitSuccess] = useState(false);
     
     const { data, setData, patch, errors, processing, reset } = useForm({
         title: registration.title || '',
@@ -75,13 +80,56 @@ export default function Edit({ auth, user, userRegistration, userRole, roleSpeci
 
     const submit = (e) => {
         e.preventDefault();
-        patch(route('profile.update'), {
-            onSuccess: () => {
+        
+        // Create a FormData object to handle file uploads
+        const formData = new FormData();
+        
+        // Append all form fields
+        Object.keys(data).forEach(key => {
+            if (key === 'parent_info') {
+                // Handle nested parent_info object
+                Object.keys(data.parent_info).forEach(subKey => {
+                    formData.append(`parent_info[${subKey}]`, data.parent_info[subKey] || '');
+                });
+            } else if (data[key] !== null && data[key] !== undefined) {
+                formData.append(key, data[key]);
+            }
+        });
+    
+        // If an image is selected, append it
+        if (data.image) {
+            formData.append('image', data.image);
+        }
+    
+        // Use Axios for more robust form submission
+        axios.post(route('profile.update'), formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                'X-HTTP-Method-Override': 'PATCH' // Laravel uses this for method spoofing
+            },
+            transformRequest: [function (data) {
+                return data; // Prevent Axios from transforming the FormData
+            }]
+        })
+        .then(response => {
+            // Handle successful update
+            if (response.data.message) {
                 // Reset image form field only
                 setData('image', null);
-            },
-            preserveScroll: true,
-            forceFormData: true, // Force FormData for file upload
+            }
+        })
+        .catch(error => {
+            // Handle validation errors
+            if (error.response && error.response.status === 422) {
+                // Laravel returns validation errors
+                const validationErrors = error.response.data.errors;
+                
+                // Update errors state
+                Object.keys(validationErrors).forEach(key => {
+                    // Set errors for display
+                    errors[key] = validationErrors[key][0];
+                });
+            }
         });
     };
 
@@ -263,12 +311,17 @@ export default function Edit({ auth, user, userRegistration, userRole, roleSpeci
                                 {userRegistration && userRegistration.role && renderRoleSpecificForm()}
 
                                 <div className="flex items-center gap-4">
-                                    <PrimaryButton disabled={processing}>Save</PrimaryButton>
-                                    
-                                    {flash.message && processing === false && (
-                                        <p className="text-sm text-green-600">Saved.</p>
-                                    )}
-                                </div>
+                                <PrimaryButton 
+                                    type="submit" 
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Saving...' : 'Save'}
+                                </PrimaryButton>
+
+                                {submitSuccess && (
+                                    <p className="text-sm text-green-600">Profile updated successfully!</p>
+                                )}
+                            </div>
                             </form>
                         </section>
                     </div>

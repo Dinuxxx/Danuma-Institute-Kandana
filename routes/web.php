@@ -18,6 +18,8 @@ use App\Http\Controllers\TeacherAttendanceController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\StudentDashboardController;
+use App\Http\Controllers\TeacherDashboardController;
 use App\Http\Controllers\TeacherSearchController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\SettingsController;
@@ -113,9 +115,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Teacher routes
     Route::prefix('teacher')->middleware([CheckRole::class . ':teacher'])->group(function () {
-        Route::get('/dashboard', function () {
-            return Inertia::render('Teacher/Dashboard');
-        })->name('teacher.dashboard');
+
+        Route::get('/dashboard', [TeacherDashboardController::class, 'index'])->name('teacher.dashboard');
+        Route::get('/dashboard/total-students', [TeacherDashboardController::class, 'getTotalStudents']);
+        Route::get('/dashboard/attendance-stats', [TeacherDashboardController::class, 'getAttendanceStats']);
+        Route::get('/dashboard/grade-stats', [TeacherDashboardController::class, 'getGradeStats']);
+        Route::get('/dashboard/assignment-stats', [TeacherDashboardController::class, 'getAssignmentStats']);
+        Route::get('/dashboard/class-attendance', [TeacherDashboardController::class, 'getClassAttendance']);
+        Route::get('/dashboard/today-schedule', [TeacherDashboardController::class, 'getTodaySchedule']);
+        Route::get('/dashboard/class-performance', [TeacherDashboardController::class, 'getClassPerformance']);
         
         Route::get('/courses', function () {
             return Inertia::render('Teacher/Courses');
@@ -196,6 +204,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/attendance/report', [StudentAttendanceController::class, 'getAttendanceReport'])->name('student.attendance.report');
         Route::get('/attendance/stats', [StudentAttendanceController::class, 'getAttendanceStats'])->name('student.attendance.stats');
         Route::get('/courses/list', [StudentAttendanceController::class, 'getStudentCourses'])->name('student.courses.list');
+
+        Route::get('/dashboard/monthly-attendance', [StudentDashboardController::class, 'getMonthlyAttendance']);
+        Route::get('/dashboard/attendance-stats', [StudentDashboardController::class, 'getAttendanceStats']);
+        Route::get('/dashboard/grade-stats', [StudentDashboardController::class, 'getGradeStats']);
+        Route::get('/dashboard/assignment-stats', [StudentDashboardController::class, 'getAssignmentStats']);
+        Route::get('/dashboard/subject-distribution', [StudentDashboardController::class, 'getSubjectDistribution']);
         
         Route::get('/exams', function () {
             return Inertia::render('Student/Exams');

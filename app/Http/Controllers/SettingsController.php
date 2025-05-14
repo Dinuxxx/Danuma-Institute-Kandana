@@ -101,55 +101,70 @@ class SettingsController extends Controller
 }    
     
     /**      
-     * Update the user's password.      
-     *      
-     * @param  \Illuminate\Http\Request  $request      
-     * @return \Illuminate\Http\Response      
-     */     
-    public function updatePassword(Request $request)     
-    {         
-        try {
-            $user = Auth::user();
-            
-            // Validate the current password
-            if (!Hash::check($request->current_password, $user->password)) {
-                throw ValidationException::withMessages([
-                    'current_password' => ['The current password is incorrect.'],
-                ]);
-            }
-            
-            $validated = $request->validate([             
-                'current_password' => ['required'],             
-                'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/'],
-                'password_confirmation' => ['required'],
-            ], [             
-                'password.regex' => 'The password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.',         
-            ]);                  
-            
-            $user->password = Hash::make($validated['password']);         
-            $user->save();                  
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Password updated successfully.'
+ * Update the user's password.      
+ *      
+ * @param  \Illuminate\Http\Request  $request      
+ * @return \Illuminate\Http\Response      
+ */     
+public function updatePassword(Request $request)     
+{         
+    try {
+        $user = Auth::user();
+        
+        // Validate the request
+        $validated = $request->validate([             
+            'current_password' => ['required', 'string'],             
+            'password' => [
+                'required', 
+                'string', 
+                'min:8', 
+                'confirmed', 
+                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/',
+                'different:current_password' // Ensure new password is different from current
+            ],
+            'password_confirmation' => ['required'],
+        ], [             
+            'password.regex' => 'The password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
+            'password.different' => 'The new password must be different from your current password.'
+        ]);
+
+        // Validate the current password
+        if (!Hash::check($validated['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['The current password is incorrect.'],
             ]);
-        } catch (ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'errors' => $e->errors(),
-            ], 422);
-        } catch (\Exception $e) {
-            // Log the error for debugging
-            Log::error('Password update error: ' . $e->getMessage());
-            
-            // Return a proper error response
-            return response()->json([
-                'success' => false,
-                'message' => 'Unable to update password',
-                'error' => $e->getMessage()
-            ], 500);
-        }   
-    }      
+        }
+                  
+        $user->password = Hash::make($validated['password']);
+        $user->save();
+
+        // Log the password change
+        Log::info('Password changed for user:', [
+            'user_id' => $user->id,
+            'email' => $user->email
+        ]);
+                  
+        return response()->json([
+            'success' => true,
+            'message' => 'Password updated successfully.'
+        ]);
+    } catch (ValidationException $e) {
+        return response()->json([
+            'success' => false,
+            'errors' => $e->errors(),
+        ], 422);
+    } catch (\Exception $e) {
+        // Log the error for debugging
+        Log::error('Password update error: ' . $e->getMessage());
+        
+        // Return a proper error response
+        return response()->json([
+            'success' => false,
+            'message' => 'Unable to update password',
+            'error' => $e->getMessage()
+        ], 500);
+    }   
+}     
     
     /**      
      * Update the user's appearance settings.      

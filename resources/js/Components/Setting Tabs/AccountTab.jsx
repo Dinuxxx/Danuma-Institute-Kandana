@@ -161,4 +161,4 @@ export default function AccountTab({ user, onSuccess }) {
     );
 } 
 
-// Admin2@1234
+// Student2@1234

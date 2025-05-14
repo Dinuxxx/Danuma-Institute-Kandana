@@ -11,9 +11,7 @@ export default function AppearanceTab({ onSuccess }) {
     
     // Available languages
     const languages = [
-        { id: 'en', name: 'English' },
-        { id: 'si', name: 'Sinhala' },
-        { id: 'ta', name: 'Tamil' },
+        { id: 'en', name: 'English' }
     ];
     
     // Available timezones (shortened list for example)

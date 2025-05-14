@@ -21,6 +21,9 @@ const ManualAttendance = () => {
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [selectedTimeTable, setSelectedTimeTable] = useState(null);
   const [showPaymentPortal, setShowPaymentPortal] = useState(false);
+  
+  // Track attendance for each course
+  const [courseAttendance, setCourseAttendance] = useState({});
 
   useEffect(() => {
     // Get the current date
@@ -43,16 +46,35 @@ const ManualAttendance = () => {
     try {
       const response = await axios.get(`/admin/students/${studentId}`);
       setStudentData(response.data.student);
-      setCourses(response.data.courses || []);
-      setLoading(false);
-
+      
+      // Setup courses with their attendance status
+      const coursesData = response.data.courses || [];
+      setCourses(coursesData);
+      
+      // Initialize course attendance tracking
+      const attendanceMap = {};
+      coursesData.forEach(course => {
+        attendanceMap[course.course_id] = {
+          checkedIn: false,
+          checkedOut: false,
+          checkInTime: '',
+          checkOutTime: '',
+          attendanceId: null,
+        };
+      });
+      setCourseAttendance(attendanceMap);
+      
+      // Fetch today's attendance for this student to populate attendance status
       if (response.data.student) {
+        fetchTodayAttendance(response.data.student.student_id);
         fetchStudentPaymentData(response.data.student.student_id);
         fetchPaymentHistory(response.data.student.student_id);
       }
       
+      setLoading(false);
+
       // Clear course selection if there are no courses
-      if (response.data.courses?.length === 0) {
+      if (coursesData.length === 0) {
         setCourse('');
         setSelectedTimeTable(null);
       }
@@ -65,11 +87,6 @@ const ManualAttendance = () => {
         });
       }
       
-      // Fetch payment data for this student
-      if (response.data.student) {
-        fetchStudentPaymentData(response.data.student.student_id);
-        fetchPaymentHistory(response.data.student.student_id);
-      }
     } catch (error) {
       console.error('Error fetching student data:', error);
       
@@ -88,6 +105,35 @@ const ManualAttendance = () => {
       });
       setStudentData(null);
       setLoading(false);
+    }
+  };
+
+  // New function to fetch today's attendance records
+  const fetchTodayAttendance = async (studentId) => {
+    try {
+      const response = await axios.get(`/admin/attendance/today/${studentId}`);
+      
+      if (response.data.attendance) {
+        const newAttendanceMap = {...courseAttendance};
+        
+        // Update attendance map with today's data
+        response.data.attendance.forEach(record => {
+          if (record.course_id && newAttendanceMap[record.course_id]) {
+            newAttendanceMap[record.course_id] = {
+              checkedIn: !!record.check_in_time,
+              checkedOut: !!record.check_out_time,
+              checkInTime: record.check_in_time ? record.check_in_time.substring(11, 16) : '',
+              checkOutTime: record.check_out_time ? record.check_out_time.substring(11, 16) : '',
+              attendanceId: record.att_id,
+              status: record.status || 'present' // Store the attendance status
+            };
+          }
+        });
+        
+        setCourseAttendance(newAttendanceMap);
+      }
+    } catch (error) {
+      console.error('Error fetching today\'s attendance:', error);
     }
   };
 
@@ -163,6 +209,19 @@ const ManualAttendance = () => {
         text: statusMessage, 
         type: statusType 
       });
+      
+      // Update the course attendance tracking
+      setCourseAttendance(prev => ({
+        ...prev,
+        [course]: {
+          ...prev[course],
+          checkedIn: true,
+          checkInTime: checkInTime,
+          attendanceId: response.data.attendance_id,
+          status: status // Store the attendance status
+        }
+      }));
+      
     } catch (error) {
       console.error('Error checking in:', error);
       let errorMsg = 'Failed to check in student';
@@ -193,6 +252,17 @@ const ManualAttendance = () => {
         text: 'Student checked out successfully', 
         type: 'success' 
       });
+      
+      // Update the course attendance tracking
+      setCourseAttendance(prev => ({
+        ...prev,
+        [course]: {
+          ...prev[course],
+          checkedOut: true,
+          checkOutTime: checkOutTime
+        }
+      }));
+      
     } catch (error) {
       console.error('Error checking out:', error);
       setMessage({ 
@@ -211,6 +281,22 @@ const ManualAttendance = () => {
       const selectedCourse = courses.find(c => c.course_id === courseId);
       if (selectedCourse) {
         setSelectedTimeTable(selectedCourse.ttable_id);
+        
+        // Set the check-in and check-out times from attendance data if available
+        if (courseAttendance[courseId]) {
+          if (courseAttendance[courseId].checkInTime) {
+            setCheckInTime(courseAttendance[courseId].checkInTime);
+          }
+          if (courseAttendance[courseId].checkOutTime) {
+            setCheckOutTime(courseAttendance[courseId].checkOutTime);
+          } else {
+            // Reset check-out time if not set
+            const today = new Date();
+            const hours = String(today.getHours()).padStart(2, '0');
+            const minutes = String(today.getMinutes()).padStart(2, '0');
+            setCheckOutTime(`${hours}:${minutes}`);
+          }
+        }
       }
     } else {
       setSelectedTimeTable(null);
@@ -264,7 +350,6 @@ const ManualAttendance = () => {
     setPaymentAmount(selectedAmount);
   };
   
-  // Add this to process the payment
   const handlePayment = async () => {
     if (!studentData || paymentAmount <= 0) {
       setMessage({ text: 'Please select at least one course to pay for', type: 'error' });
@@ -327,7 +412,7 @@ const ManualAttendance = () => {
   };
 
   return (
-    <div className=" min-h-screen">
+    <div className="min-h-screen">
       {/* Main Content */}
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-xl shadow-xl overflow-hidden">
@@ -383,12 +468,16 @@ const ManualAttendance = () => {
 
           {/* Message Section */}
           {message.text && (
-            <div className={`px-6 py-3 ${message.type === 'error' ? 'bg-red-50 text-red-700 border-l-4 border-red-500' : 'bg-green-50 text-green-700 border-l-4 border-green-500'}`}>
+            <div className={`px-6 py-3 ${message.type === 'error' ? 'bg-red-50 text-red-700 border-l-4 border-red-500' : message.type === 'warning' ? 'bg-amber-50 text-amber-700 border-l-4 border-amber-500' : 'bg-green-50 text-green-700 border-l-4 border-green-500'}`}>
               <div className="flex items-center">
-                <div className={`h-8 w-8 flex items-center justify-center rounded-full ${message.type === 'error' ? 'bg-red-100' : 'bg-green-100'} mr-4`}>
+                <div className={`h-8 w-8 flex items-center justify-center rounded-full ${message.type === 'error' ? 'bg-red-100' : message.type === 'warning' ? 'bg-amber-100' : 'bg-green-100'} mr-4`}>
                   {message.type === 'error' ? (
                     <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  ) : message.type === 'warning' ? (
+                    <svg className="h-5 w-5 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
                   ) : (
                     <svg className="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">

@@ -18,8 +18,11 @@ use App\Http\Controllers\TeacherAttendanceController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\StudentDashboardController;
+use App\Http\Controllers\TeacherDashboardController;
 use App\Http\Controllers\TeacherSearchController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StripePaymentController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
@@ -225,9 +228,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Teacher routes
     Route::prefix('teacher')->middleware([CheckRole::class . ':teacher'])->group(function () {
-        Route::get('/dashboard', function () {
-            return Inertia::render('Teacher/Dashboard');
-        })->name('teacher.dashboard');
+
+        Route::get('/dashboard', [TeacherDashboardController::class, 'index'])->name('teacher.dashboard');
+        Route::get('/dashboard/total-students', [TeacherDashboardController::class, 'getTotalStudents']);
+        Route::get('/dashboard/attendance-stats', [TeacherDashboardController::class, 'getAttendanceStats']);
+        Route::get('/dashboard/grade-stats', [TeacherDashboardController::class, 'getGradeStats']);
+        Route::get('/dashboard/assignment-stats', [TeacherDashboardController::class, 'getAssignmentStats']);
+        Route::get('/dashboard/class-attendance', [TeacherDashboardController::class, 'getClassAttendance']);
+        Route::get('/dashboard/today-schedule', [TeacherDashboardController::class, 'getTodaySchedule']);
+        Route::get('/dashboard/class-performance', [TeacherDashboardController::class, 'getClassPerformance']);
         
         Route::get('/courses', function () {
             return Inertia::render('Teacher/Courses');
@@ -308,6 +317,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/attendance/report', [StudentAttendanceController::class, 'getAttendanceReport'])->name('student.attendance.report');
         Route::get('/attendance/stats', [StudentAttendanceController::class, 'getAttendanceStats'])->name('student.attendance.stats');
         Route::get('/courses/list', [StudentAttendanceController::class, 'getStudentCourses'])->name('student.courses.list');
+
+        Route::get('/dashboard/monthly-attendance', [StudentDashboardController::class, 'getMonthlyAttendance']);
+        Route::get('/dashboard/attendance-stats', [StudentDashboardController::class, 'getAttendanceStats']);
+        Route::get('/dashboard/grade-stats', [StudentDashboardController::class, 'getGradeStats']);
+        Route::get('/dashboard/assignment-stats', [StudentDashboardController::class, 'getAssignmentStats']);
+        Route::get('/dashboard/subject-distribution', [StudentDashboardController::class, 'getSubjectDistribution']);
         
         Route::get('/exams', function () {
             return Inertia::render('Student/Exams');
@@ -395,11 +410,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
     Route::get('/notifications/{id}/notice', [NotificationController::class, 'showNoticeFromNotification']);
 
-    Route::get('/settings', [App\Http\Controllers\SettingsController::class, 'index'])->name('settings');
-    Route::post('/settings/account', [App\Http\Controllers\SettingsController::class, 'updateAccount'])->name('settings.account');
-    Route::post('/settings/password', [App\Http\Controllers\SettingsController::class, 'updatePassword'])->name('settings.password');
-    Route::post('/settings/notifications', [App\Http\Controllers\SettingsController::class, 'updateNotifications'])->name('settings.notifications');
-    Route::post('/settings/appearance', [App\Http\Controllers\SettingsController::class, 'updateAppearance'])->name('settings.appearance');
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+    Route::post('/settings/account', [SettingsController::class, 'updateAccount']);
+    Route::post('/settings/password', [SettingsController::class, 'updatePassword']);
+    Route::post('/settings/appearance', [SettingsController::class, 'updateAppearance']);
+    Route::delete('/profile', [SettingsController::class, 'deleteAccount']);
 
     Route::post('/create-payment-intent', [StripePaymentController::class, 'createPaymentIntent']);
     Route::post('/student/payments/stripe', [StripePaymentController::class, 'recordPayment'])

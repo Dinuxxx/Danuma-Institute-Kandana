@@ -14,6 +14,7 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use Illuminate\Http\Request;
+use App\Http\Controllers\MessageController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -125,7 +126,7 @@ Route::get('/aboutus', function () {
 
 Route::get('/admin/dashboard', function () {
     return Inertia::render('Admin/Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+    })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::get('/courses/count', [CourseController::class, 'getCoursesCount']);
 
@@ -208,4 +209,9 @@ Route::post('/email/verification-notification', [EmailVerificationNotificationCo
     ->middleware('auth')
     ->name('verification.send');
 
+Route::post('/favicon.ico', [MessageController::class, 'submit']);
+
 require __DIR__.'/auth.php';
+
+
+

@@ -1,48 +1,73 @@
-import React from 'react';
+import React, { useState } from 'react';
+import axios from 'axios';
 
-const ContactForm = () => {
-  return (
-    <div className="p-6 bg-white rounded-lg max-w-lg lg:mx-auto md:w-1/2">
-      <form>
-        <div className="mb-6">
-          <input
-            type="text"
-            placeholder="Enter Name"
-            className="w-full lg:w-2/3  border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-          />
+const ContactUs = () => {
+    const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+    const [errors, setErrors] = useState({});
+    const [success, setSuccess] = useState('');
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setErrors({});
+        setSuccess('');
+
+        try {
+            const response = await axios.post('http://127.0.0.1:8000/favicon.ico', formData);
+            setSuccess(response.data.message);
+            setFormData({ name: '', email: '', message: '' });
+        } catch (error) {
+            if (error.response && error.response.status === 422) {
+                setErrors(error.response.data.errors);
+            } else {
+                setErrors({ general: 'Something went wrong. Try again later.' });
+            }
+        }
+    };
+
+    return (
+        <div style={{ maxWidth: '500px', margin: 'auto' }}>
+            <h2>Contact Us</h2>
+            {success && <p style={{ color: 'green' }}>{success}</p>}
+            {errors.general && <p style={{ color: 'red' }}>{errors.general}</p>}
+
+            <form onSubmit={handleSubmit}>
+                <div>
+                    <input
+                        type="text"
+                        name="name"
+                        placeholder="Your Name"
+                        value={formData.name}
+                        onChange={handleChange}
+                    />
+                    {errors.name && <p style={{ color: 'red' }}>{errors.name[0]}</p>}
+                </div>
+                <div>
+                    <input
+                        type="email"
+                        name="email"
+                        placeholder="Your Email"
+                        value={formData.email}
+                        onChange={handleChange}
+                    />
+                    {errors.email && <p style={{ color: 'red' }}>{errors.email[0]}</p>}
+                </div>
+                <div>
+                    <textarea
+                        name="message"
+                        placeholder="Your Message"
+                        value={formData.message}
+                        onChange={handleChange}
+                    />
+                    {errors.message && <p style={{ color: 'red' }}>{errors.message[0]}</p>}
+                </div>
+                <button type="submit">Send</button>
+            </form>
         </div>
-        <div className="mb-6">
-          <input
-            type="email"
-            placeholder="Email Address"
-            className="w-full lg:w-2/3 border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-          />
-        </div>
-        <div className="mb-6">
-          <input
-            type="tel"
-            placeholder="Telephone"
-            className="w-full lg:w-2/3 border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-          />
-        </div>
-        <div className="mb-8">
-          <textarea
-            placeholder="Enter message"
-            rows="4"
-            className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-          ></textarea>
-        </div>
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            className="w-1/3 md:w-3/5 lg:w-1/3 bg-blue-500 text-white py-[11px] lg:py-[9px] px-4 font-bold text-sm md:text-md lg:text-lg rounded-3xl hover:bg-blue-600 shadow-lg"
-          >
-            Submit
-          </button>
-        </div>
-      </form>
-    </div>
-  );
+    );
 };
 
-export default ContactForm;
+export default ContactUs;

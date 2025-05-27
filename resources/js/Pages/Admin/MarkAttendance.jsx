@@ -5,6 +5,7 @@ import Sidebar from '@/Components/Sidebar';
 import { Head } from '@inertiajs/react';
 import AttendanceQR from '@/Components/Admin Components/AttendanceQR';
 import { usePage } from '@inertiajs/react';
+import ManualAttendance from '@/Components/Admin Components/ManualAttendance';
 
 const MarkAttendance = () => {
   const { props } = usePage();
@@ -71,7 +72,7 @@ const MarkAttendance = () => {
             )}
             {activeTab === 'manual' && (
               <div>
-
+                <ManualAttendance />
               </div>
             )}
           </main>

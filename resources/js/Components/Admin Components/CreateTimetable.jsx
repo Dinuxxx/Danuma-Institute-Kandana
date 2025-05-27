@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from 'axios';
 
-const CreateTimetable = ({ closeModal, selectedGrade, courses }) => {
+const CreateTimetable = ({ closeModal, selectedGrade, courses, onSuccess }) => {
   const [formData, setFormData] = useState({
     day_of_week: "",
     start_time: "",
@@ -10,6 +10,9 @@ const CreateTimetable = ({ closeModal, selectedGrade, courses }) => {
     classroom_no: "",
     subject_name: ""
   });
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   // Filter courses for the selected grade
   const availableCourses = courses || [];
@@ -28,6 +31,7 @@ const CreateTimetable = ({ closeModal, selectedGrade, courses }) => {
   // Handle form field changes
   const handleChange = (e) => {
     const { name, value } = e.target;
+    setError(""); // Clear any previous errors
     
     setFormData(prevData => {
       const newData = { ...prevData, [name]: value };
@@ -52,6 +56,14 @@ const CreateTimetable = ({ closeModal, selectedGrade, courses }) => {
   // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    
+    // Validate end time is after start time
+    if (formData.start_time >= formData.end_time) {
+      setError("End time must be after start time");
+      setIsSubmitting(false);
+      return;
+    }
     
     // Prepare data for submission
     const submissionData = {
@@ -65,12 +77,33 @@ const CreateTimetable = ({ closeModal, selectedGrade, courses }) => {
     // Send data to backend using axios
     axios.post("/admin/time-tables", submissionData)
       .then(response => {
+        // Get the course details to add to the new timetable entry
+        const selectedCourse = availableCourses.find(course => course.course_id === formData.course_id);
+        
+        // Create a new timetable entry object with complete information
+        const newTimetableEntry = {
+          ...submissionData,
+          ttable_id: response.data.ttable_id || response.data.id, // Depending on what your API returns
+          course: selectedCourse // Include course details
+        };
+        
+        // Call the onSuccess callback with the new timetable entry
+        onSuccess(newTimetableEntry);
         closeModal();
-        window.location.reload();
       })
       .catch(error => {
         console.error("Error adding timetable:", error);
-        alert("Failed to add timetable entry. Please try again.");
+        
+        // Display detailed error messages if available
+        if (error.response && error.response.data && error.response.data.errors) {
+          const errorMessages = Object.values(error.response.data.errors).flat().join(", ");
+          setError(errorMessages);
+        } else {
+          setError("Failed to add timetable entry. Please try again.");
+        }
+      })
+      .finally(() => {
+        setIsSubmitting(false);
       });
   };
 
@@ -82,6 +115,12 @@ const CreateTimetable = ({ closeModal, selectedGrade, courses }) => {
         </div>
         
         <div className="p-8">
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              {error}
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
@@ -194,17 +233,31 @@ const CreateTimetable = ({ closeModal, selectedGrade, courses }) => {
                 type="button"
                 onClick={closeModal}
                 className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-6 py-2.5 rounded-lg transition duration-200"
+                disabled={isSubmitting}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="bg-blue-500 hover:bg-blue-600 text-white font-medium px-4 py-2.5 rounded-lg shadow-md transition duration-200 flex items-center"
+                className={`bg-blue-500 hover:bg-blue-600 text-white font-medium px-4 py-2.5 rounded-lg shadow-md transition duration-200 flex items-center ${isSubmitting ? 'opacity-75 cursor-not-allowed' : ''}`}
+                disabled={isSubmitting}
               >
-                <svg className="w-5 h-5 mr-2 border-2 rounded-xl" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-                ADD to Table
+                {isSubmitting ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5 mr-2 border-2 rounded-xl" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    ADD to Table
+                  </>
+                )}
               </button>
             </div>
           </form>

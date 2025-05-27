@@ -82,7 +82,7 @@ function Sidebar({ isOpen, toggleSidebar, role }) {
             { icon: <FaBook />, text: 'Courses', link: '/teacher/courses' },
             { icon: <FaTrophy />, text: 'Exams', link: '/teacher/exams' },
             { icon: <FaClipboardList />, text: 'Attendance', link: '/teacher/attendance' },
-            { icon: <FaMoneyBill />, text: 'Payments', link: '/teacher/payments' },
+           // { icon: <FaMoneyBill />, text: 'Payments', link: '/teacher/payments' },
             { icon: <FaBullhorn />, text: 'Notices', link: '/teacher/notices' },
             { icon: <FaCalendarAlt />, text: 'Time Tables', link: '/teacher/time-tables' },
         ],

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Payments extends Model
+class Payment extends Model
 {
     /** @use HasFactory<\Database\Factories\PaymentsFactory> */
     use HasFactory;
@@ -19,7 +19,14 @@ class Payments extends Model
      */
     protected $primaryKey = 'payment_id';
     
-    protected $fillable = ['amount'];
+    protected $fillable = [
+        'method',
+        'status',
+        'amount',
+        'verified_by',
+        'student_id',
+        'proof_path',
+    ];
 
     //get the user who verified this payment 
     public function verifiedUser() :BelongsTo
@@ -34,7 +41,7 @@ class Payments extends Model
     }
 
     // get the courses for which this payment made
-    public function paymentCourse(): HasMany
+    public function paymentCourses(): HasMany
     {
         return $this->hasMany(PaymentCourse::class, 'payment_id', 'payment_id');
     }

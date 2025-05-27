@@ -20,6 +20,18 @@ const Courses = () => {
     setIsModalOpen(false);
   };
 
+  // Function to handle newly created course
+  const handleCourseCreated = (newCourse) => {
+    // Add pattern image to the new course
+    const courseWithImage = {
+      ...newCourse,
+      pattern: getOrAssignImage(newCourse.course_id || "")
+    };
+    
+    // Update courses state by adding the new course
+    setCourses(currentCourses => [...currentCourses, courseWithImage]);
+  };
+
   // Fetch courses from the backend
   useEffect(() => {
     const fetchCourses = async () => {
@@ -27,7 +39,11 @@ const Courses = () => {
         const response = await axios.get("/courses"); // Update the URL as needed
         const coursesWithImages = response.data.map((course) => ({
           ...course,
-          pattern: getOrAssignImage(course.course_id), // Assign or retrieve image for each course
+          course_id: course.course_id || "",
+          course_name: course.course_name || "",
+          grade: course.grade || "",
+          teacher_id: course.teacher_id || "",
+          pattern: getOrAssignImage(course.course_id || ""), // Assign or retrieve image for each course
         }));
         setCourses(coursesWithImages);
       } catch (error) {
@@ -64,23 +80,29 @@ const Courses = () => {
     return patternImages[randomIndex];
   };
 
-  // Filter courses based on search query
-  const filteredCourses = courses.filter(course =>
-    course.course_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    course.course_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    course.grade.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter courses based on search query - with null checks
+  const filteredCourses = courses.filter(course => {
+    const courseName = (course.course_name || "").toLowerCase();
+    const courseId = (course.course_id || "").toLowerCase();
+    const courseGrade = (course.grade || "").toLowerCase();
+    const query = searchQuery.toLowerCase();
+    
+    return courseName.includes(query) || 
+           courseId.includes(query) || 
+           courseGrade.includes(query);
+  });
   
-
-  // Sort courses based on the selected method
-  const sortedCourses = filteredCourses.sort((a, b) => {
+  // Sort courses based on the selected method - with null checks
+  const sortedCourses = [...filteredCourses].sort((a, b) => {
     if (sortMethod === "name") {
-      return a.course_name.localeCompare(b.course_name);
+      return (a.course_name || "").localeCompare(b.course_name || "");
     } else if (sortMethod === "lastAccessed") {
-      // Assuming 'last_accessed' is a date string or timestamp
-      return new Date(b.last_accessed) - new Date(a.last_accessed);
+      // Safely handle potentially missing last_accessed
+      const dateA = a.last_accessed ? new Date(a.last_accessed) : new Date(0);
+      const dateB = b.last_accessed ? new Date(b.last_accessed) : new Date(0);
+      return dateB - dateA;
     } else if(sortMethod === "grade") {
-      return a.grade.localeCompare(b.grade);
+      return (a.grade || "").localeCompare(b.grade || "");
     }
     return 0;
   });
@@ -139,14 +161,14 @@ const Courses = () => {
             <div className="p-4 text-gray-500">No results found</div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-              {sortedCourses.map((course) => (
+              {sortedCourses.map((course, index) => (
                 <CourseCard
-                  key={course.course_id}
-                  id={course.course_id}
-                  title={course.course_name}
-                  grade={course.grade}
-                  instructor={`Instructor ID: ${course.teacher_id}`} // Replace with actual instructor details
-                  pattern={course.pattern}
+                  key={course.course_id || index}
+                  id={course.course_id || ""}
+                  title={course.course_name || "Untitled Course"}
+                  grade={course.grade || ""}
+                  instructor={course.teacher_id ? `${course.teacher_id}` : ""}
+                  pattern={course.pattern || patternImages[0]}
                 />
               ))}
             </div>
@@ -155,7 +177,11 @@ const Courses = () => {
       </div>
 
       {/* Create Course Modal */}
-      <CreateCourseModal isOpen={isModalOpen} onClose={handleCloseModal} />
+      <CreateCourseModal 
+        isOpen={isModalOpen} 
+        onClose={handleCloseModal} 
+        onCourseCreated={handleCourseCreated} 
+      />
     </AuthenticatedLayout>
   );
 };

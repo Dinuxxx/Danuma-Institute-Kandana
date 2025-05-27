@@ -15,12 +15,17 @@ const TimeTables = ({ timetables = [], courses = [] }) => {
   const formatTimetableData = (data) => {
     return data.map(item => {
       const course = courses.find(c => c.course_id === item.course_id) || {};
+      
+      // Format times to remove seconds
+      const startTime = item.start_time.substring(0, 5); // Extract only HH:MM
+      const endTime = item.end_time.substring(0, 5);     // Extract only HH:MM
+      
       return {
-        "Subject Code": course.code || item.course_id,
-        "Subject Name": course.name || "Unknown Course",
+        "Subject Code": course.course_id || "Unknown",
+        "Subject Name": course.course_name || "Unknown Course",
         "Day": item.day_of_week,
-        "Start Time": item.start_time,
-        "End Time": item.end_time,
+        "Start Time": startTime,
+        "End Time": endTime,
         "Classroom": item.classroom_no || "TBA"
       };
     });
@@ -36,8 +41,8 @@ const TimeTables = ({ timetables = [], courses = [] }) => {
       filtered = filtered.filter(item => {
         const course = courses.find(c => c.course_id === item.course_id) || {};
         return (
-          (course.code && course.code.toLowerCase().includes(term)) ||
-          (course.name && course.name.toLowerCase().includes(term)) ||
+          (course.course_id && course.course_id.toLowerCase().includes(term)) ||
+          (course.course_name && course.course_name.toLowerCase().includes(term)) ||
           item.day_of_week.toLowerCase().includes(term) ||
           (item.classroom_no && item.classroom_no.toLowerCase().includes(term))
         );
@@ -62,7 +67,7 @@ const TimeTables = ({ timetables = [], courses = [] }) => {
       filtered = [...filtered].sort((a, b) => {
         const courseA = courses.find(c => c.course_id === a.course_id) || {};
         const courseB = courses.find(c => c.course_id === b.course_id) || {};
-        return (courseA.name || '').localeCompare(courseB.name || '');
+        return (courseA.course_name || '').localeCompare(courseB.course_name || '');
       });
     } else if (sortBy === 'Sort by Time') {
       filtered = [...filtered].sort((a, b) => {
@@ -160,10 +165,10 @@ const TimeTables = ({ timetables = [], courses = [] }) => {
       
       <div className="py-8">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-[#FC9C02] mb-6">Time table</h1>
+          <h1 className="text-3xl font-bold text-[#FC9C02] mb-6">My Timetable</h1>
           <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div className="p-6">
-              <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+              <div className="flex flex-col md:flex-row justify-between items-center mb-24 gap-4">
                 <div className="flex flex-wrap gap-2">
                   {/* Search input */}
                   <div className="relative w-full md:w-auto">
@@ -220,7 +225,7 @@ const TimeTables = ({ timetables = [], courses = [] }) => {
               
               {filteredData.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  <p>No timetable entries found. Please check your filters or contact administration.</p>
+                  <p>No timetable entries found for your enrolled courses. Please check your course enrollments or contact administration.</p>
                 </div>
               ) : (
                 <div className="print-section">

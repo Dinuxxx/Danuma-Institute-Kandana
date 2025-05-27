@@ -1,15 +1,16 @@
 import React, { useRef, useState, useEffect } from "react";
 import ApplicationLogo from "./ApplicationLogo";
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage, router } from '@inertiajs/react';
 
 export default function Header() {
     const headerRef = useRef();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [notificationsOpen, setNotificationsOpen] = useState(false);
+    const [expandedNotificationId, setExpandedNotificationId] = useState(null);
     
-    // Dummy user details
+    // Get authenticated user from page props
     const user = usePage().props.auth.user;
-    const profileImage = "https://via.placeholder.com/40"; // Placeholder image
+    const { notifications = [] } = usePage().props;
     
     // Toggle dropdown visibility
     const toggleDropdown = () => {
@@ -21,6 +22,11 @@ export default function Header() {
     const toggleNotifications = () => {
         if (dropdownOpen) setDropdownOpen(false);
         setNotificationsOpen(!notificationsOpen);
+    };
+    
+    // Toggle expansion of notification
+    const toggleNotificationExpansion = (id) => {
+        setExpandedNotificationId(expandedNotificationId === id ? null : id);
     };
     
     // Close dropdown and notifications when clicking outside
@@ -44,44 +50,64 @@ export default function Header() {
     // Get user's first name
     const firstName = user?.name ? user.name.split(' ')[0] : 'User';
 
-    // Sample notifications data
-    const notifications = [
-        {
-            id: 1,
-            type: 'message',
-            content: 'John sent you a message',
-            time: '5 min ago',
-            read: false,
-            avatar: 'https://via.placeholder.com/40/4f46e5/ffffff?text=J'
-        },
-        {
-            id: 2,
-            type: 'task',
-            content: 'New task assigned: Update project documentation',
-            time: '2 hours ago',
-            read: false,
-            avatar: 'https://via.placeholder.com/40/ef4444/ffffff?text=T'
-        },
-        {
-            id: 3,
-            type: 'alert',
-            content: 'Your subscription will expire in 3 days',
-            time: 'Yesterday',
-            read: true,
-            avatar: 'https://via.placeholder.com/40/f59e0b/ffffff?text=!'
-        },
-        {
-            id: 4,
-            type: 'update',
-            content: 'System update completed successfully',
-            time: '2 days ago',
-            read: true,
-            avatar: 'https://via.placeholder.com/40/10b981/ffffff?text=U'
-        },
-    ];
-
-    // Filter unread notifications
+    // Count unread notifications
     const unreadCount = notifications.filter(n => !n.read).length;
+    
+    // Get notification icon based on type
+    const getNotificationIcon = (type) => {
+        switch(type) {
+            case 'payment_request':
+                return (
+                    <div className="rounded-full bg-indigo-100 p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                );
+            case 'payment_approved':
+                return (
+                    <div className="rounded-full bg-green-100 p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                );
+            case 'payment_rejected':
+                return (
+                    <div className="rounded-full bg-red-100 p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                );
+            default:
+                return (
+                    <div className="rounded-full bg-gray-100 p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                );
+        }
+    };
+
+    // Mark notification as read
+    const markAsRead = (notificationId) => {
+        router.post(route('notifications.mark-as-read', { id: notificationId }));
+    };
+
+    // Navigate to related page for notification
+    const handleSeeMoreClick = (notification, e) => {
+        e.stopPropagation();
+        markAsRead(notification.id);
+        
+        // Navigate based on notification type and role
+        if (user.role === 'admin' && notification.type === 'payment_request') {
+            router.visit(route('admin.payments.show', { id: notification.data.payment_id }));
+        } else if (user.role === 'student' && ['payment_approved', 'payment_rejected'].includes(notification.type)) {
+            router.visit(route('student.payments'));
+        }
+    };
 
     return (
         <header
@@ -120,9 +146,14 @@ export default function Header() {
                                 <h3 className="text-white font-semibold">Notifications</h3>
                                 <div className="flex items-center space-x-2">
                                     <span className="text-xs text-white opacity-80">{unreadCount} unread</span>
-                                    <button className="text-xs text-white hover:underline">
-                                        Mark all as read
-                                    </button>
+                                    {unreadCount > 0 && (
+                                        <button 
+                                            className="text-xs text-white hover:underline"
+                                            onClick={() => router.post(route('notifications.mark-all-read'))}
+                                        >
+                                            Mark all as read
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                             
@@ -132,21 +163,38 @@ export default function Header() {
                                     notifications.map((notification) => (
                                         <div 
                                             key={notification.id} 
-                                            className={`flex items-start px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${!notification.read ? 'bg-blue-50' : ''}`}
+                                            className={`cursor-pointer border-b border-gray-100 hover:bg-gray-50 transition-colors ${!notification.read ? 'bg-blue-50' : ''}`}
+                                            onClick={() => {
+                                                toggleNotificationExpansion(notification.id);
+                                                if (!notification.read) markAsRead(notification.id);
+                                            }}
                                         >
-                                            <div className="flex-shrink-0">
-                                                <img 
-                                                    src={notification.avatar} 
-                                                    alt=""
-                                                    className="rounded-full w-10 h-10" 
-                                                />
+                                            <div className="flex items-start px-4 py-3">
+                                                <div className="flex-shrink-0">
+                                                    {getNotificationIcon(notification.type)}
+                                                </div>
+                                                <div className="ml-3 flex-1">
+                                                    <p className="text-sm text-gray-800 font-medium">{notification.title}</p>
+                                                    <p className="text-xs text-gray-500 mt-1">{notification.created_at_formatted}</p>
+                                                </div>
+                                                {!notification.read && (
+                                                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                                                )}
                                             </div>
-                                            <div className="ml-3 flex-1">
-                                                <p className="text-sm text-gray-800">{notification.content}</p>
-                                                <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
-                                            </div>
-                                            {!notification.read && (
-                                                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                                            
+                                            {/* Expanded content */}
+                                            {expandedNotificationId === notification.id && (
+                                                <div className="px-4 py-2 bg-gray-50 border-t border-gray-100">
+                                                    <p className="text-sm text-gray-700">{notification.message}</p>
+                                                    <div className="mt-2 text-right">
+                                                        <button 
+                                                            onClick={(e) => handleSeeMoreClick(notification, e)}
+                                                            className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                                                        >
+                                                            See more
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             )}
                                         </div>
                                     ))
@@ -162,9 +210,9 @@ export default function Header() {
                             
                             {/* Footer */}
                             <div className="px-4 py-2 bg-gray-50 text-center">
-                                <a href="/notifications" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                                <Link href={route('notifications.index')} className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
                                     View all notifications
-                                </a>
+                                </Link>
                             </div>
                         </div>
                     )}
@@ -179,7 +227,7 @@ export default function Header() {
                     
                     {/* Profile Image */}
                     <img
-                        src={profileImage}
+                        src={user.profile_photo_url || "/images/default-avatar-svg.svg"}
                         alt="Profile"
                         className="w-10 h-10 rounded-full"
                         onClick={toggleDropdown}

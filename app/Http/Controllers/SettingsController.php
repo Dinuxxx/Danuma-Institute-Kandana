@@ -106,65 +106,138 @@ class SettingsController extends Controller
  * @param  \Illuminate\Http\Request  $request      
  * @return \Illuminate\Http\Response      
  */     
-public function updatePassword(Request $request)     
-{         
-    try {
-        $user = Auth::user();
-        
-        // Validate the request
-        $validated = $request->validate([             
-            'current_password' => ['required', 'string'],             
-            'password' => [
-                'required', 
-                'string', 
-                'min:8', 
-                'confirmed', 
-                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/',
-                'different:current_password' // Ensure new password is different from current
-            ],
-            'password_confirmation' => ['required'],
-        ], [             
-            'password.regex' => 'The password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
-            'password.different' => 'The new password must be different from your current password.'
-        ]);
-
-        // Validate the current password
-        if (!Hash::check($validated['current_password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'current_password' => ['The current password is incorrect.'],
+public function updatePassword(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            
+            Log::info('Password update attempt for user:', [
+                'user_id' => $user->id,
+                'email' => $user->email
             ]);
-        }
-                  
-        $user->password = Hash::make($validated['password']);
-        $user->save();
 
-        // Log the password change
-        Log::info('Password changed for user:', [
-            'user_id' => $user->id,
-            'email' => $user->email
-        ]);
-                  
-        return response()->json([
-            'success' => true,
-            'message' => 'Password updated successfully.'
-        ]);
-    } catch (ValidationException $e) {
-        return response()->json([
-            'success' => false,
-            'errors' => $e->errors(),
-        ], 422);
-    } catch (\Exception $e) {
-        // Log the error for debugging
-        Log::error('Password update error: ' . $e->getMessage());
-        
-        // Return a proper error response
-        return response()->json([
-            'success' => false,
-            'message' => 'Unable to update password',
-            'error' => $e->getMessage()
-        ], 500);
+            // Validate the request with enhanced password rules
+            $validated = $request->validate([
+                'current_password' => ['required', 'string'],
+                'password' => [
+                    'required',
+                    'string',
+                    'min:8',
+                    'confirmed',
+                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/',
+                    'different:current_password'
+                ],
+                'password_confirmation' => ['required', 'string'],
+            ], [
+                'password.regex' => 'The password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
+                'password.different' => 'The new password must be different from your current password.',
+                'password.confirmed' => 'The password confirmation does not match.',
+                'current_password.required' => 'Current password is required.',
+            ]);
+
+            // Verify the current password
+            if (!Hash::check($validated['current_password'], $user->password)) {
+                Log::warning('Invalid current password provided for user:', [
+                    'user_id' => $user->id,
+                    'email' => $user->email
+                ]);
+                
+                throw ValidationException::withMessages([
+                    'current_password' => ['The current password is incorrect.'],
+                ]);
+            }
+
+            // Check if new password is actually different from current
+            if (Hash::check($validated['password'], $user->password)) {
+                throw ValidationException::withMessages([
+                    'password' => ['The new password must be different from your current password.'],
+                ]);
+            }
+
+            // Use database transaction to ensure data consistency
+            DB::transaction(function () use ($user, $validated) {
+                // Hash and update the password
+                $hashedPassword = Hash::make($validated['password']);
+                
+                // Update using both Eloquent and raw query for extra safety
+                $user->password = $hashedPassword;
+                $saved = $user->save();
+                
+                if (!$saved) {
+                    throw new \Exception('Failed to save password to database');
+                }
+                
+                // Double-check the password was actually updated
+                $user->refresh();
+                if (!Hash::check($validated['password'], $user->password)) {
+                    throw new \Exception('Password verification failed after update');
+                }
+                
+                Log::info('Password successfully updated for user:', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'updated_at' => $user->updated_at
+                ]);
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Password updated successfully.'
+            ]);
+
+        } catch (ValidationException $e) {
+            Log::warning('Password update validation failed:', [
+                'user_id' => Auth::id(),
+                'errors' => $e->errors()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors(),
+            ], 422);
+            
+        } catch (\Exception $e) {
+            Log::error('Password update error:', [
+                'user_id' => Auth::id(),
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to update password. Please try again.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
+    }
+
+    /**
+     * Verify current password (helper method for additional security)
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function verifyCurrentPassword(Request $request)
+    {
+        try {
+            $request->validate([
+                'current_password' => ['required', 'string']
+            ]);
+
+            $user = Auth::user();
+            $isValid = Hash::check($request->current_password, $user->password);
+
+            return response()->json([
+                'valid' => $isValid
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'valid' => false,
+                'error' => 'Verification failed'
+            ], 400);
+        }
     }   
-}     
     
     /**      
      * Update the user's appearance settings.      
@@ -221,47 +294,132 @@ public function updatePassword(Request $request)
     {
         try {
             $user = Auth::user();
+            $userId = $user->id;
             
-            // First, delete related records
-            if ($user->registration) {
-                $user->registration->delete();
-            }
+            Log::info('Starting account deletion process for user ID: ' . $userId);
             
-            // If there are other related records like admin, student, teacher, etc.
-            if ($user->admin) {
-                $user->admin->delete();
-            }
+            // Use database transaction to ensure data consistency
+            DB::transaction(function () use ($user, $userId) {
+                
+                // 1. Delete student-related data if user is a student
+                if ($user->student) {
+                    $studentId = $user->student->student_id;
+                    
+                    // Delete exam marks
+                    DB::table('exam_marks')->where('student_id', $studentId)->delete();
+                    
+                    // Delete student course registrations
+                    DB::table('student_courses')->where('student_id', $studentId)->delete();
+                    
+                    // Delete payments related to student
+                    DB::table('payments')->where('student_id', $studentId)->delete();
+                    
+                    // Delete attendance records for student
+                    DB::table('attendances')->where('student_id', $studentId)->delete();
+                    
+                    // Delete the student record
+                    $user->student->delete();
+                    
+                    Log::info('Deleted student-related data for student ID: ' . $studentId);
+                }
+                
+                // 2. Delete teacher-related data if user is a teacher
+                if ($user->teacher) {
+                    $teacherId = $user->teacher->tea_id;
+                    
+                    // Update courses to remove teacher reference (set to null or reassign)
+                    DB::table('courses')->where('teacher_id', $teacherId)->update(['teacher_id' => null]);
+                    
+                    // Delete the teacher record
+                    $user->teacher->delete();
+                    
+                    Log::info('Deleted teacher-related data for teacher ID: ' . $teacherId);
+                }
+                
+                // 3. Delete admin-related data if user is an admin
+                if ($user->admin) {
+                    $user->admin->delete();
+                    Log::info('Deleted admin record for user ID: ' . $userId);
+                }
+                
+                // 4. Delete records where user is referenced as "added_by"
+                DB::table('user_registrations')->where('added_by', $userId)->update(['added_by' => null]);
+                
+                // 5. Delete records where user is referenced as "marked_by" in attendances
+                DB::table('attendances')->where('marked_by', $userId)->update(['marked_by' => null]);
+                
+                // 6. Delete records where user is referenced as "verified_by" in payments
+                DB::table('payments')->where('verified_by', $userId)->update(['verified_by' => null]);
+                
+                // 7. Delete login logs
+                DB::table('login_logs')->where('user_id', $userId)->delete();
+                
+                // 8. Delete user registration record
+                if ($user->registration) {
+                    $user->registration->delete();
+                    Log::info('Deleted user registration for user ID: ' . $userId);
+                }
+                
+                // 9. Finally, delete the user account
+                $user->delete();
+                
+                Log::info('Successfully deleted user account with ID: ' . $userId);
+            });
             
-            if ($user->student) {
-                $user->student->delete();
-            }
-            
-            if ($user->teacher) {
-                $user->teacher->delete();
-            }
-            
-            // Finally, delete the user
-            $user->delete();
-            
-            // Logout the user
+            // Logout the user after successful deletion
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
             
-            return response()->json([
-                'success' => true,
-                'message' => 'Account deleted successfully.'
-            ]);
+            // Redirect to login page with success message
+            return redirect()->route('login')
+                ->with('success', 'Your account has been successfully deleted.');
+            
         } catch (\Exception $e) {
             // Log the error for debugging
             Log::error('Account deletion error: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             
-            // Return a proper error response
-            return response()->json([
-                'success' => false,
-                'message' => 'Unable to delete account',
-                'error' => $e->getMessage()
-            ], 500);
+            // Redirect back with error message
+            return back()->withErrors([
+                'delete_account' => 'Unable to delete account. Please try again later.'
+            ]);
+        }
+    }
+    
+    /**
+     * Delete the user's account with password confirmation.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function deleteAccountWithConfirmation(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'password' => ['required', 'string'],
+                'confirmation_text' => ['required', 'string', 'in:DELETE MY ACCOUNT'],
+            ], [
+                'confirmation_text.in' => 'Please type "DELETE MY ACCOUNT" to confirm deletion.'
+            ]);
+            
+            $user = Auth::user();
+            
+            // Verify the password
+            if (!Hash::check($validated['password'], $user->password)) {
+                throw ValidationException::withMessages([
+                    'password' => ['The password is incorrect.'],
+                ]);
+            }
+            
+            // If password is correct, proceed with account deletion
+            return $this->deleteAccount($request);
+            
+        } catch (ValidationException $e) {
+            throw $e; // Let Inertia handle validation errors
+        } catch (\Exception $e) {
+            Log::error('Account deletion confirmation error: ' . $e->getMessage());
+            throw $e;
         }
     }
 }

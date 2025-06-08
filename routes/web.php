@@ -22,6 +22,7 @@ use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\TeacherDashboardController;
 use App\Http\Controllers\TeacherSearchController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\TeacherExamController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StripePaymentController;
 use App\Http\Controllers\Auth\VerifyEmailController;
@@ -148,17 +149,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/lessons/edit/{id}', function () {
             return Inertia::render('Teacher/EditLesson');
         });
-        
+
+        Route::get('/exams', [TeacherExamController::class, 'index'])->name('exams');
+        Route::get('/exams/list', [TeacherExamController::class, 'getTeacherExams']);
+        Route::get('/exams/registered-grades', [TeacherExamController::class, 'getTeacherGrades']);
+        Route::post('/exams', [TeacherExamController::class, 'store']);
+        Route::get('/exams/{id}', [TeacherExamController::class, 'show']);
+        Route::put('/exams/{id}', [TeacherExamController::class, 'update']);
+        Route::delete('/exams/{id}', [TeacherExamController::class, 'destroy']);
+        Route::get('/exams/{examId}/students', [TeacherExamController::class, 'getExamStudents']);
+        Route::post('/exams/{examId}/marks', [TeacherExamController::class, 'saveExamMarks']);
+
         Route::get('/attendance', [TeacherAttendanceController::class, 'index'])->name('teacher.attendance');
         Route::get('/attendance/report', [TeacherAttendanceController::class, 'getAttendanceReport']);
         Route::get('/attendance/courses', [TeacherAttendanceController::class, 'getTeacherCourses']);
         Route::get('/attendance/students', [TeacherAttendanceController::class, 'getStudentsInCourses']);
         Route::get('/attendance/stats', [TeacherAttendanceController::class, 'getAttendanceStats']);
         Route::get('/attendance/monthly-stats', [TeacherAttendanceController::class, 'getMonthlyStats']);
-        
-        Route::get('/exams', function () {
-            return Inertia::render('Teacher/Exams');
-        });
         
         Route::get('/notices', function () {
             return Inertia::render('Teacher/Notices');
@@ -297,11 +304,15 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
     Route::get('/notifications/{id}/notice', [NotificationController::class, 'showNoticeFromNotification']);
 
-    Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
-    Route::post('/settings/account', [SettingsController::class, 'updateAccount']);
-    Route::post('/settings/password', [SettingsController::class, 'updatePassword']);
-    Route::post('/settings/appearance', [SettingsController::class, 'updateAppearance']);
-    Route::delete('/profile', [SettingsController::class, 'deleteAccount']);
+    // Settings routes
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::post('/settings/account', [SettingsController::class, 'updateAccount'])->name('settings.update-account');
+    Route::post('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.update-password');
+    Route::post('/settings/appearance', [SettingsController::class, 'updateAppearance'])->name('settings.update-appearance');
+    
+    // Account deletion routes
+    Route::post('/settings/confirm-deletion', [SettingsController::class, 'confirmAccountDeletion'])->name('settings.confirm-deletion');
+    Route::post('/settings/delete-account', [SettingsController::class, 'deleteAccount'])->name('settings.delete-account');
 
     Route::post('/create-payment-intent', [StripePaymentController::class, 'createPaymentIntent']);
     Route::post('/student/payments/stripe', [StripePaymentController::class, 'recordPayment'])

@@ -14,19 +14,9 @@ export default function AppearanceTab({ onSuccess }) {
         { id: 'en', name: 'English' }
     ];
     
-    // Available timezones (shortened list for example)
-    const timezones = [
-        { id: 'UTC', name: 'UTC (Coordinated Universal Time)' },
-        { id: 'Asia/Colombo', name: 'Asia/Colombo (Sri Lanka Time)' },
-        { id: 'Asia/Kolkata', name: 'Asia/Kolkata (Indian Standard Time)' },
-        { id: 'America/New_York', name: 'America/New_York (Eastern Time)' },
-        { id: 'Europe/London', name: 'Europe/London (Greenwich Mean Time)' },
-    ];
-    
     const { data, setData, post, processing } = useForm({
         theme: 'light',
         language: 'en',
-        timezone: 'UTC',
     });
     
     // Submit form handler
@@ -71,21 +61,6 @@ export default function AppearanceTab({ onSuccess }) {
                             >
                                 {languages.map(language => (
                                     <option key={language.id} value={language.id}>{language.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label htmlFor="timezone" className="block text-sm font-medium text-gray-700">Timezone</label>
-                            <select
-                                id="timezone"
-                                name="timezone"
-                                value={data.timezone}
-                                onChange={e => setData('timezone', e.target.value)}
-                                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                            >
-                                {timezones.map(timezone => (
-                                    <option key={timezone.id} value={timezone.id}>{timezone.name}</option>
                                 ))}
                             </select>
                         </div>

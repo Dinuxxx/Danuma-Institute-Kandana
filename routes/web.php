@@ -12,6 +12,7 @@ use App\Http\Controllers\TimetableController;
 use App\Http\Controllers\AdminNoticeController;
 use App\Http\Controllers\TeacherNoticeController;
 use App\Http\Controllers\StudentNoticeController;
+use App\Http\Controllers\StudentExamController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\StudentAttendanceController;
 use App\Http\Controllers\TeacherAttendanceController;
@@ -220,12 +221,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/dashboard/monthly-attendance', [StudentDashboardController::class, 'getMonthlyAttendance']);
         Route::get('/dashboard/attendance-stats', [StudentDashboardController::class, 'getAttendanceStats']);
         Route::get('/dashboard/grade-stats', [StudentDashboardController::class, 'getGradeStats']);
-        Route::get('/dashboard/assignment-stats', [StudentDashboardController::class, 'getAssignmentStats']);
         Route::get('/dashboard/subject-distribution', [StudentDashboardController::class, 'getSubjectDistribution']);
-        
-        Route::get('/exams', function () {
-            return Inertia::render('Student/Exams');
-        });
+        Route::get('/dashboard/due-amount-stats', [StudentDashboardController::class, 'getDueAmountStats']);
+        Route::get('/dashboard/student-performance', [StudentDashboardController::class, 'getStudentPerformance']);
+    
+        Route::get('/exams', [StudentExamController::class, 'index'])->name('exams.index');
+        Route::get('/exams/data', [StudentExamController::class, 'getStudentExams'])->name('exams.data');
+        Route::get('/exams/statistics', [StudentExamController::class, 'getExamStatistics'])->name('exams.statistics');
         
         Route::get('/notices', function () {
             return Inertia::render('Student/Notices');

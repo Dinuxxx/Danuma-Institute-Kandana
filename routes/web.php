@@ -150,6 +150,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return Inertia::render('Teacher/EditLesson');
         });
 
+                // Exam routes
         Route::get('/exams', [TeacherExamController::class, 'index'])->name('exams');
         Route::get('/exams/list', [TeacherExamController::class, 'getTeacherExams']);
         Route::get('/exams/registered-grades', [TeacherExamController::class, 'getTeacherGrades']);
@@ -157,9 +158,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/exams/{id}', [TeacherExamController::class, 'show']);
         Route::put('/exams/{id}', [TeacherExamController::class, 'update']);
         Route::delete('/exams/{id}', [TeacherExamController::class, 'destroy']);
+        
+        // Exam marks routes
         Route::get('/exams/{examId}/students', [TeacherExamController::class, 'getExamStudents']);
-        Route::post('/exams/{examId}/marks', [TeacherExamController::class, 'saveExamMarks']);
-
+        Route::get('/exams/{examId}/marks', [TeacherExamController::class, 'showExamMarks'])->name('teacher.exam.marks');
+        Route::post('/exams/{examId}/marks', [TeacherExamController::class, 'saveExamMarks'])->name('teacher.exam.marks.save');
+        Route::delete('/exams/{examId}/marks', [TeacherExamController::class, 'deleteExamMarks'])->name('teacher.exam.marks.delete');
+        
         Route::get('/attendance', [TeacherAttendanceController::class, 'index'])->name('teacher.attendance');
         Route::get('/attendance/report', [TeacherAttendanceController::class, 'getAttendanceReport']);
         Route::get('/attendance/courses', [TeacherAttendanceController::class, 'getTeacherCourses']);

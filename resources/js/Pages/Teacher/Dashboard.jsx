@@ -26,7 +26,8 @@ import {
   CheckCircle,
   TrendingUp,
   Calendar,
-  GraduationCap
+  GraduationCap,
+  AlertCircle
 } from 'lucide-react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import DatePicker from '@/Components/Admin Components/DatePicker';
@@ -42,11 +43,13 @@ const Dashboard = ({ auth }) => {
   const [classPerformance, setClassPerformance] = useState([]);
   const [todaySchedule, setTodaySchedule] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Fetch data from the backend
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
+      setError(null);
       try {
         // Parallel fetch all dashboard data
         const [
@@ -80,6 +83,8 @@ const Dashboard = ({ auth }) => {
         
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        setError('Failed to load dashboard data');
+        
         // Use fallback data if API calls fail
         setAttendanceData([
           { month: 'Jan', attendance: 92 },
@@ -91,7 +96,6 @@ const Dashboard = ({ auth }) => {
         ]);
         setAttendanceStats({ value: '92%', growth: 1.5 });
         setGradeStats({ value: '83%', growth: 3.2 });
-        setAssignmentStats({ value: '18/25', growth: 5.4 });
         setTotalStudents({ value: '145', growth: 4.2 });
         setClassPerformance([
           { class: 'Grade 11 - Mathematics', averageGrade: 85 },
@@ -164,6 +168,14 @@ const Dashboard = ({ auth }) => {
             </div>
           </div>
 
+          {/* Error Alert */}
+          {error && (
+            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center">
+              <AlertCircle className="h-5 w-5 text-red-500 mr-3" />
+              <p className="text-red-700">{error}</p>
+            </div>
+          )}
+
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {stats.map((stat, index) => {
@@ -196,7 +208,7 @@ const Dashboard = ({ auth }) => {
                   <div className="flex items-center justify-center h-full">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                   </div>
-                ) : (
+                ) : attendanceData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={attendanceData}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -211,6 +223,13 @@ const Dashboard = ({ auth }) => {
                       <Line type="monotone" dataKey="attendance" stroke="#10B981" strokeWidth={2} dot={{ r: 5 }} activeDot={{ r: 8 }} />
                     </ComposedChart>
                   </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    <div className="text-center">
+                      <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>No attendance data available</p>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -223,11 +242,17 @@ const Dashboard = ({ auth }) => {
                   <div className="flex items-center justify-center h-full">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                   </div>
-                ) : (
+                ) : classPerformance.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={classPerformance}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                      <XAxis dataKey="class" />
+                      <XAxis 
+                        dataKey="class" 
+                        angle={-45}
+                        textAnchor="end"
+                        height={80}
+                        fontSize={12}
+                      />
                       <YAxis domain={[0, 100]} />
                       <Tooltip 
                         formatter={(value) => [`${value}%`, 'Average Grade']}
@@ -237,6 +262,14 @@ const Dashboard = ({ auth }) => {
                       <Bar dataKey="averageGrade" fill="#8884D8" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    <div className="text-center">
+                      <Award className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>No exam results available</p>
+                      <p className="text-sm mt-1">Create exams and enter marks to see performance data</p>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -271,6 +304,7 @@ const Dashboard = ({ auth }) => {
                 ))
               ) : (
                 <div className="text-center py-8 text-gray-500">
+                  <Clock className="h-12 w-12 mx-auto mb-2 opacity-50" />
                   <p>No classes scheduled for today</p>
                 </div>
               )}

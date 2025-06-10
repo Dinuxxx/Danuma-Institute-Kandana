@@ -9,6 +9,8 @@ use App\Models\Attendance;
 use App\Models\CourseAttendance;
 use App\Models\Course;
 use App\Models\TimeTables;
+use App\Models\Exams;
+use App\Models\ExamMarks;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -142,15 +144,64 @@ class TeacherDashboardController extends Controller
     }
 
     /**
-     * Get grade statistics for the teacher's courses.
-     * This is a placeholder until you implement exam/grade functionality
+     * Get grade statistics for the teacher's courses based on actual exam data.
      */
     public function getGradeStats()
     {
-        // Placeholder response
+        $teacher = Teacher::where('user_id', Auth::id())->first();
+        
+        if (!$teacher) {
+            return response()->json(['error' => 'Teacher not found'], 404);
+        }
+        
+        // Get all courses taught by this teacher
+        $courseIds = Course::where('teacher_id', $teacher->tea_id)->pluck('course_id');
+        
+        if ($courseIds->isEmpty()) {
+            return response()->json([
+                'value' => '0%',
+                'growth' => 0
+            ]);
+        }
+        
+        // Get all exam marks for the teacher's courses
+        $currentMonthMarks = ExamMarks::whereHas('exam', function($query) use ($courseIds) {
+            $query->whereIn('course_id', $courseIds)
+                ->whereMonth('exam_date', Carbon::now()->month)
+                ->whereYear('exam_date', Carbon::now()->year);
+        })->pluck('marks');
+        
+        // Get previous month's marks for comparison
+        $previousMonthMarks = ExamMarks::whereHas('exam', function($query) use ($courseIds) {
+            $query->whereIn('course_id', $courseIds)
+                ->whereMonth('exam_date', Carbon::now()->subMonth()->month)
+                ->whereYear('exam_date', Carbon::now()->subMonth()->year);
+        })->pluck('marks');
+        
+        // Calculate current average
+        $currentAverage = $currentMonthMarks->isEmpty() ? 0 : $currentMonthMarks->avg();
+        
+        // Calculate previous average
+        $previousAverage = $previousMonthMarks->isEmpty() ? 0 : $previousMonthMarks->avg();
+        
+        // If no current month data, fall back to all-time average
+        if ($currentMonthMarks->isEmpty()) {
+            $allTimeMarks = ExamMarks::whereHas('exam', function($query) use ($courseIds) {
+                $query->whereIn('course_id', $courseIds);
+            })->pluck('marks');
+            
+            $currentAverage = $allTimeMarks->isEmpty() ? 0 : $allTimeMarks->avg();
+        }
+        
+        // Calculate growth
+        $growth = 0;
+        if ($previousAverage > 0) {
+            $growth = (($currentAverage - $previousAverage) / $previousAverage) * 100;
+        }
+        
         return response()->json([
-            'value' => '83%',
-            'growth' => 3.2
+            'value' => round($currentAverage) . '%',
+            'growth' => round($growth, 1)
         ]);
     }
 
@@ -253,8 +304,7 @@ class TeacherDashboardController extends Controller
     }
     
     /**
-     * Get class performance data for the teacher's courses.
-     * This is a placeholder until you implement performance tracking functionality
+     * Get class performance data based on actual exam results.
      */
     public function getClassPerformance()
     {
@@ -264,19 +314,53 @@ class TeacherDashboardController extends Controller
             return response()->json(['error' => 'Teacher not found'], 404);
         }
         
-        // Get the teacher's courses
+        // Get the teacher's courses with their exam performance
         $courses = Course::where('teacher_id', $teacher->tea_id)
+            ->with(['exams.marks'])
             ->select('course_id', 'course_name', 'grade')
             ->get();
             
-        // Generate placeholder performance data
+        // Calculate performance data for each course
         $performanceData = $courses->map(function($course) {
+            // Get all exam marks for this course
+            $allMarks = collect();
+            
+            foreach ($course->exams as $exam) {
+                foreach ($exam->marks as $mark) {
+                    $allMarks->push($mark->marks);
+                }
+            }
+            
+            // Calculate average grade for this course
+            $averageGrade = $allMarks->isEmpty() ? 0 : $allMarks->avg();
+            
             return [
-                'class' => 'Grade ' . $course->grade . ' - ' . $course->course_name,
-                'averageGrade' => rand(70, 95) // Random average grade between 70-95
+                'class' => 'Grade ' . $course->grade,
+                'averageGrade' => round($averageGrade, 1)
             ];
+        })->filter(function($course) {
+            // Only include courses that have exam data
+            return $course['averageGrade'] > 0;
         });
         
-        return response()->json($performanceData);
+        // If no real data available, return empty array instead of placeholder
+        if ($performanceData->isEmpty()) {
+            return response()->json([]);
+        }
+        
+        return response()->json($performanceData->values());
+    }
+
+    /**
+     * Helper method to calculate grade based on marks
+     */
+    private function calculateGrade($marks)
+    {
+        if ($marks >= 85) return 'A+';
+        if ($marks >= 75) return 'A';
+        if ($marks >= 60) return 'B';
+        if ($marks >= 50) return 'C';
+        if ($marks >= 35) return 'S';
+        return 'W';
     }
 }

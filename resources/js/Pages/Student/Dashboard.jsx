@@ -24,7 +24,8 @@ import {
   Clock, 
   FileText, 
   CheckCircle,
-  TrendingUp
+  TrendingUp,
+  DollarSign
 } from 'lucide-react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import DatePicker from '@/Components/Admin Components/DatePicker';
@@ -35,20 +36,12 @@ const Dashboard = ({ auth }) => {
   const [attendanceData, setAttendanceData] = useState([]);
   const [attendanceStats, setAttendanceStats] = useState({ value: '0%', growth: 0 });
   const [gradeStats, setGradeStats] = useState({ value: '0%', growth: 0 });
-  const [assignmentStats, setAssignmentStats] = useState({ value: '0/0', growth: 0 });
-  const [subjectDistribution, setSubjectDistribution] = useState([]);
+  const [dueAmountStats, setDueAmountStats] = useState({ value: 'Rs. 0', growth: 0 });
+  const [performanceData, setPerformanceData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [subjectLoading, setSubjectLoading] = useState(true);
+  const [performanceLoading, setPerformanceLoading] = useState(true);
 
   // Sample data for parts that don't need backend integration yet
-  const gradesData = [
-    { subject: 'Math', grade: 85 },
-    { subject: 'Science', grade: 92 },
-    { subject: 'English', grade: 78 },
-    { subject: 'History', grade: 88 },
-    { subject: 'Art', grade: 95 }
-  ];
-
   const upcomingAssignments = [
     { id: 1, title: 'Math Problem Set', dueDate: '2025-05-20', subject: 'Mathematics', status: 'Pending' },
     { id: 2, title: 'English Essay', dueDate: '2025-05-18', subject: 'Literature', status: 'In Progress' },
@@ -88,9 +81,9 @@ const Dashboard = ({ auth }) => {
         const gradeStatsResponse = await axios.get('/student/dashboard/grade-stats');
         setGradeStats(gradeStatsResponse.data);
         
-        // Fetch assignment stats
-        const assignmentStatsResponse = await axios.get('/student/dashboard/assignment-stats');
-        setAssignmentStats(assignmentStatsResponse.data);
+        // Fetch due amount stats
+        const dueAmountStatsResponse = await axios.get('/student/dashboard/due-amount-stats');
+        setDueAmountStats(dueAmountStatsResponse.data);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         // Use fallback data if API calls fail
@@ -103,7 +96,7 @@ const Dashboard = ({ auth }) => {
         ]);
         setAttendanceStats({ value: '95%', growth: 2.3 });
         setGradeStats({ value: '87%', growth: 5.2 });
-        setAssignmentStats({ value: '24/30', growth: -3.1 });
+        setDueAmountStats({ value: 'Rs. 5,000', growth: -15.0 });
       } finally {
         setLoading(false);
       }
@@ -112,15 +105,53 @@ const Dashboard = ({ auth }) => {
     fetchDashboardData();
   }, []);
 
+  // Fetch student performance data
+  useEffect(() => {
+    const fetchPerformanceData = async () => {
+      setPerformanceLoading(true);
+      try {
+        const response = await axios.get('/student/dashboard/student-performance');
+        setPerformanceData(response.data);
+      } catch (error) {
+        console.error('Error fetching performance data:', error);
+        // Use fallback data if API call fails
+        setPerformanceData([
+          { subject: 'Math', grade: 0 },
+          { subject: 'Science', grade: 0 },
+          { subject: 'English', grade: 0 },
+        ]);
+      } finally {
+        setPerformanceLoading(false);
+      }
+    };
+
+    fetchPerformanceData();
+  }, []);
+
   // Stats with growth indicators
   const stats = [
     { title: 'Average Grade', value: gradeStats.value, icon: Award, growth: gradeStats.growth, color: 'blue' },
     { title: 'Attendance', value: attendanceStats.value, icon: Calendar, growth: attendanceStats.growth, color: 'green' },
-    { title: 'Completed Assignments', value: assignmentStats.value, icon: CheckCircle, growth: assignmentStats.growth, color: 'orange' },
+    { title: 'Due Amount', value: dueAmountStats.value, icon: DollarSign, growth: dueAmountStats.growth, color: 'red' },
   ];
 
   // Colors for charts
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
+
+  // Custom tooltip for performance chart
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+          <p className="font-medium text-gray-900">{`Subject: ${label}`}</p>
+          <p className="text-blue-600">
+            {`Grade: ${payload[0].value}${payload[0].value > 0 ? '%' : ' (No exams yet)'}`}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <AuthenticatedLayout>
@@ -199,66 +230,48 @@ const Dashboard = ({ auth }) => {
               </div>
             </div>
 
-            {/* Grades Chart */}
+            {/* Student Performance Chart */}
             <div className="bg-white rounded-lg shadow-md p-6 transition-all duration-300 hover:shadow-lg">
               <h2 className="text-lg font-semibold text-gray-800 mb-4">Subject Performance</h2>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={gradesData}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                    <XAxis dataKey="subject" />
-                    <YAxis domain={[0, 100]} />
-                    <Tooltip 
-                      formatter={(value) => [`${value}%`, 'Grade']}
-                      contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}
-                    />
-                    <Legend />
-                    <Bar dataKey="grade" fill="#FF8042" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-
-          {/* Assignments and Announcements */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Assignments */}
-            <div className="bg-white rounded-lg shadow-md p-6 transition-all duration-300 hover:shadow-lg">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-gray-800">Upcoming Assignments</h2>
-                <button className="text-blue-600 text-sm font-medium hover:text-blue-800 flex items-center">
-                  <span>View All</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {upcomingAssignments.map((assignment) => (
-                  <div key={assignment.id} className="border-b border-gray-100 pb-4 last:border-0">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-medium text-gray-800">{assignment.title}</h3>
-                        <p className="text-sm text-gray-600">{assignment.subject}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className={`text-sm font-medium ${
-                          new Date(assignment.dueDate) < new Date() ? 'text-red-600' : 'text-green-600'
-                        }`}>
-                          Due: {new Date(assignment.dueDate).toLocaleDateString()}
-                        </p>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          assignment.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                          assignment.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {assignment.status}
-                        </span>
-                      </div>
+                {performanceLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+                  </div>
+                ) : performanceData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={performanceData}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                      <XAxis 
+                        dataKey="subject" 
+                        tick={{ fontSize: 12 }}
+                        interval={0}
+                        angle={-45}
+                        textAnchor="end"
+                        height={60}
+                      />
+                      <YAxis domain={[0, 100]} />
+                      <Tooltip 
+                        content={<CustomTooltip />}
+                      />
+                      <Legend />
+                      <Bar 
+                        dataKey="grade" 
+                        fill="#FF8042" 
+                        radius={[4, 4, 0, 0]}
+                        name="Average Grade (%)"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    <div className="text-center">
+                      <BookOpen className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>No performance data available</p>
+                      <p className="text-sm">Complete some exams to see your performance</p>
                     </div>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>

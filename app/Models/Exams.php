@@ -18,7 +18,8 @@ class Exams extends Model
      */
     protected $primaryKey = 'exam_id';
     
-    protected $fillable = ['exam_name','date'];
+    // Fixed fillable fields to match database schema
+    protected $fillable = ['exam_name', 'exam_date', 'course_id', 'status'];
 
     //get the course of the exam
     public function course() :BelongsTo

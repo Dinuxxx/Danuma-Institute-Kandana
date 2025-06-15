@@ -12,6 +12,7 @@ use App\Http\Controllers\TimetableController;
 use App\Http\Controllers\AdminNoticeController;
 use App\Http\Controllers\TeacherNoticeController;
 use App\Http\Controllers\StudentNoticeController;
+use App\Http\Controllers\StudentExamController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\StudentAttendanceController;
 use App\Http\Controllers\TeacherAttendanceController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\TeacherDashboardController;
 use App\Http\Controllers\TeacherSearchController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\TeacherExamController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StripePaymentController;
 use App\Http\Controllers\Auth\VerifyEmailController;
@@ -262,6 +264,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/lessons/edit/{id}', function () {
             return Inertia::render('Teacher/EditLesson');
         });
+
+                // Exam routes
+        Route::get('/exams', [TeacherExamController::class, 'index'])->name('exams');
+        Route::get('/exams/list', [TeacherExamController::class, 'getTeacherExams']);
+        Route::get('/exams/registered-grades', [TeacherExamController::class, 'getTeacherGrades']);
+        Route::post('/exams', [TeacherExamController::class, 'store']);
+        Route::get('/exams/{id}', [TeacherExamController::class, 'show']);
+        Route::put('/exams/{id}', [TeacherExamController::class, 'update']);
+        Route::delete('/exams/{id}', [TeacherExamController::class, 'destroy']);
+        
+        // Exam marks routes
+        Route::get('/exams/{examId}/students', [TeacherExamController::class, 'getExamStudents']);
+        Route::get('/exams/{examId}/marks', [TeacherExamController::class, 'showExamMarks'])->name('teacher.exam.marks');
+        Route::post('/exams/{examId}/marks', [TeacherExamController::class, 'saveExamMarks'])->name('teacher.exam.marks.save');
+        Route::delete('/exams/{examId}/marks', [TeacherExamController::class, 'deleteExamMarks'])->name('teacher.exam.marks.delete');
         
         Route::get('/attendance', [TeacherAttendanceController::class, 'index'])->name('teacher.attendance');
         Route::get('/attendance/report', [TeacherAttendanceController::class, 'getAttendanceReport']);
@@ -269,10 +286,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/attendance/students', [TeacherAttendanceController::class, 'getStudentsInCourses']);
         Route::get('/attendance/stats', [TeacherAttendanceController::class, 'getAttendanceStats']);
         Route::get('/attendance/monthly-stats', [TeacherAttendanceController::class, 'getMonthlyStats']);
-        
-        Route::get('/exams', function () {
-            return Inertia::render('Teacher/Exams');
-        });
         
         Route::get('/notices', function () {
             return Inertia::render('Teacher/Notices');
@@ -322,12 +335,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/dashboard/monthly-attendance', [StudentDashboardController::class, 'getMonthlyAttendance']);
         Route::get('/dashboard/attendance-stats', [StudentDashboardController::class, 'getAttendanceStats']);
         Route::get('/dashboard/grade-stats', [StudentDashboardController::class, 'getGradeStats']);
-        Route::get('/dashboard/assignment-stats', [StudentDashboardController::class, 'getAssignmentStats']);
         Route::get('/dashboard/subject-distribution', [StudentDashboardController::class, 'getSubjectDistribution']);
-        
-        Route::get('/exams', function () {
-            return Inertia::render('Student/Exams');
-        });
+        Route::get('/dashboard/due-amount-stats', [StudentDashboardController::class, 'getDueAmountStats']);
+        Route::get('/dashboard/student-performance', [StudentDashboardController::class, 'getStudentPerformance']);
+    
+        Route::get('/exams', [StudentExamController::class, 'index'])->name('exams.index');
+        Route::get('/exams/data', [StudentExamController::class, 'getStudentExams'])->name('exams.data');
+        Route::get('/exams/statistics', [StudentExamController::class, 'getExamStatistics'])->name('exams.statistics');
         
         Route::get('/notices', function () {
             return Inertia::render('Student/Notices');
@@ -411,11 +425,15 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
     Route::get('/notifications/{id}/notice', [NotificationController::class, 'showNoticeFromNotification']);
 
-    Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
-    Route::post('/settings/account', [SettingsController::class, 'updateAccount']);
-    Route::post('/settings/password', [SettingsController::class, 'updatePassword']);
-    Route::post('/settings/appearance', [SettingsController::class, 'updateAppearance']);
-    Route::delete('/profile', [SettingsController::class, 'deleteAccount']);
+    // Settings routes
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::post('/settings/account', [SettingsController::class, 'updateAccount'])->name('settings.update-account');
+    Route::post('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.update-password');
+    Route::post('/settings/appearance', [SettingsController::class, 'updateAppearance'])->name('settings.update-appearance');
+    
+    // Account deletion routes
+    Route::post('/settings/confirm-deletion', [SettingsController::class, 'confirmAccountDeletion'])->name('settings.confirm-deletion');
+    Route::post('/settings/delete-account', [SettingsController::class, 'deleteAccount'])->name('settings.delete-account');
 
     Route::post('/create-payment-intent', [StripePaymentController::class, 'createPaymentIntent']);
     Route::post('/student/payments/stripe', [StripePaymentController::class, 'recordPayment'])

@@ -26,7 +26,8 @@ import {
   CheckCircle,
   TrendingUp,
   Calendar,
-  GraduationCap
+  GraduationCap,
+  AlertCircle
 } from 'lucide-react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import DatePicker from '@/Components/Admin Components/DatePicker';
@@ -39,15 +40,16 @@ const Dashboard = ({ auth }) => {
   const [attendanceData, setAttendanceData] = useState([]);
   const [attendanceStats, setAttendanceStats] = useState({ value: '0%', growth: 0 });
   const [gradeStats, setGradeStats] = useState({ value: '0%', growth: 0 });
-  const [assignmentStats, setAssignmentStats] = useState({ value: '0/0', growth: 0 });
   const [classPerformance, setClassPerformance] = useState([]);
   const [todaySchedule, setTodaySchedule] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Fetch data from the backend
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
+      setError(null);
       try {
         // Parallel fetch all dashboard data
         const [
@@ -76,12 +78,13 @@ const Dashboard = ({ auth }) => {
         setAttendanceStats(attendanceStatsResponse.data);
         setAttendanceData(attendanceResponse.data);
         setGradeStats(gradeStatsResponse.data);
-        setAssignmentStats(assignmentStatsResponse.data);
         setClassPerformance(classPerformanceResponse.data);
         setTodaySchedule(scheduleResponse.data);
         
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        setError('Failed to load dashboard data');
+        
         // Use fallback data if API calls fail
         setAttendanceData([
           { month: 'Jan', attendance: 92 },
@@ -93,7 +96,6 @@ const Dashboard = ({ auth }) => {
         ]);
         setAttendanceStats({ value: '92%', growth: 1.5 });
         setGradeStats({ value: '83%', growth: 3.2 });
-        setAssignmentStats({ value: '18/25', growth: 5.4 });
         setTotalStudents({ value: '145', growth: 4.2 });
         setClassPerformance([
           { class: 'Grade 11 - Mathematics', averageGrade: 85 },
@@ -114,13 +116,6 @@ const Dashboard = ({ auth }) => {
 
     fetchDashboardData();
   }, []);
-
-  // Sample data for assignments (this would eventually come from backend)
-  const upcomingAssignments = [
-    { id: 1, title: 'Math Problem Set', dueDate: '2025-05-20', class: 'Grade 11 - Mathematics', status: 'Assigned' },
-    { id: 2, title: 'Physics Lab Report', dueDate: '2025-05-18', class: 'Grade 12 - Physics', status: 'Draft' },
-    { id: 3, title: 'Literature Essay', dueDate: '2025-05-25', class: 'Grade 10 - English', status: 'Assigned' }
-  ];
 
   // Stats with growth indicators
   const stats = [
@@ -144,13 +139,6 @@ const Dashboard = ({ auth }) => {
       icon: Award, 
       growth: gradeStats.growth, 
       color: 'orange' 
-    },
-    { 
-      title: 'Assignment Status', 
-      value: assignmentStats.value, 
-      icon: FileText, 
-      growth: assignmentStats.growth, 
-      color: 'purple' 
     },
   ];
 
@@ -178,13 +166,18 @@ const Dashboard = ({ auth }) => {
                 </div>
               </div>
             </div>
-            <div className="flex space-x-2 mt-4">
-              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">2025</span>
-            </div>
           </div>
 
+          {/* Error Alert */}
+          {error && (
+            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center">
+              <AlertCircle className="h-5 w-5 text-red-500 mr-3" />
+              <p className="text-red-700">{error}</p>
+            </div>
+          )}
+
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {stats.map((stat, index) => {
               const Icon = stat.icon;
               return (
@@ -215,7 +208,7 @@ const Dashboard = ({ auth }) => {
                   <div className="flex items-center justify-center h-full">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                   </div>
-                ) : (
+                ) : attendanceData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={attendanceData}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -230,6 +223,13 @@ const Dashboard = ({ auth }) => {
                       <Line type="monotone" dataKey="attendance" stroke="#10B981" strokeWidth={2} dot={{ r: 5 }} activeDot={{ r: 8 }} />
                     </ComposedChart>
                   </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    <div className="text-center">
+                      <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>No attendance data available</p>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -242,11 +242,17 @@ const Dashboard = ({ auth }) => {
                   <div className="flex items-center justify-center h-full">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                   </div>
-                ) : (
+                ) : classPerformance.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={classPerformance}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                      <XAxis dataKey="class" />
+                      <XAxis 
+                        dataKey="class" 
+                        angle={-45}
+                        textAnchor="end"
+                        height={80}
+                        fontSize={12}
+                      />
                       <YAxis domain={[0, 100]} />
                       <Tooltip 
                         formatter={(value) => [`${value}%`, 'Average Grade']}
@@ -256,50 +262,15 @@ const Dashboard = ({ auth }) => {
                       <Bar dataKey="averageGrade" fill="#8884D8" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Assignments and Announcements */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Assignments */}
-            <div className="bg-white rounded-lg shadow-md p-6 transition-all duration-300 hover:shadow-lg">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-gray-800">Upcoming Assignments</h2>
-                <button className="text-blue-600 text-sm font-medium hover:text-blue-800 flex items-center">
-                  <span>View All</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {upcomingAssignments.map((assignment) => (
-                  <div key={assignment.id} className="border-b border-gray-100 pb-4 last:border-0">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-medium text-gray-800">{assignment.title}</h3>
-                        <p className="text-sm text-gray-600">{assignment.class}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className={`text-sm font-medium ${
-                          new Date(assignment.dueDate) < new Date() ? 'text-red-600' : 'text-green-600'
-                        }`}>
-                          Due: {new Date(assignment.dueDate).toLocaleDateString()}
-                        </p>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          assignment.status === 'Assigned' ? 'bg-green-100 text-green-800' :
-                          assignment.status === 'Draft' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-blue-100 text-blue-800'
-                        }`}>
-                          {assignment.status}
-                        </span>
-                      </div>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    <div className="text-center">
+                      <Award className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>No exam results available</p>
+                      <p className="text-sm mt-1">Create exams and enter marks to see performance data</p>
                     </div>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
@@ -333,6 +304,7 @@ const Dashboard = ({ auth }) => {
                 ))
               ) : (
                 <div className="text-center py-8 text-gray-500">
+                  <Clock className="h-12 w-12 mx-auto mb-2 opacity-50" />
                   <p>No classes scheduled for today</p>
                 </div>
               )}

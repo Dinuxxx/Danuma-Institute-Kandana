@@ -12,8 +12,7 @@ use App\Models\StudentCourse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
-class CourseController extends Controller
-{
+class CourseController extends Controller{
     /**
      * Store a newly created course in storage.
      *
@@ -59,6 +58,18 @@ class CourseController extends Controller
 
 
 
+        
+        $course = Course::create([
+            'course_id' => $validatedData['subjectCode'],
+            'course_name' => $validatedData['subjectName'],
+            'monthly_fees' => $validatedData['courseFee'],
+            'course_desc' => $validatedData['courseDesc'],
+            'teacher_id' => $validatedData['teacherId'],
+            'grade' => $validatedData['grade'],
+        ]);
+        
+        return response()->json(['message' => 'Course created successfully!', 'course' => $course]);
+    }
 
     //The index method retrieves all courses from the database and returns them as JSON. This is used when listing all courses.
 

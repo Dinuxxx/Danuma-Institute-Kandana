@@ -32,6 +32,8 @@ use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Middleware\CheckRole;
 use Illuminate\Http\Request;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\TeacherController;
+use App\Http\Controllers\AdminController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -108,11 +110,11 @@ Route::get('/teacher/time-tables', function () {
 
 Route::get('/student/dashboard', function () {
     return Inertia::render('Student/Dashboard'); 
-})->name('admin.viewexams');
+}); // ->name('admin.viewexams');
 
 Route::get('/student/courses', function () {
     return Inertia::render('Student/Courses'); 
-})->name('admin.viewexams');
+}); // ->name('admin.viewexams');
 
 Route::get('/student/courses/{course_id}', function ($course_id) {
     $course = \App\Models\Course::where('course_id', $course_id)->firstOrFail();
@@ -125,19 +127,19 @@ Route::get('/student/courses/{course_id}', function ($course_id) {
 
 Route::get('/student/attendance', function () {
     return Inertia::render('Student/Attendance'); 
-})->name('admin.viewexams');
+}); //->name('admin.viewexams');
 
 Route::get('/student/exams', function () {
     return Inertia::render('Student/Exams'); 
-})->name('admin.viewexams');
+}); //->name('admin.viewexams');
 
 Route::get('/student/notices', function () {
     return Inertia::render('Student/Notices'); 
-})->name('admin.viewexams');
+}); //->name('admin.viewexams');
 
 Route::get('/student/payments', function () {
     return Inertia::render('Student/Payments'); 
-})->name('admin.viewexams');
+}); //->name('admin.viewexams');
 
 Route::get('/student/time-tables', [TimetableController::class, 'studentView'])->name('student.timetables');
 
@@ -477,9 +479,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
         return Inertia::render('Auth/AdminRegister');
     })->name('admin.register.form');
     
-    // POST routes to handle form submissions
+//     // POST routes to handle form submissions
     Route::post('/teacher/register', [TeacherController::class, 'register'])->name('teacher.register');
-    Route::post('/student/register', [StudentController::class, 'register'])->name('student.register');
+    // Route::post('/student/register', [StudentController::class, 'register'])->name('student.register');
     Route::post('/admin/register', [AdminController::class, 'register'])->name('admin.register');
 });
 
@@ -509,9 +511,8 @@ Route::post('/email/verification-notification', [EmailVerificationNotificationCo
     ->middleware('auth')
     ->name('verification.send');
 
-Route::post('/favicon.ico', [MessageController::class, 'submit']);
+Route::post('/messages', [MessageController::class, 'store']);
 
 require __DIR__.'/auth.php';
 
-
-
+?>

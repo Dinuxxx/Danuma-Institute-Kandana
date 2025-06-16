@@ -3,41 +3,24 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Message; // Make sure the model exists
 use App\Models\messages;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Mail;
 
 class MessageController extends Controller
 {
-    public function submit(Request $request)
+    public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email',
-            'telephone' => 'nullable|string',
+            'email' => 'required|email|max:255',
+            'telephone' => 'nullable|string|max:20',
             'message' => 'required|string',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
+        messages::create($validated);
 
-        // Save to database
-        messages::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'telephone' => $request->telephone,
-            'message' => $request->message,
-        ]);
-
-        // Optional: send email notification
-        Mail::raw($request->message, function ($mail) use ($request) {
-            $mail->to('your-email@example.com')
-                 ->subject('New Contact Message from ' . $request->name)
-                 ->replyTo($request->email);
-        });
-
-        return response()->json(['message' => 'Message sent successfully!']);
+        return response()->json(['message' => 'Message submitted successfully!'], 201);
     }
 }
+
 

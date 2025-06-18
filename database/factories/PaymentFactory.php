@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Payments>
  */
-class PaymentsFactory extends Factory
+class PaymentFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -17,7 +17,10 @@ class PaymentsFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'method' => $this->faker->randomElement(['Online Transfer', 'Bank Deposit', 'Manual']),
+            'status' => 'Verified', 
+            'amount' => $this->faker->randomFloat(2, 1000, 5000),
+            'proof_path' => $this->faker->imageUrl(),
         ];
     }
 }

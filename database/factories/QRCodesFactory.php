@@ -17,7 +17,8 @@ class QRCodesFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'QR_reference' => fake()->uuid(),
+            'is_active' => true,
         ];
     }
 }

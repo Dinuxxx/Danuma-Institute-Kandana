@@ -68,7 +68,7 @@ class Student extends Model
      // get the payments verified by current user
     public function payments(): HasMany
     {
-        return $this->hasMany(Payments::class, 'student_id', 'student_id');
+        return $this->hasMany(Payment::class, 'student_id', 'student_id');
     }
 
     //get the exammarks  of the student

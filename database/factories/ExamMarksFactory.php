@@ -17,7 +17,9 @@ class ExamMarksFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'marks' => fake()->randomFloat(2, 0, 100),
+            'exam_id' => null,   // override in seeder
+            'student_id' => null,
         ];
     }
 }

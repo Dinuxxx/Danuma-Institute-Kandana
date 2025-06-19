@@ -16,30 +16,33 @@ class UserRegistration extends Model
     
     // Attributes allowed for mass assignment
     protected $fillable = [
-        'title',
+        'user_id',
         'first_name',
         'last_name',
         'gender',
         'dob',
         'tel_no',
         'address',
-        'image', 
-        'status' , 
-        'user_id',
-        'role_id',
+        'image',
+        'status',
         'added_by'
     ];
- 
+
+    protected $casts = [
+        'dob' => 'date',
+        'status' => 'boolean'
+    ];
+
     //  Get the user whos details are these.
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class,'user_id','id');
+        return $this->belongsTo(User::class);
     }
     
     //get the user who added current user
     public function addedBy()
     {
-        return $this->belongsTo(User::class, 'added_by', 'id');
+        return $this->belongsTo(User::class, 'added_by');
     }
 
     //get the role of the user

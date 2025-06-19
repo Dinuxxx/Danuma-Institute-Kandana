@@ -22,6 +22,10 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Middleware\CheckRole;
+use Illuminate\Http\Request;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\TeacherController;
+use App\Http\Controllers\StudentController;
 
 
 Route::get('/', function () {
@@ -42,7 +46,7 @@ Route::get('/courses-by-grade/{grade}', [CourseController::class, 'getCoursesByG
 
 Route::get('/teacher/dashboard', function () {
     return Inertia::render('Teacher/Dashboard'); 
-})->name('admin.viewexams');
+})->name('teacher.dashboard');
 
 Route::get('/teacher/courses', function () {
     return Inertia::render('Teacher/Courses'); 
@@ -99,7 +103,7 @@ Route::get('/teacher/time-tables', function () {
 
 Route::get('/student/dashboard', function () {
     return Inertia::render('Student/Dashboard'); 
-})->name('admin.viewexams');
+})->name('student.dashboard');
 
 Route::get('/student/courses', function () {
     return Inertia::render('Student/Courses'); 
@@ -141,9 +145,7 @@ Route::get('/aboutus', function () {
 
 // Admin routes
 
-Route::get('/admin/dashboard', function () {
-    return Inertia::render('Admin/Dashboard');
-})->name('dashboard');
+Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
 // Dashboard route that redirects based on user role
 Route::get('/dashboard', function () {
@@ -170,10 +172,9 @@ Route::get('/dashboard', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     // Admin routes
     Route::prefix('admin')->middleware([CheckRole::class . ':admin'])->group(function () {
-        Route::get('/dashboard', function () {
-            return Inertia::render('Admin/Dashboard');
-        })->name('admin.dashboard');
-        
+        //Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+        Route::get('/users/create', [AdminController::class, 'createUser'])->name('admin.users.create');
+        Route::post('/users/store', [AdminController::class, 'storeUser'])->name('admin.users.store');
         Route::get('/courses', function () {
             return Inertia::render('Admin/Courses');
         })->name('admin.courses');
@@ -218,14 +219,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/exams', function () {
             return Inertia::render('Admin/Exams');
         });
+
+        // User Registration Routes
+        Route::get('/register', function () {
+            return Inertia::render('Auth/AdminRegister');
+        })->name('admin.register.form');
+
+        Route::get('/teacher/register', function () {
+            return Inertia::render('Auth/TeacherRegister');
+        })->name('teacher.register.form');
+
+        Route::get('/student/register', function () {
+            return Inertia::render('Auth/StudentRegister');
+        })->name('student.register.form');
+
+        // Registration handlers - all using the same controller method
+        Route::post('/register', [UserRegistrationController::class, 'registerUser'])->name('admin.register');
+        Route::post('/teacher/register', [UserRegistrationController::class, 'registerUser'])->name('teacher.register');
+        Route::post('/student/register', [UserRegistrationController::class, 'registerUser'])->name('student.register');
+
+        // Helper routes for registration forms
+        Route::get('/get-grades', [UserRegistrationController::class, 'getGrades']);
+        Route::get('/courses-by-grade/{grade}', [UserRegistrationController::class, 'getCoursesByGrade']);
+        Route::get('/all-courses', [UserRegistrationController::class, 'getAllCourses']);
     });
 
     // Teacher routes
     Route::prefix('teacher')->middleware([CheckRole::class . ':teacher'])->group(function () {
-        Route::get('/dashboard', function () {
-            return Inertia::render('Teacher/Dashboard');
-        })->name('teacher.dashboard');
-        
+        Route::get('/dashboard', [TeacherController::class, 'dashboard'])->name('teacher.dashboard');
         Route::get('/courses', function () {
             return Inertia::render('Teacher/Courses');
         })->name('teacher.courses');
@@ -274,10 +295,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Student routes
     Route::prefix('student')->middleware([CheckRole::class . ':student'])->group(function () {
-        Route::get('/dashboard', function () {
-            return Inertia::render('Student/Dashboard');
-        })->name('student.dashboard');
-        
+        Route::get('/dashboard', [StudentController::class, 'dashboard'])->name('student.dashboard');
         Route::get('/courses', function () {
             return Inertia::render('Student/Courses');
         })->name('student.courses');
@@ -405,30 +423,6 @@ Route::get('/register', function () {
 })->name('register');
 
 Route::post('/register', [UserRegistrationController::class, 'register'])->name('register');
-
-
-
-
-// Routes for registration forms
-Route::middleware(['auth', 'admin'])->group(function () {
-    // GET routes to display forms
-    Route::get('/teacher/register', function () {
-        return Inertia::render('Auth/TeacherRegister');
-    })->name('teacher.register.form');
-    
-    Route::get('/student/register', function () {
-        return Inertia::render('Auth/StudentRegister');
-    })->name('student.register.form');
-    
-    Route::get('/admin/register', function () {
-        return Inertia::render('Auth/AdminRegister');
-    })->name('admin.register.form');
-    
-    // POST routes to handle form submissions
-    Route::post('/teacher/register', [TeacherController::class, 'register'])->name('teacher.register');
-    Route::post('/student/register', [StudentController::class, 'register'])->name('student.register');
-    Route::post('/admin/register', [AdminController::class, 'register'])->name('admin.register');
-});
 
 
 

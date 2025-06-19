@@ -7,23 +7,19 @@ import GuestLayout from "@/Layouts/GuestLayout";
 import { Head, useForm } from "@inertiajs/react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { route } from "ziggy-js"; // Correctly import Ziggy's route helper
+import { route } from "ziggy-js";
 import axios from "axios";
 
 export default function Register() {
     const [currentStep, setCurrentStep] = useState(1);
 
     const [courses, setCourses] = useState([]);
-    const [grade, setGrade] = useState("");
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = useState(null);
 
-    //  State for available courses based on grade selection
     const [availableGrades, setAvailableGrades] = useState([]);
     const [availableCourses, setAvailableCourses] = useState([]);
     const [selectedCourses, setSelectedCourses] = useState([]);
-
-    //const [courseInput, setCourseInput] = useState("");
 
     const { data, setData, post, processing, errors, reset } = useForm({
         first_name: "",
@@ -36,13 +32,12 @@ export default function Register() {
         parent_first_name: "",
         parent_last_name: "",
         parent_phone_number: "",
-        relationship_to_student: "",
-        grade: grade,
+        relationship_type: "",
         grade: "",
         courses: [],
-        name: "", // Add name field
-        password: "", // Add password field
-        password_confirmation: "", // Add password confirmation field
+        name: "",
+        password: "",
+        password_confirmation: "",
     });
 
     const handleNext = (e) => {
@@ -50,12 +45,11 @@ export default function Register() {
         setCurrentStep((prev) => prev + 1);
     };
 
-    // useEffect to fetch grades when component mounts
     useEffect(() => {
         const fetchGrades = async () => {
             try {
                 const response = await axios.get("/get-grades");
-                setAvailableGrades(response.data); // Add this state variable: const [availableGrades, setAvailableGrades] = useState([]);
+                setAvailableGrades(response.data);
             } catch (error) {
                 console.error("Error fetching grades:", error);
             }
@@ -64,17 +58,17 @@ export default function Register() {
         fetchGrades();
     }, []);
 
-    // NEW: Fetch courses when grade changes
     useEffect(() => {
-        if (!grade) {
+        if (!data.grade) {
             setAvailableCourses([]);
             return;
         }
 
         const fetchCourses = async () => {
             try {
-                // Call to your backend API to get courses for selected grade
-                const response = await axios.get(`/courses-by-grade/${grade}`);
+                const response = await axios.get(
+                    `/courses-by-grade/${data.grade}`
+                );
                 setAvailableCourses(response.data);
             } catch (error) {
                 console.error("Error fetching courses:", error);
@@ -84,34 +78,19 @@ export default function Register() {
         };
 
         fetchCourses();
-    }, [grade]);
+    }, [data.grade]);
+
+    const isGradeDisabled = courses.length > 0;
 
     const handleAddCourse = () => {
-        if (selectedCourses.length && grade) {
-            // Add selected courses to the courses list
+        if (selectedCourses.length && data.grade) {
             setCourses([...courses, ...selectedCourses]);
-            setSelectedCourses([]); // Clear selected courses
+            setSelectedCourses([]);
             notifySuccess("Courses successfully added!");
         } else {
             notifyError("Please select at least one course.");
         }
     };
-
-    /* if (courseInput.length && grade) {
-            // Add each selected course separately
-            const newCourses = courseInput.map((course) => ({
-                id: Date.now() + Math.random(), // Unique ID for each course
-                name: course,
-                grade,
-            }));
-
-            setCourses([...courses, ...newCourses]);
-            setCourseInput([]);
-            notifySuccess("Courses successfully added!");
-        } else {
-            notifyError("Please provide both course and grade.");
-        }
-    }; */
 
     const handleRemoveCourse = (courseId) => {
         const removedCourse = courses.find(
@@ -124,51 +103,31 @@ export default function Register() {
         }
     };
 
-    /*const handleCourseChange = (course) => {
-        if (courseInput.includes(course)) {
-            setCourseInput(courseInput.filter((item) => item !== course));
-        } else {
-            setCourseInput([...courseInput, course]);
-        }
-    };*/
-
-    // MODIFIED: Handle course selection/deselection
     const handleCourseToggle = (course) => {
         setSelectedCourses((prevSelected) => {
-            // Check if course is already selected
             const isAlreadySelected = prevSelected.some(
                 (c) => c.course_id === course.course_id
             );
 
             if (isAlreadySelected) {
-                // Remove course if it's already selected
                 return prevSelected.filter(
                     (c) => c.course_id !== course.course_id
                 );
             } else {
-                // Add course if it's not already selected
                 return [...prevSelected, course];
             }
         });
     };
 
-    const isGradeDisabled = courses.length > 0;
-
-    /*// Helper function to check if course is already added
-    const isCourseAdded = (course) => courses.some((c) => c.name === course);*/
-
-    // MODIFIED: Check if course is already added to the final courses list
     const isCourseAdded = (courseId) =>
         courses.some((c) => c.course_id === courseId);
 
-    // Add a utility function to generate a temporary password
     const generateTemporaryPassword = () => {
         const length = 12;
         const charset =
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
         let password = "";
 
-        // Ensure at least one of each type of character
         const requiredChars = [
             charset.match(/[a-z]/)[0],
             charset.match(/[A-Z]/)[0],
@@ -178,13 +137,11 @@ export default function Register() {
 
         password += requiredChars.join("");
 
-        // Fill the rest of the password
         for (let i = password.length; i < length; i++) {
             const randomIndex = Math.floor(Math.random() * charset.length);
             password += charset[randomIndex];
         }
 
-        // Shuffle the password
         return password
             .split("")
             .sort(() => 0.5 - Math.random())
@@ -194,51 +151,65 @@ export default function Register() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Concatenate first_name and last_name to create the 'name' field
         const name = `${data.first_name} ${data.last_name}`.trim();
-
-        // Generate a temporary password
         const generatedPassword = generateTemporaryPassword();
-
-        // Update the form data with generated name and password
-        setData((prevData) => ({
-            ...prevData,
-            name,
-            password: generatedPassword,
-            password_confirmation: generatedPassword, // Add password confirmation
-        }));
-
-        // MODIFIED: Pass course IDs instead of entire course objects
         const coursesToSubmit = courses.map((course) => course.course_id);
 
         const finalData = {
             ...data,
-            courses: coursesToSubmit, // Send only course IDs
-            grade: grade,
-            name, // Add the concatenated name
-            password: generatedPassword, // Add the generated
-            password_confirmation: generatedPassword, // Add password confirmation
+            role: "student",
+            courses: coursesToSubmit,
+            name,
+            password: generatedPassword,
+            password_confirmation: generatedPassword,
         };
 
-        setLoading(true); // Set loading state to true
-        setError(null); // Clear any previous errors
+        setLoading(true);
+        setError(null);
 
         try {
             console.log("Final Data being sent:", finalData);
 
-            const response = await axios.post(route("register"), finalData);
-            console.log("Registration successful", response.data);
-            reset(); // Reset form fields
-            setCourses([]); // Clear selected courses
-            setGrade(""); // Reset grade
-            setCurrentStep(1); // Return to first step
-            notifySuccess("Student registered successfully!");
+            const response = await axios.post(
+                route("student.register"),
+                finalData
+            );
+
+            console.log("Server response:", response.data);
+
+            if (response.data.status === "success") {
+                reset();
+                setCourses([]);
+                setData("grade", ""); // Reset grade here properly
+                setCurrentStep(1);
+                notifySuccess("Student registered successfully!");
+
+                if (response.data.data?.temporary_password) {
+                    notifySuccess(
+                        `Temporary password: ${response.data.data.temporary_password}`
+                    );
+                }
+            } else {
+                throw new Error(response.data.message || "Registration failed");
+            }
         } catch (error) {
-            setError(error.message); // Set the error message
             console.error("Registration error:", error);
-            notifyError("Registration failed. Please try again.");
+
+            if (error.response?.data?.errors) {
+                const errorMessages = Object.values(
+                    error.response.data.errors
+                ).flat();
+                setError(errorMessages.join(", "));
+                notifyError(errorMessages.join(", "));
+            } else {
+                setError(error.response?.data?.message || error.message);
+                notifyError(
+                    error.response?.data?.message ||
+                        "Registration failed. Please try again."
+                );
+            }
         } finally {
-            setLoading(false); // Reset loading state
+            setLoading(false);
         }
     };
 
@@ -283,10 +254,10 @@ export default function Register() {
         /^(?:[6-9]|10|11|A\/L)$/i.test(grade) || grade === "";
     const handleGradeChange = (value) => {
         if (validateGrade(value)) {
-            setGrade(value);
+            setData("grade", value);
             if (errors.grade) delete errors.grade;
         } else {
-            setGrade(value);
+            setData("grade", value);
             errors.grade = "Grade must be between 6-11 or 'A/L'.";
         }
     };
@@ -321,6 +292,8 @@ export default function Register() {
         <GuestLayout>
             <Head title="Register" />
             <div className="relative mb-8 md:mb-20 h-1 bg-black w-full"></div>
+
+            {/* Step 1 */}
             {currentStep === 1 && (
                 <form onSubmit={handleNext} className="space-y-2 px-[10%]">
                     <div>
@@ -340,6 +313,7 @@ export default function Register() {
                             className="mt-2"
                         />
                     </div>
+
                     <div>
                         <InputLabel htmlFor="last_name" value="Last Name" />
                         <TextInput
@@ -357,6 +331,7 @@ export default function Register() {
                             className="mt-2"
                         />
                     </div>
+
                     <div>
                         <InputLabel htmlFor="email" value="Email" />
                         <TextInput
@@ -370,6 +345,7 @@ export default function Register() {
                         />
                         <InputError message={errors.email} className="mt-2" />
                     </div>
+
                     <div>
                         <InputLabel htmlFor="address" value="Address" />
                         <TextInput
@@ -382,6 +358,7 @@ export default function Register() {
                         />
                         <InputError message={errors.address} className="mt-2" />
                     </div>
+
                     <div>
                         <InputLabel htmlFor="tel_no" value="Phone Number" />
                         <TextInput
@@ -399,19 +376,21 @@ export default function Register() {
                         />
                         <InputError message={errors.tel_no} className="mt-2" />
                     </div>
+
                     <div>
                         <InputLabel htmlFor="dob" value="Date of Birth" />
                         <TextInput
                             id="dob"
                             type="date"
                             name="dob"
-                            value={data.dateOfBirth}
+                            value={data.dob}
                             className="mt-1 block w-full"
                             onChange={(e) => setData("dob", e.target.value)}
                             required
                         />
                         <InputError message={errors.dob} className="mt-2" />
                     </div>
+
                     <div>
                         <InputLabel value="Gender" />
                         <div className="mt-1 flex items-center space-x-4 md:pl-10">
@@ -428,6 +407,7 @@ export default function Register() {
                                 />
                                 Male
                             </label>
+
                             <label className="flex items-center">
                                 <input
                                     type="radio"
@@ -444,6 +424,7 @@ export default function Register() {
                         </div>
                         <InputError message={errors.gender} className="mt-2" />
                     </div>
+
                     <div className="flex justify-center">
                         <PrimaryButton
                             type="submit"
@@ -455,9 +436,10 @@ export default function Register() {
                     </div>
                 </form>
             )}
+
+            {/* Step 2 */}
             {currentStep === 2 && (
                 <form onSubmit={handleNext} className="space-y-3 px-[10%]">
-                    {/* Second Part of the Form */}
                     <div>
                         <InputLabel
                             htmlFor="parent_first_name"
@@ -481,6 +463,7 @@ export default function Register() {
                             className="mt-2"
                         />
                     </div>
+
                     <div>
                         <InputLabel
                             htmlFor="parent_last_name"
@@ -504,6 +487,7 @@ export default function Register() {
                             className="mt-2"
                         />
                     </div>
+
                     <div>
                         <InputLabel
                             htmlFor="parent_phone_number"
@@ -527,29 +511,28 @@ export default function Register() {
                             className="mt-2"
                         />
                     </div>
+
                     <div>
                         <InputLabel
-                            htmlFor="relationship_to_student"
+                            htmlFor="relationship_type"
                             value="Relationship to Student"
                         />
                         <TextInput
-                            id="relationship_to_student"
-                            name="relationship_to_student"
-                            value={data.relationship_to_student}
+                            id="relationship_type"
+                            name="relationship_type"
+                            value={data.relationship_type}
                             className="mt-1 block w-full"
                             onChange={(e) =>
-                                setData(
-                                    "relationship_to_student",
-                                    e.target.value
-                                )
+                                setData("relationship_type", e.target.value)
                             }
                             required
                         />
                         <InputError
-                            message={errors.relationship_to_student}
+                            message={errors.relationship_type}
                             className="mt-2"
                         />
                     </div>
+
                     <div className="flex justify-center ">
                         <PrimaryButton
                             type="submit"
@@ -561,21 +544,21 @@ export default function Register() {
                 </form>
             )}
 
+            {/* Step 3 */}
             {currentStep === 3 && (
                 <form onSubmit={handleSubmit} className="space-y-4 px-[8%]">
-                    {/* Third Part of the Form */}
                     <div>
                         <InputLabel htmlFor="grade" value="Grade" />
                         <select
                             id="grade"
                             name="grade"
-                            value={grade}
+                            value={data.grade} // Correct: use data.grade here
                             className={`mt-1 block w-full border rounded-md p-2 ${
                                 isGradeDisabled
                                     ? "cursor-not-allowed opacity-50"
                                     : ""
                             }`}
-                            onChange={(e) => setGrade(e.target.value)}
+                            onChange={(e) => handleGradeChange(e.target.value)} // Use validation handler
                             disabled={isGradeDisabled}
                             required
                         >
@@ -588,6 +571,7 @@ export default function Register() {
                                 </option>
                             ))}
                         </select>
+                        <InputError message={errors.grade} className="mt-2" />
 
                         <InputLabel
                             htmlFor="course"
@@ -596,19 +580,20 @@ export default function Register() {
                         />
                         <div className="flex space-x-2">
                             <div className="w-full">
-                                {/* MODIFIED: Display courses from database instead of hardcoded values */}
                                 <div className="border rounded-md p-2">
                                     {availableCourses.length === 0 &&
-                                        !grade && (
+                                        !data.grade && (
                                             <p className="text-gray-500">
                                                 Please select a grade first
                                             </p>
                                         )}
-                                    {availableCourses.length === 0 && grade && (
-                                        <p className="text-gray-500">
-                                            No courses available for this grade
-                                        </p>
-                                    )}
+                                    {availableCourses.length === 0 &&
+                                        data.grade && (
+                                            <p className="text-gray-500">
+                                                No courses available for this
+                                                grade
+                                            </p>
+                                        )}
                                     {availableCourses.map((course) => (
                                         <div
                                             key={course.course_id}
@@ -658,7 +643,7 @@ export default function Register() {
                                 className="bg-gray-400 hover:bg-gray-500 text-black font-semibold rounded-md px-8 py-2"
                                 onClick={handleAddCourse}
                                 disabled={
-                                    !grade || selectedCourses.length === 0
+                                    !data.grade || selectedCourses.length === 0
                                 }
                             >
                                 Add
@@ -720,6 +705,7 @@ export default function Register() {
                             </div>
                         </div>
                     </div>
+
                     <div className="flex justify-center">
                         <PrimaryButton
                             type="submit"
@@ -731,6 +717,7 @@ export default function Register() {
                     </div>
                 </form>
             )}
+
             <ToastContainer />
         </GuestLayout>
     );

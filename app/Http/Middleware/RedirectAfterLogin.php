@@ -16,25 +16,9 @@ class RedirectAfterLogin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Check if user is authenticated
-        if (Auth::check()) {
-            $user = Auth::user();
-            $userRegistration = $user->registration;
-            
-            if ($userRegistration && $userRegistration->role) {
-                $userRole = strtolower($userRegistration->role->role_name);
-                
-                if (in_array($request->path(), ['/', 'login'])) {
-                    // Redirect based on role
-                    if ($userRole === 'admin') {
-                        return redirect('/admin/dashboard');
-                    } elseif ($userRole === 'teacher') {
-                        return redirect('/teacher/dashboard');
-                    } elseif ($userRole === 'student') {
-                        return redirect('/student/dashboard');
-                    }
-                }
-            }
+        // Only redirect authenticated users from / or /login to the dashboard
+        if (in_array($request->path(), ['/', 'login']) && Auth::check()) {
+            return redirect()->route('admin.dashboard');
         }
 
         return $next($request);

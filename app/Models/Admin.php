@@ -26,7 +26,7 @@ class Admin extends Model
     public $timestamps = false;
 
     // Attributes allowed for mass assignment
-    protected $fillable = ['salary', 'nic'];
+    protected $fillable = ['user_id', 'salary', 'nic'];
 
     //get the user details
     public function user() :BelongsTo

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('user_registrations', function (Blueprint $table) {
             $table->increments('registration_id');
-            $table->string('title');
+            $table->string('title', 20);
             $table->string('first_name',250);
             $table->string('last_name',250);
             $table->string('gender', 50);
@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('tel_no', 25);
             $table->text('address');
             $table->string('image')->nullable();
-            $table->string('status');
+            $table->boolean('status')->default(true);
             $table->unsignedBigInteger('user_id');
             $table->unsignedInteger('role_id')->nullable();
             $table->unsignedBigInteger('added_by')->nullable();

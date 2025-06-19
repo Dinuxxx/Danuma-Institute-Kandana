@@ -19,7 +19,10 @@ class Role extends Model
     protected $primaryKey = 'role_id'; 
     
     //fillable attributes
-    protected $fillable = [];
+    protected $fillable = [
+        'name',
+        'description'
+    ];
 
     //get the modules of the role
     public function modules()
@@ -32,6 +35,6 @@ class Role extends Model
     // get the user who have this role
     public function users(): HasMany
     {
-        return $this->hasMany(UserRegistration::class, 'role_id', 'role_id');
+        return $this->hasMany(User::class);
     }
 }

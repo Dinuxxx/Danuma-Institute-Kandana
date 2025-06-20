@@ -12,12 +12,20 @@ use App\Http\Controllers\TimetableController;
 use App\Http\Controllers\AdminNoticeController;
 use App\Http\Controllers\TeacherNoticeController;
 use App\Http\Controllers\StudentNoticeController;
+use App\Http\Controllers\StudentExamController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\StudentAttendanceController;
+use App\Http\Controllers\TeacherAttendanceController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\StudentDashboardController;
+use App\Http\Controllers\TeacherDashboardController;
+use App\Http\Controllers\TeacherSearchController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\TeacherExamController;
+use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\StripePaymentController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
@@ -26,6 +34,8 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\MessageController;
+
 
 
 Route::get('/', function () {
@@ -107,7 +117,7 @@ Route::get('/student/dashboard', function () {
 
 Route::get('/student/courses', function () {
     return Inertia::render('Student/Courses'); 
-})->name('admin.viewexams');
+}); // ->name('admin.viewexams');
 
 Route::get('/student/courses/{course_id}', function ($course_id) {
     $course = \App\Models\Course::where('course_id', $course_id)->firstOrFail();
@@ -120,19 +130,19 @@ Route::get('/student/courses/{course_id}', function ($course_id) {
 
 Route::get('/student/attendance', function () {
     return Inertia::render('Student/Attendance'); 
-})->name('admin.viewexams');
+}); //->name('admin.viewexams');
 
 Route::get('/student/exams', function () {
     return Inertia::render('Student/Exams'); 
-})->name('admin.viewexams');
+}); //->name('admin.viewexams');
 
 Route::get('/student/notices', function () {
     return Inertia::render('Student/Notices'); 
-})->name('admin.viewexams');
+}); //->name('admin.viewexams');
 
 Route::get('/student/payments', function () {
     return Inertia::render('Student/Payments'); 
-})->name('admin.viewexams');
+}); //->name('admin.viewexams');
 
 Route::get('/student/time-tables', [TimetableController::class, 'studentView'])->name('student.timetables');
 
@@ -246,7 +256,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Teacher routes
     Route::prefix('teacher')->middleware([CheckRole::class . ':teacher'])->group(function () {
-        Route::get('/dashboard', [TeacherController::class, 'dashboard'])->name('teacher.dashboard');
+
+
+        Route::get('/dashboard', [TeacherDashboardController::class, 'index'])->name('teacher.dashboard');
+        Route::get('/dashboard/total-students', [TeacherDashboardController::class, 'getTotalStudents']);
+        Route::get('/dashboard/attendance-stats', [TeacherDashboardController::class, 'getAttendanceStats']);
+        Route::get('/dashboard/grade-stats', [TeacherDashboardController::class, 'getGradeStats']);
+        Route::get('/dashboard/assignment-stats', [TeacherDashboardController::class, 'getAssignmentStats']);
+        Route::get('/dashboard/class-attendance', [TeacherDashboardController::class, 'getClassAttendance']);
+        Route::get('/dashboard/today-schedule', [TeacherDashboardController::class, 'getTodaySchedule']);
+        Route::get('/dashboard/class-performance', [TeacherDashboardController::class, 'getClassPerformance']);
+        
+
         Route::get('/courses', function () {
             return Inertia::render('Teacher/Courses');
         })->name('teacher.courses');
@@ -270,14 +291,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/lessons/edit/{id}', function () {
             return Inertia::render('Teacher/EditLesson');
         });
+
+                // Exam routes
+        Route::get('/exams', [TeacherExamController::class, 'index'])->name('exams');
+        Route::get('/exams/list', [TeacherExamController::class, 'getTeacherExams']);
+        Route::get('/exams/registered-grades', [TeacherExamController::class, 'getTeacherGrades']);
+        Route::post('/exams', [TeacherExamController::class, 'store']);
+        Route::get('/exams/{id}', [TeacherExamController::class, 'show']);
+        Route::put('/exams/{id}', [TeacherExamController::class, 'update']);
+        Route::delete('/exams/{id}', [TeacherExamController::class, 'destroy']);
         
-        Route::get('/attendance', function () {
-            return Inertia::render('Teacher/Attendance');
-        });
+        // Exam marks routes
+        Route::get('/exams/{examId}/students', [TeacherExamController::class, 'getExamStudents']);
+        Route::get('/exams/{examId}/marks', [TeacherExamController::class, 'showExamMarks'])->name('teacher.exam.marks');
+        Route::post('/exams/{examId}/marks', [TeacherExamController::class, 'saveExamMarks'])->name('teacher.exam.marks.save');
+        Route::delete('/exams/{examId}/marks', [TeacherExamController::class, 'deleteExamMarks'])->name('teacher.exam.marks.delete');
         
-        Route::get('/exams', function () {
-            return Inertia::render('Teacher/Exams');
-        });
+        Route::get('/attendance', [TeacherAttendanceController::class, 'index'])->name('teacher.attendance');
+        Route::get('/attendance/report', [TeacherAttendanceController::class, 'getAttendanceReport']);
+        Route::get('/attendance/courses', [TeacherAttendanceController::class, 'getTeacherCourses']);
+        Route::get('/attendance/students', [TeacherAttendanceController::class, 'getStudentsInCourses']);
+        Route::get('/attendance/stats', [TeacherAttendanceController::class, 'getAttendanceStats']);
+        Route::get('/attendance/monthly-stats', [TeacherAttendanceController::class, 'getMonthlyStats']);
         
         Route::get('/notices', function () {
             return Inertia::render('Teacher/Notices');
@@ -320,10 +355,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/attendance/report', [StudentAttendanceController::class, 'getAttendanceReport'])->name('student.attendance.report');
         Route::get('/attendance/stats', [StudentAttendanceController::class, 'getAttendanceStats'])->name('student.attendance.stats');
         Route::get('/courses/list', [StudentAttendanceController::class, 'getStudentCourses'])->name('student.courses.list');
-        
-        Route::get('/exams', function () {
-            return Inertia::render('Student/Exams');
-        });
+
+        Route::get('/dashboard/monthly-attendance', [StudentDashboardController::class, 'getMonthlyAttendance']);
+        Route::get('/dashboard/attendance-stats', [StudentDashboardController::class, 'getAttendanceStats']);
+        Route::get('/dashboard/grade-stats', [StudentDashboardController::class, 'getGradeStats']);
+        Route::get('/dashboard/subject-distribution', [StudentDashboardController::class, 'getSubjectDistribution']);
+        Route::get('/dashboard/due-amount-stats', [StudentDashboardController::class, 'getDueAmountStats']);
+        Route::get('/dashboard/student-performance', [StudentDashboardController::class, 'getStudentPerformance']);
+    
+        Route::get('/exams', [StudentExamController::class, 'index'])->name('exams.index');
+        Route::get('/exams/data', [StudentExamController::class, 'getStudentExams'])->name('exams.data');
+        Route::get('/exams/statistics', [StudentExamController::class, 'getExamStatistics'])->name('exams.statistics');
         
         Route::get('/notices', function () {
             return Inertia::render('Student/Notices');
@@ -334,6 +376,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/payments', [PaymentController::class, 'index'])->name('student.payments');
         Route::get('/bank-transfer', [PaymentController::class, 'bankTransfer'])->name('student.bank-transfer');
         Route::post('/payments', [PaymentController::class, 'store'])->name('student.payments.store');
+
+        Route::get('/stripe-payment', [StripePaymentController::class, 'showStripePayment'])->name('student.stripe-payment');
         
         Route::get('/time-tables', [TimetableController::class, 'studentView'])->name('student.timetables');
     });
@@ -405,10 +449,25 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
     Route::get('/notifications/{id}/notice', [NotificationController::class, 'showNoticeFromNotification']);
 
-    Route::get('/settings', function () {
-        return Inertia::render('Settings');
-    });
+    // Settings routes
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::post('/settings/account', [SettingsController::class, 'updateAccount'])->name('settings.update-account');
+    Route::post('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.update-password');
+    Route::post('/settings/appearance', [SettingsController::class, 'updateAppearance'])->name('settings.update-appearance');
+    
+    // Account deletion routes
+    Route::post('/settings/confirm-deletion', [SettingsController::class, 'confirmAccountDeletion'])->name('settings.confirm-deletion');
+    Route::post('/settings/delete-account', [SettingsController::class, 'deleteAccount'])->name('settings.delete-account');
+
+    Route::post('/create-payment-intent', [StripePaymentController::class, 'createPaymentIntent']);
+    Route::post('/student/payments/stripe', [StripePaymentController::class, 'recordPayment'])
+        ->name('student.payments.stripe.record');
+
 });
+
+Route::post('/webhook/stripe', [StripePaymentController::class, 'handleWebhook']);
+
+Route::get('/teachers/search', [App\Http\Controllers\TeacherSearchController::class, 'search']);
 
 // Profile management
 Route::middleware('auth')->group(function () {
@@ -423,6 +482,31 @@ Route::get('/register', function () {
 })->name('register');
 
 Route::post('/register', [UserRegistrationController::class, 'register'])->name('register');
+
+
+
+
+
+// Routes for registration forms
+Route::middleware(['auth', 'admin'])->group(function () {
+    // GET routes to display forms
+    Route::get('/teacher/register', function () {
+        return Inertia::render('Auth/TeacherRegister');
+    })->name('teacher.register.form');
+    
+    Route::get('/student/register', function () {
+        return Inertia::render('Auth/StudentRegister');
+    })->name('student.register.form');
+    
+    Route::get('/admin/register', function () {
+        return Inertia::render('Auth/AdminRegister');
+    })->name('admin.register.form');
+    
+//     // POST routes to handle form submissions
+    Route::post('/teacher/register', [TeacherController::class, 'register'])->name('teacher.register');
+    // Route::post('/student/register', [StudentController::class, 'register'])->name('student.register');
+    Route::post('/admin/register', [AdminController::class, 'register'])->name('admin.register');
+});
 
 
 
@@ -450,4 +534,8 @@ Route::post('/email/verification-notification', [EmailVerificationNotificationCo
     ->middleware('auth')
     ->name('verification.send');
 
+Route::post('/messages', [MessageController::class, 'store']);
+
 require __DIR__.'/auth.php';
+
+?>

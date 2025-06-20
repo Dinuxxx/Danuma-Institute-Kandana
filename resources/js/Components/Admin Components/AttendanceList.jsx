@@ -315,7 +315,7 @@ const AttendanceList = () => {
           : timeString;
           
         if (time instanceof Date && !isNaN(time)) {
-          return time.toTimeString().slice(0, 5); // HH:MM format for input[type="time"]
+          return time.toTimeString().slice(0, 5); 
         }
       } catch (e) {
         console.error("Error parsing time:", e);
@@ -491,31 +491,6 @@ const AttendanceList = () => {
     }
   }
 
-  // Handle print function
-  function handlePrint() {
-    try {
-      // Create a printable version of the data
-      const printContent = filteredData.map(item => {
-        const { select, Option, ...printableItem } = item;
-        return printableItem;
-      });
-      
-      // Store the data to print in localStorage
-      localStorage.setItem('printData', JSON.stringify(printContent));
-      localStorage.setItem('printColumns', JSON.stringify(columns.filter(col => col !== 'select' && col !== 'Option')));
-      
-      // Open print window
-      const printWindow = window.open('/print-attendance', '_blank');
-      
-      if (!printWindow) {
-        toast.error("Pop-up blocked! Please allow pop-ups for printing.");
-      }
-    } catch (e) {
-      console.error("Error preparing print data:", e);
-      toast.error("Failed to prepare print data");
-    }
-  }
-
   // Handle export to CSV
   function handleExportCSV() {
     try {
@@ -675,12 +650,6 @@ const AttendanceList = () => {
                 >
                   Delete Selected
                 </button>
-                <button 
-                  className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-                  onClick={() => handleBulkAction('markPresent')}
-                >
-                  Mark Present
-                </button>
               </div>
             </div>
           )}
@@ -704,16 +673,6 @@ const AttendanceList = () => {
             onClick={handleExportCSV}
           >
             Export CSV
-          </button>
-          
-          <button 
-            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm flex items-center gap-1"
-            onClick={handlePrint}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
-            </svg>
-            Print
           </button>
         </div>
       </div>
@@ -785,9 +744,10 @@ const AttendanceList = () => {
               <input 
                 type="time" 
                 name="checkInTime"
-                className="border rounded w-full py-2 px-3" 
+                className="border rounded w-full py-2 px-3 bg-gray-100" 
                 value={editForm.checkInTime}
                 onChange={handleEditFormChange}
+                disabled
               />
             </div>
             
@@ -798,9 +758,10 @@ const AttendanceList = () => {
               <input 
                 type="time" 
                 name="checkOutTime"
-                className={`border rounded w-full py-2 px-3 ${formErrors.checkOutTime ? 'border-red-500' : ''}`}
+                className={`border rounded w-full py-2 px-3 bg-gray-100 ${formErrors.checkOutTime ? 'border-red-500' : ''}`}
                 value={editForm.checkOutTime}
                 onChange={handleEditFormChange}
+                disabled
               />
               {formErrors.checkOutTime && (
                 <p className="text-red-500 text-xs italic">{formErrors.checkOutTime}</p>

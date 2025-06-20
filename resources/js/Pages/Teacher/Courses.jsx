@@ -124,14 +124,13 @@ const Courses = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
               {sortedCourses.map((course) => (
-                <Link key={course.course_id} href={`/teacher/courses/${course.course_id}`}>
-                  <CourseCardTeacher
-                    id={course.course_id}
-                    title={course.course_name}
-                    grade={`Grade ${course.grade}`}
-                    pattern={course.pattern}
-                  />
-                </Link>
+                <CourseCardTeacher
+                  key={course.course_id}
+                  id={course.course_id}
+                  title={course.course_name}
+                  grade={`Grade ${course.grade}`}
+                  pattern={course.pattern}
+                />
               ))}
             </div>
           )}

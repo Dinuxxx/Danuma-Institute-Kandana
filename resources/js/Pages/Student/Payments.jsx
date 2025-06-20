@@ -7,10 +7,9 @@ const Payments = ({ auth, payments = [], dueAmount = 0, lastPayment = 0 }) => {
   const [loading, setLoading] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
 
-  const initiatePayhere = () => {
-    // Payhere payment initiation logic would go here
-    alert('Initiating Payhere payment gateway');
-    // You would typically redirect to Payhere or open their widget here
+  const initiateStripe = () => {
+    // Navigate to Stripe payment page
+    router.visit(route('student.stripe-payment'));
   };
 
   const formatCurrency = (amount) => {
@@ -147,15 +146,15 @@ const Payments = ({ auth, payments = [], dueAmount = 0, lastPayment = 0 }) => {
                   Bank Transfer
                 </button>
                 <button 
-                  className="bg-green-100 hover:bg-green-200 text-green-700 px-12 py-4 rounded-lg flex items-center justify-center gap-3 transition-colors duration-200 shadow-sm"
-                  onClick={initiatePayhere}
+                  className="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-12 py-4 rounded-lg flex items-center justify-center gap-3 transition-colors duration-200 shadow-sm"
+                  onClick={initiateStripe}
                 >
                   <span className="inline-block w-5 h-5">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                     </svg>
                   </span>
-                  Payhere
+                  Stripe
                 </button>
               </div>
               

@@ -98,11 +98,7 @@ function Sidebar({ isOpen, toggleSidebar, role }) {
                 text: "Attendance",
                 link: "/teacher/attendance",
             },
-            {
-                icon: <FaMoneyBill />,
-                text: "Payments",
-                link: "/teacher/payments",
-            },
+            // { icon: <FaMoneyBill />, text: 'Payments', link: '/teacher/payments' },
             { icon: <FaBullhorn />, text: "Notices", link: "/teacher/notices" },
             {
                 icon: <FaCalendarAlt />,

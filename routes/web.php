@@ -488,7 +488,7 @@ Route::post('/register', [UserRegistrationController::class, 'register'])->name(
 
 
 // Routes for registration forms
-Route::middleware(['auth', 'admin'])->group(function () {
+Route::middleware(['auth', CheckRole::class . ':admin'])->group(function () {
     // GET routes to display forms
     Route::get('/teacher/register', function () {
         return Inertia::render('Auth/TeacherRegister');
@@ -503,9 +503,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     })->name('admin.register.form');
     
 //     // POST routes to handle form submissions
-    Route::post('/teacher/register', [TeacherController::class, 'register'])->name('teacher.register');
-    // Route::post('/student/register', [StudentController::class, 'register'])->name('student.register');
-    Route::post('/admin/register', [AdminController::class, 'register'])->name('admin.register');
+    Route::post('/teacher/register', [UserRegistrationController::class, 'register'])->name('teacher.register');
+    Route::post('/student/register', [UserRegistrationController::class, 'register'])->name('student.register');
+    Route::post('/admin/register', [UserRegistrationController::class, 'register'])->name('admin.register');
 });
 
 

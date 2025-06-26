@@ -38,7 +38,7 @@ class AdminSeeder extends Seeder
             $registration = UserRegistration::updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'title' => 'Mr.',
+
                     'first_name' => 'Admin',
                     'last_name' => 'User',
                     'gender' => 'Male',

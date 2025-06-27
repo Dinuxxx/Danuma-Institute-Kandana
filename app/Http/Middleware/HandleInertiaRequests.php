@@ -34,7 +34,7 @@ class HandleInertiaRequests extends Middleware
         
         if ($user) {
             // Load the user with their registration and role information
-            $userWithRole = $user->load('registration.role');
+            $userWithRole = $user->load(['registration.role']);
             
             // Extract the role for easy access in the frontend
             $role = null;
@@ -44,6 +44,9 @@ class HandleInertiaRequests extends Middleware
             
             // Add the role directly to the user object for easier access in React components
             $userWithRole->role = $role;
+            
+            // Add email verification status
+            $userWithRole->email_verified_at = $user->email_verified_at;
         }
         
         return [

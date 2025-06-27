@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use App\Models\Parents;
 use App\Models\User;
 use App\Models\UserRegistration;
@@ -9,7 +10,6 @@ use App\Models\Student;
 use App\Models\Course;
 use App\Models\Teacher;
 use App\Models\Admin;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +17,12 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Auth\Events\Registered; // for user verification
 use Illuminate\Support\Facades\Mail;
 use App\Mail\SendPasswordEmail; // You'll create this Mailable class
-
+use App\Http\Controllers\TeacherController;
+use App\Http\Controllers\StudentController;
+use App\Http\Controllers\AdminController;
+use Illuminate\Support\Facades\Log;
+use App\Models\StudentCourse;
+use Illuminate\Validation\Rules;
 
 class UserRegistrationController extends Controller
 {
@@ -82,221 +87,174 @@ class UserRegistrationController extends Controller
     
     public function registerUser(Request $request)
     {
-        // Validate the request data
-        $commonRules = [
-            'name' => 'required|string|max:255',
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'address' => 'required|string|max:255',
-            'tel_no' => 'required|digits:10',
-            'dob' => 'nullable|date',
-            'gender' => 'required|string|in:male,female',
-            //'password' => 'required|string|min:8|confirmed',          
-            //'parent_first_name' => 'required|string|max:255',
-            //'parent_last_name' => 'required|string|max:255',
-            //'parent_phone_number' => 'required|digits_between:10,15',
-            //'relationship_to_student' => 'required|string|max:255',
-            //'role' => 'required|string',
-            //'grade' => 'required|string|max:255',
-            //'courses' => 'required|array|min:1', // Array of selected course IDs
-            //'courses.*'=> 'required|exists:courses,course_id',// Validate each course ID exists
-        ];
-
-        //$password = "sdadasdadadadadd"; // Generate a random password of 12 characters
-
-
-
-        // Get user type from request
-        $userType = $request->input('user_type');
-        $roleId = null;
-
-        // Set role ID and role-specific validation rules based on user type
-        switch ($userType) {
-            case 'teacher':
-                $roleId = 2; // Assuming 2 is the role_id for teachers
-                $roleRules = [
-                    //'subject' => 'required|string',
-                    
-                    //'selected_grades' => 'sometimes|array',
-                    //'selected_courses.*' => 'exists:courses,course_id',
-                    'qualifications' => 'required|string',
-                    'selected_courses' => 'sometimes|array',
-                    'selected_courses.*' => 'exists:courses,course_id',
-                    'salary' => 'nullable|numeric',
-                    'nic' => 'required|string|max:12',
-                ];
-                break;
-                
-            case 'student':
-                $roleId = 3; // Assuming 3 is the role_id for students
-                $roleRules = [
-                    'grade' => 'required|string',
-                    'parent_first_name' => 'required|string',
-                    'parent_last_name' => 'required|string',
-                    'parent_phone_number' => 'required|string',
-                    'relationship_to_student' => 'required|string',
-                    'courses' => 'sometimes|array',
-                    'courses.*' => 'exists:courses,course_id',
-                ];
-                break;
-                
-            case 'admin':
-                $roleId = 1; // Assuming 1 is the role_id for admins
-                $roleRules = [
-                    //'admin_level' => 'required|integer|min:1|max:3',
-                    'salary' => 'nullable|numeric',
-                    'nic' => 'required|string|max:12',
-                ];
-                break;
-                
-            default:
-                return back()->withErrors(['user_type' => 'Invalid user type']);
-        }
-
-        // Merge common and role-specific validation rules
-        $validationRules = array_merge($commonRules, $roleRules);
-        
-        // Validate the request
-        $validated = $request->validate($validationRules);
-
-        // Create transaction to ensure all operations succeed or fail together
-        DB::beginTransaction();
-
         try {
-            // Generate random password for the user
-            $password = Str::random(12);
-            
-            // Create the base user
-            $user = User::create([
-                'name' => $validated['first_name'] . ' ' . $validated['last_name'],
-                'email' => $validated['email'],
-                'password' => Hash::make($password),
-            ]);
-            
-            // Send the password to the user via email
-            Mail::to($user->email)->send(new SendPasswordEmail($password));
-            
-            // Trigger email verification event
-            event(new Registered($user));
-            
-            // Handle image upload if present
-            $imagePath = null;
-            if ($request->hasFile('image')) {
-                $imagePath = $request->file('image')->store('user_images', 'public');
-            }
-            
-            // Create user registration entry
-            $registration = UserRegistration::create([
-                'first_name' => $validated['first_name'],
-                'last_name' => $validated['last_name'],
-                'gender' => $validated['gender'],
-                'dob' => $validated['dob'],
-                'tel_no' => $validated['tel_no'],
-                'address' => $validated['address'],
-                'image' => $imagePath,
-                'status' => 'active', // Default status
-                'user_id' => $user->id,
-                'role_id' => $roleId,
-                'added_by' => auth()->id() ?? 1, // Current admin or default
-            ]);
-            
-            // Handle role-specific data
-            switch ($userType) {
-                case 'teacher':
-                    $teacher = Teacher::create([
-                        'user_id' => $user->id,
-                        'salary' => $validated['salary'] ?? null,
-                        'qualifications' => $validated['qualifications'],
-                        'nic' => $validated['nic'],
-                    ]);
+            DB::beginTransaction();
 
-                    // Handle teacher courses if provided
-    if (!empty($validated['selected_courses'])) {
-        foreach ($validated['selected_courses'] as $courseId) {
-            // Update the course with this teacher's ID
-            Course::where('course_id', $courseId)->update([
-                'teacher_id' => $teacher->tea_id
+            // Validate common fields
+            $request->validate([
+                'first_name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users',
+                'gender' => 'required|in:Male,Female',
+                'dob' => 'required|date',
+                'tel_no' => 'required|string|max:20',
+                'address' => 'required|string',
+                'role' => 'required|in:admin,teacher,student',
             ]);
-        }
-    }
-                            
-                    break;
-                    
+
+            // Generate a temporary password
+            $password = Str::random(12);
+
+            // Create user
+            $user = User::create([
+                'name' => $request->first_name . ' ' . $request->last_name,
+                'email' => $request->email,
+                'password' => Hash::make($password),
+            
+            ]);
+
+            // Create user registration
+            $userRegistration = UserRegistration::create([
+                'user_id' => $user->id,
+                'role_id' => $this->getRoleId($request->role),
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'gender' => $request->gender,
+                'dob' => $request->dob,
+                'tel_no' => $request->tel_no,
+                'address' => $request->address,
+                'status' => true,
+                'added_by' => auth()->id()
+            ]);
+
+            // Handle role-specific registration
+            switch ($request->role) {
                 case 'student':
-                    // Create parent first
-                    $parent = Parent::create([
-                        'parent_first_name' => $validated['parent_first_name'],
-                        'parent_last_name' => $validated['parent_last_name'],
-                        'parent_phone_number' => $validated['parent_phone_number'],
-                        'relationship_type' => $validated['relationship_to_student'],
-                    ]);
-                    
-                    $student = Student::create([
-                        'user_id' => $user->id,
-                        'grade' => $validated['grade'],
-                        'QR_id' => 'STU' . str_pad($user->id, 6, '0', STR_PAD_LEFT), // Generate QR ID
-                        'parent_id' => $parent->parent_id, // Use the parent ID from newly created parent
-                    ]);
-                    
-                    // Enroll student in selected courses
-                    // These are courses specific to the student's grade
-                    $courseData = [];
-                    foreach ($validated['courses'] as $courseId) {
-                        $courseData[] = [
-                            'registered_date_time' => now(),
-                            'status' => 'active',
-                            'student_id' => $student->id, // Use student ID (auto-increment primary key)
-                            'course_id' => $courseId,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ];
-                    }
-                    
-                    // Bulk insert all course registrations for better performance
-                    if (!empty($courseData)) {
-                        DB::table('student_courses')->insert($courseData);
-                    }
+                    $this->registerStudent($request, $user->id);
                     break;
-                    
+                case 'teacher':
+                    $this->registerTeacher($request, $user->id);
+                    break;
                 case 'admin':
-                    Admin::create([
-                        'user_id' => $user->id,
-                        'salary' => $validated['salary'] ?? null,
-                        'nic' => $validated['nic'],
-                        //'admin_level' => $validated['admin_level'],
-                    ]);
+                    $this->registerAdmin($request, $user->id);
                     break;
             }
-            
+
             DB::commit();
-            
-            // Return success response based on request type
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'message' => ucfirst($userType) . ' registered successfully. Please verify your email.',
-                    'status' => 'verification-link-sent',
-                    'user' => $user
-                ], 201);
-            }
-            
-            // Redirect back to users list for web request
-            return redirect()->route('admin.users')
-                ->with('message', ucfirst($userType) . ' registered successfully. Verification email sent.');
-                
+
+            // Always return JSON response
+            return response()->json([
+                'status' => 'success',
+                'message' => ucfirst($request->role) . ' registered successfully!',
+                'data' => [
+                    'user_id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $request->role,
+                    'temporary_password' => $password // Only for development
+                ]
+            ], 201);
+
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('User registration error: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             
-            // Return error response based on request type
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'message' => 'Registration failed',
-                    'error' => $e->getMessage()
-                ], 500);
-            }
-            
-            return back()->withErrors(['error' => 'Registration failed: ' . $e->getMessage()]);
+            // Always return JSON response for errors
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Registration failed: ' . $e->getMessage(),
+                'errors' => $e instanceof \Illuminate\Validation\ValidationException ? $e->errors() : null
+            ], 500);
         }
+    }
+
+    private function registerStudent(Request $request, $userId)
+    {
+        // Validate student-specific fields
+        $request->validate([
+            'parent_first_name' => 'required|string|max:255',
+            'parent_last_name' => 'required|string|max:255',
+            'parent_phone_number' => 'required|string|max:20',
+            'relationship_type' => 'required|string|max:50',
+            'grade' => 'required|string|max:10',
+            'courses' => 'required|array'
+        ]);
+
+        try {
+            // Create parent
+            $parent = Parents::create([
+                'parent_first_name' => $request->parent_first_name,
+                'parent_last_name' => $request->parent_last_name,
+                'parent_phone_number' => $request->parent_phone_number,
+                'relationship_type' => $request->relationship_type
+            ]);
+
+            // Create student
+            $student = Student::create([
+                'user_id' => $userId,
+                'parent_id' => $parent->parent_id,
+                'grade' => $request->grade
+            ]);
+
+            // Create student-course relationships
+            foreach ($request->courses as $courseId) {
+                StudentCourse::create([
+                    'student_id' => $student->student_id,
+                    'course_id' => $courseId,
+                    'status' => 'active',
+                    'registered_date_time' => now()
+                ]);
+            }
+
+            Log::info('Student registration completed successfully', [
+                'user_id' => $userId,
+                'student_id' => $student->student_id,
+                'parent_id' => $parent->parent_id
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Student registration error: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            throw $e;
+        }
+    }
+
+    private function registerTeacher(Request $request, $userId)
+    {
+        // Validate teacher-specific fields
+        $request->validate([
+            'nic' => 'required|string|max:20',
+            'qualifications' => 'required|string',
+            'courses' => 'required|array'
+        ]);
+
+        // Create teacher
+        $teacher = Teacher::create([
+            'user_id' => $userId,
+            'nic' => $request->nic,
+            'qualifications' => $request->qualifications
+        ]);
+
+        // Update courses with teacher_id
+        Course::whereIn('course_id', $request->courses)
+            ->update(['teacher_id' => $teacher->tea_id]);
+    }
+
+    private function registerAdmin(Request $request, $userId)
+    {
+        // Add any admin-specific registration logic here
+        // For now, we just need the user and user_registration records
+    }
+
+    private function getRoleId($role)
+    {
+        $roles = [
+            'admin' => 1,
+            'teacher' => 2,
+            'student' => 3
+        ];
+        return $roles[$role] ?? 1;
     }
 
     /**

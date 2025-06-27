@@ -19,7 +19,7 @@ class TeacherController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function register(Request $request)
+    /*public function register(Request $request)
     {
         $request->validate([
             'first_name' => 'required|string|max:255',
@@ -76,5 +76,5 @@ class TeacherController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
-    }
+    }*/
 }

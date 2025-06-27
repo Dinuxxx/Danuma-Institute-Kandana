@@ -1,22 +1,20 @@
 import { useState } from "react";
 import { Link } from "@inertiajs/react";
+import { route } from "ziggy-js";
 
 function RoleDropdown() {
     const [isOpen, setIsOpen] = useState(false);
-    const [selected, setSelected] = useState("ADD new User");
+    const [selected, setSelected] = useState("Add New User");
 
     const toggleDropdown = () => setIsOpen(!isOpen);
 
     const handleSelect = (role) => {
         setSelected(role);
         setIsOpen(false);
-    };
-
-    // Define proper routes for each user type
-    const roleRoutes = {
-        Admin: "admin/register",
-        Teacher: "teacher/register",
-        Student: "student/register",
+        // Navigate to the appropriate registration form
+        if (role) {
+            window.location.href = route(`${role.toLowerCase()}.register.form`);
+        }
     };
 
     return (
@@ -39,16 +37,10 @@ function RoleDropdown() {
                     {["Admin", "Teacher", "Student"].map((option) => (
                         <li
                             key={option}
-                            //onClick={() => handleSelect(option)}
+                            onClick={() => handleSelect(option)}
                             className="px-4 hover:bg-blue-200 cursor-pointer hover:font-bold"
                         >
-                            <Link
-                                href={roleRoutes[option]}
-                                className="w-full block py-2 px-4 hover:bg-blue-200 cursor-pointer"
-                                onClick={() => handleSelect(option)}
-                            >
-                                {option}
-                            </Link>
+                            {option}
                         </li>
                     ))}
                 </ul>

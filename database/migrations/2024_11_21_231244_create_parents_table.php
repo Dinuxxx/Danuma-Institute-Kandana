@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('parents', function (Blueprint $table) {
 
             $table->increments('parent_id');
-            $table->string('first_name',200);
-            $table->string('last_name',200);
+            $table->string('parent_first_name',200);
+            $table->string('parent_last_name',200);
             //$table->text('address');
-            $table->string('tel_no', 15);
+            $table->string('parent_phone_number', 15);
             //$table->string('email')->unique();
             $table->string('relationship_type',50);
             

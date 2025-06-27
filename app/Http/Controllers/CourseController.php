@@ -58,6 +58,7 @@ class CourseController extends Controller{
 
 
 
+
         
     //     $course = Course::create([
     //         'course_id' => $validatedData['subjectCode'],
@@ -70,6 +71,7 @@ class CourseController extends Controller{
         
     //     return response()->json(['message' => 'Course created successfully!', 'course' => $course]);
     // }
+
 
     //The index method retrieves all courses from the database and returns them as JSON. This is used when listing all courses.
 

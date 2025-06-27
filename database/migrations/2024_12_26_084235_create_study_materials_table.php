@@ -19,7 +19,7 @@ return new class extends Migration {
             $table->string('material_url')->nullable(); // URL for external links
             $table->string('material_url_title', 100)->nullable(); // Custom title for the URL
             $table->boolean('is_visible')->default(true);
-            $table->string('course_id')->nullable();
+            $table->unsignedInteger('course_id')->nullable();
             
             $table->foreign('course_id')
                 ->references('course_id')

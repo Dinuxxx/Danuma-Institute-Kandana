@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('status',50);
             $table->unsignedInteger('for_slot'); 
             $table->unsignedInteger('att_id'); 
-            $table->string('course_id');
+            $table->unsignedInteger('course_id');
 
             
             $table->foreign('for_slot')

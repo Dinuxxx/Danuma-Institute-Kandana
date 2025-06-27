@@ -95,7 +95,7 @@ class User extends Authenticatable implements MustVerifyEmail
     // get the payments verified by current user
     public function payments(): HasMany
     {
-        return $this->hasMany(Payments::class, 'verified_by', 'id');
+        return $this->hasMany(Payment::class, 'verified_by', 'id');
     }
 
     public function role()

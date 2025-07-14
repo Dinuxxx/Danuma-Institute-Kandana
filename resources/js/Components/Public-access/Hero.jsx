@@ -44,14 +44,6 @@ const Hero = () => {
             Login
           </Link>
         </PrimaryButton>
-
-        <br />
-        <Link
-          href={route('register')}
-          className="text-[16px] sm:text-[20px] mt-4 block"
-        >
-          Register
-        </Link>
       </div>
     </div>
   );

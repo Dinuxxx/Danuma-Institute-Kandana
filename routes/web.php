@@ -330,7 +330,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Student routes
     Route::prefix('student')->middleware([CheckRole::class . ':student'])->group(function () {
-        Route::get('/dashboard', [StudentController::class, 'dashboard'])->name('student.dashboard');
+
+        Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
         Route::get('/courses', function () {
             return Inertia::render('Student/Courses');
         })->name('student.courses');

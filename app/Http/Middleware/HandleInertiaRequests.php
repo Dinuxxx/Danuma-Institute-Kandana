@@ -42,11 +42,11 @@ class HandleInertiaRequests extends Middleware
                 $role = strtolower($userWithRole->registration->role->role_name);
             }
             
-            // Add the role directly to the user object for easier access in React components
-            $userWithRole->role = $role;
-            
-            // Add email verification status
-            $userWithRole->email_verified_at = $user->email_verified_at;
+            // Convert user to array and add the role property
+            $userArray = $userWithRole->toArray();
+            $userArray['role'] = $role;
+            $userArray['email_verified_at'] = $user->email_verified_at;
+            $userWithRole = $userArray;
         }
         
         return [

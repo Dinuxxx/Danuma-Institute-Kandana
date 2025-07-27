@@ -17,10 +17,7 @@ class StudentCourseFactory extends Factory
     public function definition(): array
     {
         return [
-            'registered_date_time' => fake()->dateTimeBetween('-1 years', 'now'),
-            'status' => fake()->randomElement(['active', 'completed', 'dropped']),
-            'student_id' => 1, // override in seeder
-            'course_id' => 1,  // override in seeder
+            //
         ];
     }
 }

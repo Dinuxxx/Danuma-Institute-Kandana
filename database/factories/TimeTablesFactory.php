@@ -16,12 +16,8 @@ class TimeTablesFactory extends Factory
      */
     public function definition(): array
     {
-         return [
-            'day_of_week' => $this->faker->dayOfWeek(),
-            'start_time' => $this->faker->time('H:i', '17:00'),
-            'end_time' => $this->faker->time('H:i', '20:00'),
-             'course_id' => null, // filled when assigning
-            'classroom_no' => 'CR-' . $this->faker->numberBetween(1, 10),
+        return [
+            //
         ];
     }
 }

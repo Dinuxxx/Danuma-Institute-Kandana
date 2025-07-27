@@ -16,7 +16,7 @@ return new class extends Migration
             $table->timestamp('registered_date_time');
             $table->string('status',50); 
             $table->unsignedInteger('student_id'); 
-            $table->unsignedInteger('course_id');
+            $table->string('course_id');
 
             $table->foreign('student_id')
                 ->references('student_id')

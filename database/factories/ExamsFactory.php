@@ -17,10 +17,7 @@ class ExamsFactory extends Factory
     public function definition(): array
     {
         return [
-            'exam_name' => fake()->randomElement(['Midterm', 'Final', 'Quiz', 'Assignment']) . ' Exam',
-            'exam_date' => fake()->dateTimeBetween('-1 year', '+1 month'),
-            'status' => fake()->randomElement(['Scheduled', 'Completed']),
-            'course_id' => null, // override in seeder
+            //
         ];
     }
 }

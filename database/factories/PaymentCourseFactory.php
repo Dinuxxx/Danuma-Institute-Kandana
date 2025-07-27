@@ -17,9 +17,7 @@ class PaymentCourseFactory extends Factory
     public function definition(): array
     {
         return [
-            'month' => $this->faker->monthName,
-            'amount' => $this->faker->randomFloat(2, 500, 2000),
-            'status' => $this->faker->randomElement(['Paid', 'Pending']),
+            //
         ];
     }
 }

@@ -17,10 +17,7 @@ class ParentsFactory extends Factory
     public function definition(): array
     {
         return [
-            'parent_first_name' => fake()->firstName(),
-            'parent_last_name' => fake()->lastName(),
-            'parent_phone_number' => fake()->numerify('0#########'),
-            'relationship_type' => fake()->randomElement(['Father', 'Mother', 'Guardian']),
+            //
         ];
     }
 }

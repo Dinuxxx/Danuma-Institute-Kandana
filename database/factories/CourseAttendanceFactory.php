@@ -17,10 +17,7 @@ class CourseAttendanceFactory extends Factory
     public function definition(): array
     {
         return [
-            'status' => fake()->randomElement(['Present', 'Absebt']),
-            'for_slot' => null, // will be set in seeder
-            'att_id' => null,   // will be set in seeder
-            'course_id' => null // will be set in seeder
+            //
         ];
     }
 }

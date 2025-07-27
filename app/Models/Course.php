@@ -54,7 +54,7 @@ class Course extends Model
     //get the studymaterials  for the course
     public function studyMaterials()
     {
-        return $this->hasMany(StudyMaterial::class, 'course_id', 'course_id');
+        return $this->hasMany(StudyMaterials::class, 'course_id', 'course_id');
     }
 
     //get the payments  for the course

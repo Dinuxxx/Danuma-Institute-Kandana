@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('exam_marks', function (Blueprint $table) {
             $table->increments('row_id');
-            $table->decimal('marks', 5, 2)->nullable(); 
+            $table->decimal('marks', 5, 2); 
             $table->unsignedInteger('exam_id');
             $table->unsignedInteger('student_id');
         

@@ -103,13 +103,13 @@ class UserRegistrationController extends Controller
             ]);
 
             // Generate a temporary password
-            $password = Str::random(12);
+            $temporaryPassword = Str::random(12);
 
             // Create user
             $user = User::create([
                 'name' => $request->first_name . ' ' . $request->last_name,
                 'email' => $request->email,
-                'password' => Hash::make($password),
+                'password' => Hash::make($temporaryPassword),
             
             ]);
 
@@ -151,7 +151,7 @@ class UserRegistrationController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'role' => $request->role,
-                    'temporary_password' => $password // Only for development
+                    'temporary_password' => $temporaryPassword // Only for development
                 ]
             ], 201);
 

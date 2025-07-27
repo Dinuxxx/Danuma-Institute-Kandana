@@ -13,46 +13,18 @@ class SendPasswordEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $password;
+    public $user;
+    public $temporaryPassword;
 
-    /**
-     * Create a new message instance.
-     */
-    public function __construct($password)
+    public function __construct($user, $temporaryPassword)
     {
-        $this->password = $password;
+        $this->user = $user;
+        $this->temporaryPassword = $temporaryPassword;
     }
 
-    /**
-     * Get the message envelope.
-     */
-    public function envelope(): Envelope
+    public function build()
     {
-        return new Envelope(
-            subject: 'Your Account Password',
-        );
-    } 
-
-    /**
-     * Get the message content definition.
-     */
-    public function content(): Content
-    {
-        return new Content(
-            markdown: 'password', // Use the Markdown email template
-            with: [
-                'password' => $this->password, // Pass the password to the view
-            ],
-        );
-    }
-
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
-    public function attachments(): array
-    {
-        return [];
+        return $this->subject('Your Account Temporary Password')
+                    ->view('emails.send_password');
     }
 }

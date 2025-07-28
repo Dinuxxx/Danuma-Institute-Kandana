@@ -23,6 +23,7 @@ use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Log;
 use App\Models\StudentCourse;
 use Illuminate\Validation\Rules;
+use App\Models\Role;
 
 class UserRegistrationController extends Controller
 {
@@ -113,10 +114,25 @@ class UserRegistrationController extends Controller
             
             ]);
 
-            // Create user registration
+            // Send email verification
+            // event(new Registered($user)); // REMOVE or COMMENT THIS OUT
+
+            // Log the full request and role lookup for debugging
+            Log::info('Full registration request:', $request->all());
+
+            // Case-insensitive role lookup for robustness
+            $role = Role::whereRaw('LOWER(role_name) = ?', [strtolower($request->role)])->first();
+            Log::info('Role from request:', ['role' => $request->role]);
+            Log::info('Role found:', ['role' => $role]);
+            if (!$role) {
+                throw new \Exception('Role not found: ' . $request->role);
+            }
+            $roleId = $role->role_id;
+            Log::info('Role ID:', ['role_id' => $roleId]);
+
             $userRegistration = UserRegistration::create([
                 'user_id' => $user->id,
-                'role_id' => $this->getRoleId($request->role),
+                'role_id' => $roleId,
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
                 'gender' => $request->gender,
@@ -139,6 +155,8 @@ class UserRegistrationController extends Controller
                     $this->registerAdmin($request, $user->id);
                     break;
             }
+
+            Mail::to($user->email)->send(new SendPasswordEmail($userRegistration, $temporaryPassword));
 
             DB::commit();
 

@@ -208,7 +208,7 @@ export default function TeacherRegister() {
 
         const finalData = {
             ...data,
-            user_type: "teacher", // Explicitly setting the user type
+            role: "teacher", // Explicitly setting the user type
             courses: coursesToSubmit,
             name,
             password: generatedPassword,

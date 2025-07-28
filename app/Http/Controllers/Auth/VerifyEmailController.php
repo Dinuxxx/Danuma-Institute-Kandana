@@ -14,18 +14,37 @@ class VerifyEmailController extends Controller
      */
     public function __invoke(EmailVerificationRequest $request): RedirectResponse
     {
+        if (!$request->user()) {
+            // If not authenticated, redirect to login
+            return redirect()->route('login')->with('message', 'Please log in to verify your email.');
+        }
+
         if ($request->user()->hasVerifiedEmail()) {
-            //return redirect()->intended(route('dashboard', absolute: false).'?verified=1');
-            return redirect()->intended(route('dashboard', absolute: false).'?verified=1');
+            return $this->redirectByRole($request->user());
         }
 
         if ($request->user()->markEmailAsVerified()) {
             event(new Verified($request->user()));
         }
 
-        // Add a flash message
-    session()->flash('verified', true);
+        session()->flash('verified', true);
 
-        return redirect()->intended(route('dashboard', absolute: false).'?verified=1');
+        return $this->redirectByRole($request->user());
+    }
+
+    private function redirectByRole($user)
+    {
+        $role = optional($user->registration)->role->role_name ?? null;
+        if ($role) {
+            $role = strtolower($role);
+            if ($role === 'student') {
+                return redirect()->route('student.dashboard');
+            } elseif ($role === 'teacher') {
+                return redirect()->route('teacher.dashboard');
+            } elseif ($role === 'admin') {
+                return redirect()->route('admin.dashboard');
+            }
+        }
+        return redirect()->route('dashboard');
     }
 }

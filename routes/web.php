@@ -252,6 +252,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/get-grades', [UserRegistrationController::class, 'getGrades']);
         Route::get('/courses-by-grade/{grade}', [UserRegistrationController::class, 'getCoursesByGrade']);
         Route::get('/all-courses', [UserRegistrationController::class, 'getAllCourses']);
+
+        Route::get('/teacher/available-courses', [UserRegistrationController::class, 'getAvailableCoursesForTeacher'])
+    ->name('teacher.available.courses');
     });
 
     // Teacher routes
@@ -507,6 +510,15 @@ Route::middleware(['auth', CheckRole::class . ':admin'])->group(function () {
     Route::post('/teacher/register', [UserRegistrationController::class, 'register'])->name('teacher.register');
     Route::post('/student/register', [UserRegistrationController::class, 'register'])->name('student.register');
     Route::post('/admin/register', [UserRegistrationController::class, 'register'])->name('admin.register');
+
+    Route::middleware(['auth', CheckRole::class . ':admin'])->group(function () {
+    
+    Route::post('/teacher/register', [UserRegistrationController::class, 'registerUser'])->name('teacher.register');
+    
+    // Helper routes (if not already present)
+    Route::get('/get-grades', [UserRegistrationController::class, 'getGrades']);
+    Route::get('/courses-by-grade/{grade}', [UserRegistrationController::class, 'getCoursesByGrade']);
+    Route::get('/all-courses', [UserRegistrationController::class, 'getAllCourses']);
 });
 
 

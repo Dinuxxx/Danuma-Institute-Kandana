@@ -13,14 +13,12 @@ import axios from "axios";
 export default function TeacherRegister() {
     const [currentStep, setCurrentStep] = useState(1);
     const [availableCourses, setAvailableCourses] = useState([]);
-    const [filteredCourses, setFilteredCourses] = useState([]);
     const [selectedCourses, setSelectedCourses] = useState([]);
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [searchTerm, setSearchTerm] = useState("");
     const [availableGrades, setAvailableGrades] = useState([]);
-    const [activeGradeFilter, setActiveGradeFilter] = useState("all");
+    const [coursesLoading, setCoursesLoading] = useState(false);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         first_name: "",
@@ -57,53 +55,36 @@ export default function TeacherRegister() {
         fetchGrades();
     }, []);
 
-    // Fetch all available courses when component mounts
+    // Fetch available courses for teacher registration
     useEffect(() => {
-        const fetchAllCourses = async () => {
+        const fetchAvailableCourses = async () => {
+            setCoursesLoading(true);
             try {
-                const response = await axios.get("/all-courses");
+                // Use the new endpoint for available courses
+                const response = await axios.get("/teacher/available-courses");
                 setAvailableCourses(response.data);
-                setFilteredCourses(response.data);
             } catch (error) {
-                console.error("Error fetching all courses:", error);
+                console.error("Error fetching available courses:", error);
                 notifyError("Failed to fetch available courses.");
+                // Fallback to all courses if the specific endpoint fails
+                try {
+                    const fallbackResponse = await axios.get("/all-courses");
+                    setAvailableCourses(fallbackResponse.data);
+                } catch (fallbackError) {
+                    console.error(
+                        "Error fetching fallback courses:",
+                        fallbackError
+                    );
+                }
+            } finally {
+                setCoursesLoading(false);
             }
         };
 
-        fetchAllCourses();
+        fetchAvailableCourses();
     }, []);
 
-    // Filter courses based on search term and grade filter
-    useEffect(() => {
-        let filtered = availableCourses;
-
-        // Apply grade filter if not 'all'
-        if (activeGradeFilter !== "all") {
-            filtered = filtered.filter(
-                (course) => course.grade === activeGradeFilter
-            );
-        }
-
-        // Apply search term if present
-        if (searchTerm) {
-            filtered = filtered.filter(
-                (course) =>
-                    course.course_name
-                        .toLowerCase()
-                        .includes(searchTerm.toLowerCase()) ||
-                    course.subject
-                        .toLowerCase()
-                        .includes(searchTerm.toLowerCase()) ||
-                    course.course_id
-                        .toLowerCase()
-                        .includes(searchTerm.toLowerCase())
-            );
-        }
-
-        setFilteredCourses(filtered);
-    }, [searchTerm, activeGradeFilter, availableCourses]);
-
-    /*const handleAddCourse = () => {
+    const handleAddCourse = () => {
         if (selectedCourses.length) {
             // Add selected courses to the courses list
             setCourses([...courses, ...selectedCourses]);
@@ -111,21 +92,6 @@ export default function TeacherRegister() {
             notifySuccess("Courses successfully added!");
         } else {
             notifyError("Please select at least one course.");
-        }
-    };*/
-
-    const handleAddCourse = (course) => {
-        // Check if course is already added
-        if (!courses.some((c) => c.course_id === course.course_id)) {
-            setCourses([...courses, course]);
-            // Also update the selected_courses array in the form data
-            setData("selected_courses", [
-                ...data.selected_courses,
-                course.course_id,
-            ]);
-            notifySuccess(`${course.course_name} added successfully!`);
-        } else {
-            notifyError("This course is already added.");
         }
     };
 
@@ -204,11 +170,10 @@ export default function TeacherRegister() {
         const generatedPassword = generateTemporaryPassword();
 
         // Pass course IDs instead of entire course objects
-        /*const coursesToSubmit = courses.map((course) => course.course_id);*/
+        const coursesToSubmit = courses.map((course) => course.course_id);
 
         const finalData = {
             ...data,
-            role: "teacher", // Explicitly setting the user type
             courses: coursesToSubmit,
             name,
             password: generatedPassword,
@@ -230,6 +195,12 @@ export default function TeacherRegister() {
             setCourses([]);
             setCurrentStep(1);
             notifySuccess("Teacher registered successfully!");
+
+            // Refresh available courses after successful registration
+            const refreshResponse = await axios.get(
+                "/teacher/available-courses"
+            );
+            setAvailableCourses(refreshResponse.data);
         } catch (error) {
             setError(error.message);
             console.error("Registration error:", error);
@@ -288,36 +259,6 @@ export default function TeacherRegister() {
             errors.nic =
                 "Invalid NIC number. Must be 9 digits + V/X or 12 digits.";
         }
-    };
-
-    // Grade filter buttons
-    const renderGradeFilterButtons = () => {
-        const gradeButtons = [
-            { label: "All", value: "all" },
-            ...(availableGrades?.map((grade) => ({
-                label: `Grade ${grade.grade}`,
-                value: grade.grade,
-            })) || []),
-        ];
-
-        return (
-            <div className="flex flex-wrap gap-2 mb-3">
-                {gradeButtons.map((button) => (
-                    <button
-                        key={button.value}
-                        type="button"
-                        className={`px-3 py-1 text-sm rounded-md ${
-                            activeGradeFilter === button.value
-                                ? "bg-orange-500 text-white"
-                                : "bg-gray-200 hover:bg-gray-300"
-                        }`}
-                        onClick={() => setActiveGradeFilter(button.value)}
-                    >
-                        {button.label}
-                    </button>
-                ))}
-            </div>
-        );
     };
 
     // Toast notifications
@@ -533,82 +474,92 @@ export default function TeacherRegister() {
                             value="Add Course Modules"
                             className="mt-4"
                         />
-
-                        {/* Search input */}
-                        <div className="flex mb-2">
-                            <TextInput
-                                type="text"
-                                placeholder="Search courses by name, subject or ID..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full"
-                            />
-                        </div>
-
-                        {/* Grade filter buttons */}
-                        {renderGradeFilterButtons()}
-
-                        {/* Course selection dropdown/list */}
-                        <div className="border rounded-md p-2 max-h-60 overflow-y-auto bg-white">
-                            {filteredCourses.length === 0 ? (
-                                <p className="text-gray-500">
-                                    No courses found
-                                </p>
-                            ) : (
-                                filteredCourses.map((course) => (
-                                    <div
-                                        key={course.course_id}
-                                        className="flex items-center justify-between p-2 border-b hover:bg-gray-50"
-                                    >
-                                        <div>
-                                            <span className="font-medium">
-                                                {course.course_name}
-                                            </span>
-                                            <span className="text-gray-600 ml-2">
-                                                - {course.subject}
-                                            </span>
-                                            <div className="text-sm text-gray-500">
-                                                ID: {course.course_id} | Grade:{" "}
-                                                {course.grade} | Fee: $
-                                                {course.monthly_fees}
-                                            </div>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            className={`px-3 py-1 rounded-md text-white text-sm ${
-                                                courses.some(
-                                                    (c) =>
-                                                        c.course_id ===
+                        <div className="flex space-x-2 mt-1">
+                            <div className="w-full">
+                                <div className="border rounded-md p-2 max-h-60 overflow-y-auto">
+                                    {coursesLoading ? (
+                                        <p className="text-gray-500">
+                                            Loading courses...
+                                        </p>
+                                    ) : availableCourses.length === 0 ? (
+                                        <p className="text-gray-500">
+                                            No available courses (all courses
+                                            may already be assigned)
+                                        </p>
+                                    ) : (
+                                        availableCourses.map((course) => (
+                                            <div
+                                                key={course.course_id}
+                                                className="flex items-center mb-1"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    id={course.course_id}
+                                                    checked={selectedCourses.some(
+                                                        (c) =>
+                                                            c.course_id ===
+                                                            course.course_id
+                                                    )}
+                                                    onChange={() =>
+                                                        handleCourseToggle(
+                                                            course
+                                                        )
+                                                    }
+                                                    disabled={isCourseAdded(
                                                         course.course_id
-                                                )
-                                                    ? "bg-gray-400 cursor-not-allowed"
-                                                    : "bg-green-500 hover:bg-green-600"
-                                            }`}
-                                            onClick={() =>
-                                                handleAddCourse(course)
-                                            }
-                                            disabled={courses.some(
-                                                (c) =>
-                                                    c.course_id ===
-                                                    course.course_id
-                                            )}
-                                        >
-                                            {courses.some(
-                                                (c) =>
-                                                    c.course_id ===
-                                                    course.course_id
-                                            )
-                                                ? "Added"
-                                                : "Add"}
-                                        </button>
-                                    </div>
-                                ))
-                            )}
+                                                    )}
+                                                    className={`${
+                                                        isCourseAdded(
+                                                            course.course_id
+                                                        )
+                                                            ? "cursor-not-allowed opacity-50"
+                                                            : ""
+                                                    }`}
+                                                />
+                                                <label
+                                                    htmlFor={course.course_id}
+                                                    className={`ml-2 ${
+                                                        isCourseAdded(
+                                                            course.course_id
+                                                        )
+                                                            ? "text-gray-400"
+                                                            : ""
+                                                    }`}
+                                                >
+                                                    {course.course_name} - Grade{" "}
+                                                    {course.grade} (ID:{" "}
+                                                    {course.course_id})
+                                                    {course.monthly_fees && (
+                                                        <span className="text-sm text-gray-600">
+                                                            {" "}
+                                                            - Rs.{" "}
+                                                            {
+                                                                course.monthly_fees
+                                                            }
+                                                        </span>
+                                                    )}
+                                                </label>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                className="bg-gray-400 hover:bg-gray-500 text-black font-semibold rounded-md px-8 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={handleAddCourse}
+                                disabled={
+                                    selectedCourses.length === 0 ||
+                                    coursesLoading
+                                }
+                            >
+                                Add
+                            </button>
                         </div>
                     </div>
 
                     <div className="pt-6">
-                        <InputLabel value="Selected Course Modules" />
+                        <InputLabel value="Course Modules" />
                         <div className="mt-2 overflow-x-auto rounded-3xl shadow-[1px_1px_5px_#3d3d3df7,1px_1px_5px#afb0b0f7] bg-white">
                             <table className="min-w-full table-auto border-collapse w-full bg-white rounded-3xl">
                                 <thead>
@@ -616,6 +567,7 @@ export default function TeacherRegister() {
                                         <th className="p-2">Course ID</th>
                                         <th className="p-2">Course name</th>
                                         <th className="p-2">Grade</th>
+                                        <th className="p-2">Fee (Rs.)</th>
                                         <th className="p-2">Option</th>
                                     </tr>
                                 </thead>
@@ -623,7 +575,7 @@ export default function TeacherRegister() {
                                     {courses.length === 0 ? (
                                         <tr>
                                             <td
-                                                colSpan="4"
+                                                colSpan="5"
                                                 className="border-t p-2 text-center text-gray-500"
                                             >
                                                 No courses added yet
@@ -641,6 +593,10 @@ export default function TeacherRegister() {
                                                 <td className="border-t p-2">
                                                     {course.grade}
                                                 </td>
+                                                <td className="border-t p-2">
+                                                    {course.monthly_fees ||
+                                                        "N/A"}
+                                                </td>
                                                 <td className="border-t p-2 text-center">
                                                     <button
                                                         type="button"
@@ -649,7 +605,8 @@ export default function TeacherRegister() {
                                                                 course.course_id
                                                             )
                                                         }
-                                                        className="text-red-500"
+                                                        className="text-red-500 hover:text-red-700"
+                                                        title="Remove course"
                                                     >
                                                         🗑
                                                     </button>
@@ -666,11 +623,18 @@ export default function TeacherRegister() {
                         <PrimaryButton
                             type="submit"
                             className="bg-orange-500 hover:bg-orange-600 md:w-[40%] w-[50%] justify-center rounded-xl py-2 md:mt-10 md:mb-5 mt-5"
-                            disabled={loading}
+                            disabled={loading || courses.length === 0}
                         >
                             {loading ? "Registering..." : "Register"}
                         </PrimaryButton>
                     </div>
+
+                    {courses.length === 0 && (
+                        <p className="text-center text-red-500 text-sm mt-2">
+                            Please add at least one course to proceed with
+                            registration.
+                        </p>
+                    )}
                 </form>
             )}
 

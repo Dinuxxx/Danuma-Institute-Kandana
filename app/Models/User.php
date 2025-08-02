@@ -10,6 +10,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -56,11 +58,79 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(UserRegistration::class,'user_id');
     }
 
+     public function userRegistration(): HasOne
+    {
+        return $this->registration();
+    }
+
     // get the users added by current user
     public function addedRegistrations(): HasMany
     {
         return $this->hasMany(UserRegistration::class, 'added_by', 'id');
-    }   
+    }
+    
+     public function role(): HasOneThrough
+    {
+        return $this->hasOneThrough(
+            Role::class, 
+            UserRegistration::class, 
+            'user_id',    // Foreign key on UserRegistration table
+            'role_id',         // Foreign key on Role table  
+            'id',         // Local key on User table
+            'role_id'     // Local key on UserRegistration table
+        );
+    }
+
+    // ============ ROLE CHECKING METHODS ============
+
+    /**
+     * Get the user's role name.
+     */
+    public function getRoleNameAttribute(): string
+    {
+        if ($this->registration && $this->registration->role) {
+            return $this->registration->role->role_name;
+        }
+        
+        return 'No Role';
+    }
+
+    /**
+     * Check if user has a specific role.
+     */
+    public function hasRole(string $role): bool
+    {
+        return $this->registration && 
+               $this->registration->role && 
+               strtolower($this->registration->role->role_name) === strtolower($role);
+    }
+
+    /**
+     * Check if user is admin.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('admin');
+    }
+
+    /**
+     * Check if user is teacher.
+     */
+    public function isTeacher(): bool
+    {
+        return $this->hasRole('teacher');
+    }
+
+    /**
+     * Check if user is student.
+     */
+    public function isStudent(): bool
+    {
+        return $this->hasRole('student');
+    }
+
+
+
 
     //get the admin details if a user is a admin
     public function admin() :HasOne
@@ -95,15 +165,15 @@ class User extends Authenticatable implements MustVerifyEmail
     // get the payments verified by current user
     public function payments(): HasMany
     {
-        return $this->hasMany(Payments::class, 'verified_by', 'id');
+        return $this->hasMany(Payment::class, 'verified_by', 'id');
     }
 
-    public function role()
+   /* public function role()
     {
         return $this->belongsTo(Role::class);
-    }
+    }*/
 
-    public function isAdmin()
+    /*public function isAdmin()
     {
         return $this->role_id === 1;
     }
@@ -116,5 +186,5 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isStudent()
     {
         return $this->role_id === 3;
-    }
+    }*/
 }

@@ -17,6 +17,7 @@ class UserRegistration extends Model
     // Attributes allowed for mass assignment
     protected $fillable = [
         'user_id',
+        'role_id',
         'first_name',
         'last_name',
         'gender',

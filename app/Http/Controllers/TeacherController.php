@@ -106,4 +106,26 @@ class TeacherController extends Controller
             ], 500)->toResponse($request);
         }
     }
+
+    public function updateSalary(Request $request, $teacherId)
+    {
+        $request->validate([
+            'salary' => 'required|numeric|min:0'
+        ]);
+
+        try {
+            $teacher = Teacher::findOrFail($teacherId);
+            $teacher->update(['salary' => $request->salary]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Salary updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to update salary'
+            ], 500);
+        }
+    }
 }

@@ -13,18 +13,16 @@ return new class extends Migration
     {
         Schema::create('teachers', function (Blueprint $table) {
             $table->increments('tea_id');
-            $table->integer('salary');
+            $table->decimal('salary', 10, 2)->default(0.00); // Changed to decimal with default
             $table->text('qualifications');
-            $table->string('nic')->unique();
-            $table->unsignedBigInteger('user_id');
-        
+            $table->string('nic', 20)->unique();
+            $table->unsignedBigInteger('user_id')->unique(); // Added unique constraint
+    
             $table->foreign('user_id')
                 ->references('id')
                 ->on('users')
                 ->onDelete('cascade')
                 ->onUpdate('cascade');
-                
-            //$table->timestamps();
         });
     }
 

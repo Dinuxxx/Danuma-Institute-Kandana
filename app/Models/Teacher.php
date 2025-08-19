@@ -20,24 +20,52 @@ class Teacher extends Model
     protected $primaryKey = 'tea_id';
 
     /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = true;
+
+    /**
      * Indicates if the model should be timestamped.
      *
      * @var bool
      */
     public $timestamps = false;
 
-    // Attributes allowed for mass assignment
-    protected $fillable = ['user_id','qualifications','salary', 'nic'];
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<string>
+     */
+    protected $fillable = [
+        'user_id',
+        'nic',
+        'qualifications',
+        'salary'
+    ];
 
-    // get the user details of teacher
-    public function user():BelongsTo
+    /**
+     * Get the user that owns the teacher profile.
+     */
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+        return $this->belongsTo(
+            User::class,
+            'user_id', // Foreign key on teachers table
+            'id'       // Primary key on users table
+        );
     }
 
-    //get the courses of this teacher
-    public function courses():HasMany
+    /**
+     * Get the courses taught by the teacher.
+     */
+    public function courses(): HasMany
     {
-        return $this->hasMany(Course::class, 'teacher_id', 'tea_id');
+        return $this->hasMany(
+            Course::class,
+            'teacher_id', // Foreign key on courses table
+            'tea_id'     // Local key (primary key of teachers table)
+        );
     }
 }

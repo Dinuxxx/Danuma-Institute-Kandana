@@ -19,6 +19,8 @@ export default function TeacherRegister() {
     const [error, setError] = useState(null);
     const [availableGrades, setAvailableGrades] = useState([]);
     const [coursesLoading, setCoursesLoading] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
 
     const { data, setData, post, processing, errors, reset } = useForm({
         first_name: "",
@@ -60,21 +62,40 @@ export default function TeacherRegister() {
         const fetchAvailableCourses = async () => {
             setCoursesLoading(true);
             try {
-                // Use the new endpoint for available courses
+                // Try the specific endpoint first
                 const response = await axios.get("/teacher/available-courses");
                 setAvailableCourses(response.data);
             } catch (error) {
                 console.error("Error fetching available courses:", error);
-                notifyError("Failed to fetch available courses.");
-                // Fallback to all courses if the specific endpoint fails
+
+                // Fallback to all courses endpoint
                 try {
+                    console.log("Trying fallback endpoint: /all-courses");
                     const fallbackResponse = await axios.get("/all-courses");
                     setAvailableCourses(fallbackResponse.data);
+                    notifySuccess("Courses loaded successfully!");
                 } catch (fallbackError) {
                     console.error(
                         "Error fetching fallback courses:",
                         fallbackError
                     );
+
+                    // Try another common endpoint pattern
+                    try {
+                        console.log("Trying alternative endpoint: /courses");
+                        const altResponse = await axios.get("/courses");
+                        setAvailableCourses(altResponse.data);
+                        notifySuccess("Courses loaded successfully!");
+                    } catch (altError) {
+                        console.error(
+                            "Error fetching alternative courses:",
+                            altError
+                        );
+                        notifyError(
+                            "Failed to fetch courses. Please contact administrator."
+                        );
+                        setAvailableCourses([]);
+                    }
                 }
             } finally {
                 setCoursesLoading(false);
@@ -130,6 +151,24 @@ export default function TeacherRegister() {
     const isCourseAdded = (courseId) =>
         courses.some((c) => c.course_id === courseId);
 
+    // Helper function for grade colors
+    const getGradeColor = (grade) => {
+        const gradeNum = parseInt(grade);
+        if (gradeNum <= 5) return "bg-blue-100 text-blue-800";
+        if (gradeNum <= 8) return "bg-green-100 text-green-800";
+        if (gradeNum <= 11) return "bg-yellow-100 text-yellow-800";
+        return "bg-purple-100 text-purple-800";
+    };
+
+    // Filter courses based on search term
+    const filteredCourses = availableCourses.filter(
+        (course) =>
+            course.course_name
+                ?.toLowerCase()
+                .includes(searchTerm.toLowerCase()) ||
+            course.grade?.toString().includes(searchTerm)
+    );
+
     // Generate a temporary password
     const generateTemporaryPassword = () => {
         const length = 12;
@@ -163,48 +202,80 @@ export default function TeacherRegister() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Concatenate first_name and last_name to create the 'name' field
-        const name = `${data.first_name} ${data.last_name}`.trim();
+        if (courses.length === 0) {
+            notifyError("Please add at least one course before registering.");
+            return;
+        }
 
-        // Generate a temporary password
-        const generatedPassword = generateTemporaryPassword();
-
-        // Pass course IDs instead of entire course objects
-        const coursesToSubmit = courses.map((course) => course.course_id);
+        const temporaryPassword = generateTemporaryPassword();
 
         const finalData = {
-            ...data,
-            courses: coursesToSubmit,
-            name,
-            password: generatedPassword,
-            password_confirmation: generatedPassword,
+            first_name: data.first_name,
+            last_name: data.last_name,
+            email: data.email.trim().toLowerCase(), // Ensure email is clean
+            address: data.address,
+            tel_no: data.tel_no,
+            dob: data.dob,
+            gender: data.gender,
+            nic: data.nic,
+            qualifications: data.qualifications,
+            courses: courses.map((course) => course.course_id),
+            name: `${data.first_name} ${data.last_name}`.trim(),
+            password: temporaryPassword,
+            password_confirmation: temporaryPassword,
+            role: "teacher", // Explicitly specify role
         };
+
+        console.log("Submitting data:", finalData); // Debug log
 
         setLoading(true);
         setError(null);
 
         try {
-            console.log("Final Data being sent:", finalData);
-
             const response = await axios.post(
                 route("teacher.register"),
                 finalData
             );
-            console.log("Teacher registration successful", response.data);
-            reset();
-            setCourses([]);
-            setCurrentStep(1);
-            notifySuccess("Teacher registered successfully!");
 
-            // Refresh available courses after successful registration
-            const refreshResponse = await axios.get(
-                "/teacher/available-courses"
-            );
-            setAvailableCourses(refreshResponse.data);
+            if (response.data.status === "success") {
+                notifySuccess(
+                    "Teacher registered successfully! Verification email has been sent."
+                );
+                notifySuccess(`Temporary password: ${temporaryPassword}`);
+
+                // Clear form and reset state
+                reset();
+                setCourses([]);
+                setCurrentStep(1);
+            }
         } catch (error) {
-            setError(error.message);
             console.error("Registration error:", error);
-            notifyError("Registration failed. Please try again.");
+
+            // Handle specific validation errors
+            if (error.response?.status === 422) {
+                const errorData = error.response.data;
+                console.log("Validation errors:", errorData);
+
+                if (errorData.errors) {
+                    // Display specific field errors
+                    Object.keys(errorData.errors).forEach((field) => {
+                        const fieldErrors = errorData.errors[field];
+                        fieldErrors.forEach((errorMsg) => {
+                            notifyError(`${field}: ${errorMsg}`);
+                        });
+                    });
+                } else {
+                    notifyError(
+                        errorData.message ||
+                            "Validation failed. Please check your input."
+                    );
+                }
+            } else {
+                notifyError(
+                    error.response?.data?.message ||
+                        "Registration failed. Please try again."
+                );
+            }
         } finally {
             setLoading(false);
         }
@@ -227,8 +298,9 @@ export default function TeacherRegister() {
         /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email) ||
         email === "";
     const handleEmailChange = (value) => {
-        if (validateEmail(value)) {
-            setData("email", value);
+        const cleanEmail = value.trim().toLowerCase();
+        if (validateEmail(cleanEmail)) {
+            setData("email", cleanEmail);
             if (errors.email) delete errors.email;
         } else {
             setData("email", value);
@@ -278,7 +350,7 @@ export default function TeacherRegister() {
     const notifyError = (message) =>
         toast.error(message, {
             position: "bottom-right",
-            autoClose: 3000,
+            autoClose: 5000, // Longer duration for errors
             hideProgressBar: false,
             closeOnClick: true,
             pauseOnHover: true,
@@ -468,154 +540,328 @@ export default function TeacherRegister() {
                         />
                     </div>
 
-                    <div>
-                        <InputLabel
-                            htmlFor="course"
-                            value="Add Course Modules"
-                            className="mt-4"
-                        />
-                        <div className="flex space-x-2 mt-1">
-                            <div className="w-full">
-                                <div className="border rounded-md p-2 max-h-60 overflow-y-auto">
-                                    {coursesLoading ? (
-                                        <p className="text-gray-500">
-                                            Loading courses...
-                                        </p>
-                                    ) : availableCourses.length === 0 ? (
-                                        <p className="text-gray-500">
-                                            No available courses (all courses
-                                            may already be assigned)
-                                        </p>
-                                    ) : (
-                                        availableCourses.map((course) => (
-                                            <div
-                                                key={course.course_id}
-                                                className="flex items-center mb-1"
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    id={course.course_id}
-                                                    checked={selectedCourses.some(
-                                                        (c) =>
-                                                            c.course_id ===
-                                                            course.course_id
-                                                    )}
-                                                    onChange={() =>
-                                                        handleCourseToggle(
-                                                            course
-                                                        )
-                                                    }
-                                                    disabled={isCourseAdded(
-                                                        course.course_id
-                                                    )}
-                                                    className={`${
-                                                        isCourseAdded(
-                                                            course.course_id
-                                                        )
-                                                            ? "cursor-not-allowed opacity-50"
-                                                            : ""
-                                                    }`}
-                                                />
-                                                <label
-                                                    htmlFor={course.course_id}
-                                                    className={`ml-2 ${
-                                                        isCourseAdded(
-                                                            course.course_id
-                                                        )
-                                                            ? "text-gray-400"
+                    {/* Enhanced Course Selection Section */}
+                    <div className="space-y-6">
+                        {/* Course Selection Section */}
+                        <div>
+                            <InputLabel
+                                htmlFor="course"
+                                value="📚 Add Course Modules"
+                                className="mt-4 font-semibold"
+                            />
+
+                            {coursesLoading && (
+                                <div className="text-center text-gray-500 py-4">
+                                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500 mx-auto mb-2"></div>
+                                    Loading courses...
+                                </div>
+                            )}
+
+                            {!coursesLoading &&
+                                availableCourses.length === 0 && (
+                                    <div className="text-center text-red-500 py-4 border border-red-200 rounded-lg bg-red-50">
+                                        ⚠️ No courses available. Please contact
+                                        the administrator.
+                                    </div>
+                                )}
+
+                            {!coursesLoading && availableCourses.length > 0 && (
+                                <>
+                                    {/* Dropdown Container */}
+                                    <div className="relative mt-1">
+                                        <div
+                                            className="w-full p-4 border-2 border-gray-200 rounded-xl bg-white shadow-sm hover:border-orange-300 transition-colors cursor-pointer"
+                                            onClick={() =>
+                                                setIsDropdownOpen(
+                                                    !isDropdownOpen
+                                                )
+                                            }
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="text-gray-500">
+                                                        ➕
+                                                    </span>
+                                                    <span className="text-gray-600">
+                                                        {selectedCourses.length >
+                                                        0
+                                                            ? `${selectedCourses.length} course(s) selected`
+                                                            : "Select courses to add"}
+                                                    </span>
+                                                </div>
+                                                <span
+                                                    className={`text-gray-400 transition-transform ${
+                                                        isDropdownOpen
+                                                            ? "rotate-180"
                                                             : ""
                                                     }`}
                                                 >
-                                                    {course.course_name} - Grade{" "}
-                                                    {course.grade} (ID:{" "}
-                                                    {course.course_id})
-                                                    {course.monthly_fees && (
-                                                        <span className="text-sm text-gray-600">
-                                                            {" "}
-                                                            - Rs.{" "}
-                                                            {
-                                                                course.monthly_fees
-                                                            }
-                                                        </span>
-                                                    )}
-                                                </label>
+                                                    ⬇️
+                                                </span>
                                             </div>
-                                        ))
-                                    )}
-                                </div>
-                            </div>
-                            <button
-                                type="button"
-                                className="bg-gray-400 hover:bg-gray-500 text-black font-semibold rounded-md px-8 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                onClick={handleAddCourse}
-                                disabled={
-                                    selectedCourses.length === 0 ||
-                                    coursesLoading
-                                }
-                            >
-                                Add
-                            </button>
-                        </div>
-                    </div>
+                                        </div>
 
-                    <div className="pt-6">
-                        <InputLabel value="Course Modules" />
-                        <div className="mt-2 overflow-x-auto rounded-3xl shadow-[1px_1px_5px_#3d3d3df7,1px_1px_5px#afb0b0f7] bg-white">
-                            <table className="min-w-full table-auto border-collapse w-full bg-white rounded-3xl">
-                                <thead>
-                                    <tr>
-                                        <th className="p-2">Course ID</th>
-                                        <th className="p-2">Course name</th>
-                                        <th className="p-2">Grade</th>
-                                        <th className="p-2">Fee (Rs.)</th>
-                                        <th className="p-2">Option</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {courses.length === 0 ? (
-                                        <tr>
-                                            <td
-                                                colSpan="5"
-                                                className="border-t p-2 text-center text-gray-500"
-                                            >
-                                                No courses added yet
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        courses.map((course) => (
-                                            <tr key={course.course_id}>
-                                                <td className="border-t p-2">
-                                                    {course.course_id}
-                                                </td>
-                                                <td className="border-t p-2">
-                                                    {course.course_name}
-                                                </td>
-                                                <td className="border-t p-2">
-                                                    {course.grade}
-                                                </td>
-                                                <td className="border-t p-2">
-                                                    {course.monthly_fees ||
-                                                        "N/A"}
-                                                </td>
-                                                <td className="border-t p-2 text-center">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            handleRemoveCourse(
-                                                                course.course_id
+                                        {/* Dropdown Menu */}
+                                        {isDropdownOpen && (
+                                            <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg">
+                                                {/* Search Bar */}
+                                                <div className="p-3 border-b border-gray-100">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="🔍 Search courses or grades..."
+                                                        value={searchTerm}
+                                                        onChange={(e) =>
+                                                            setSearchTerm(
+                                                                e.target.value
                                                             )
                                                         }
-                                                        className="text-red-500 hover:text-red-700"
-                                                        title="Remove course"
-                                                    >
-                                                        🗑
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
+                                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent"
+                                                    />
+                                                </div>
+
+                                                {/* Course List */}
+                                                <div className="max-h-64 overflow-y-auto">
+                                                    {filteredCourses.length ===
+                                                    0 ? (
+                                                        <div className="p-4 text-center text-gray-500">
+                                                            {searchTerm
+                                                                ? "No courses match your search"
+                                                                : "No available courses"}
+                                                        </div>
+                                                    ) : (
+                                                        filteredCourses.map(
+                                                            (course) => (
+                                                                <div
+                                                                    key={
+                                                                        course.course_id
+                                                                    }
+                                                                    className={`p-3 border-b border-gray-50 hover:bg-gray-50 transition-colors ${
+                                                                        isCourseAdded(
+                                                                            course.course_id
+                                                                        )
+                                                                            ? "opacity-50 cursor-not-allowed"
+                                                                            : "cursor-pointer"
+                                                                    }`}
+                                                                >
+                                                                    <label className="flex items-center space-x-3 cursor-pointer">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={selectedCourses.some(
+                                                                                (
+                                                                                    c
+                                                                                ) =>
+                                                                                    c.course_id ===
+                                                                                    course.course_id
+                                                                            )}
+                                                                            onChange={() =>
+                                                                                handleCourseToggle(
+                                                                                    course
+                                                                                )
+                                                                            }
+                                                                            disabled={isCourseAdded(
+                                                                                course.course_id
+                                                                            )}
+                                                                            className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-300"
+                                                                        />
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="flex items-center justify-between">
+                                                                                <div className="flex items-center space-x-2">
+                                                                                    <span className="font-medium text-gray-900">
+                                                                                        {
+                                                                                            course.course_name
+                                                                                        }
+                                                                                    </span>
+                                                                                    <span
+                                                                                        className={`px-2 py-1 text-xs font-medium rounded-full ${getGradeColor(
+                                                                                            course.grade
+                                                                                        )}`}
+                                                                                    >
+                                                                                        Grade{" "}
+                                                                                        {
+                                                                                            course.grade
+                                                                                        }
+                                                                                    </span>
+                                                                                </div>
+                                                                                <div className="flex items-center text-sm text-gray-600">
+                                                                                    <span className="mr-1">
+                                                                                        💰
+                                                                                    </span>
+                                                                                    Rs.{" "}
+                                                                                    {course.monthly_fees ||
+                                                                                        "N/A"}
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="text-sm text-gray-500 mt-1">
+                                                                                Course
+                                                                                ID:{" "}
+                                                                                {
+                                                                                    course.course_id
+                                                                                }
+                                                                                {isCourseAdded(
+                                                                                    course.course_id
+                                                                                ) && (
+                                                                                    <span className="ml-2 text-orange-600 font-medium">
+                                                                                        Already
+                                                                                        Added
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </label>
+                                                                </div>
+                                                            )
+                                                        )
+                                                    )}
+                                                </div>
+
+                                                {/* Add Button */}
+                                                {selectedCourses.length > 0 && (
+                                                    <div className="p-3 border-t border-gray-100 bg-gray-50">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                handleAddCourse();
+                                                                setIsDropdownOpen(
+                                                                    false
+                                                                );
+                                                                setSearchTerm(
+                                                                    ""
+                                                                );
+                                                            }}
+                                                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                                                        >
+                                                            <span>➕</span>
+                                                            <span>
+                                                                Add{" "}
+                                                                {
+                                                                    selectedCourses.length
+                                                                }{" "}
+                                                                Course(s)
+                                                            </span>
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Selected Courses Table */}
+                        <div className="pt-6">
+                            <InputLabel
+                                value="🏆 Course Modules"
+                                className="font-semibold"
+                            />
+
+                            <div className="mt-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                {courses.length === 0 ? (
+                                    <div className="p-8 text-center">
+                                        <div className="text-6xl mb-3">📚</div>
+                                        <p className="text-gray-500 font-medium">
+                                            No courses added yet
+                                        </p>
+                                        <p className="text-sm text-gray-400 mt-1">
+                                            Select courses from the dropdown
+                                            above to get started
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full">
+                                            <thead className="bg-gray-50 border-b border-gray-200">
+                                                <tr>
+                                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                        Course Details
+                                                    </th>
+                                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                        Grade
+                                                    </th>
+                                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                        Monthly Fee
+                                                    </th>
+                                                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                        Action
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-200">
+                                                {courses.map(
+                                                    (course, index) => (
+                                                        <tr
+                                                            key={
+                                                                course.course_id
+                                                            }
+                                                            className="hover:bg-gray-50 transition-colors"
+                                                        >
+                                                            <td className="px-6 py-4">
+                                                                <div>
+                                                                    <div className="font-medium text-gray-900">
+                                                                        {
+                                                                            course.course_name
+                                                                        }
+                                                                    </div>
+                                                                    <div className="text-sm text-gray-500">
+                                                                        ID:{" "}
+                                                                        {
+                                                                            course.course_id
+                                                                        }
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <span
+                                                                    className={`px-3 py-1 text-sm font-medium rounded-full ${getGradeColor(
+                                                                        course.grade
+                                                                    )}`}
+                                                                >
+                                                                    Grade{" "}
+                                                                    {
+                                                                        course.grade
+                                                                    }
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <div className="flex items-center text-gray-900 font-medium">
+                                                                    <span className="mr-1">
+                                                                        💰
+                                                                    </span>
+                                                                    Rs.{" "}
+                                                                    {course.monthly_fees ||
+                                                                        "N/A"}
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-center">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        handleRemoveCourse(
+                                                                            course.course_id
+                                                                        )
+                                                                    }
+                                                                    className="inline-flex items-center justify-center w-8 h-8 rounded-full text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                                                                    title="Remove course"
+                                                                >
+                                                                    🗑️
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    )
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+
+                            {courses.length === 0 && (
+                                <p className="text-center text-red-500 text-sm mt-3 flex items-center justify-center">
+                                    <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                                    Please add at least one course to proceed
+                                    with registration.
+                                </p>
+                            )}
                         </div>
                     </div>
 
@@ -628,13 +874,6 @@ export default function TeacherRegister() {
                             {loading ? "Registering..." : "Register"}
                         </PrimaryButton>
                     </div>
-
-                    {courses.length === 0 && (
-                        <p className="text-center text-red-500 text-sm mt-2">
-                            Please add at least one course to proceed with
-                            registration.
-                        </p>
-                    )}
                 </form>
             )}
 

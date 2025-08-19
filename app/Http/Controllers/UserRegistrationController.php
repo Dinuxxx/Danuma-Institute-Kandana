@@ -14,9 +14,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Auth\Events\Registered; // for user verification
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\SendPasswordEmail; // You'll create this Mailable class
+use App\Mail\SendPasswordEmail;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AdminController;
@@ -27,19 +27,52 @@ use App\Models\Role;
 
 class UserRegistrationController extends Controller
 {
-
     /**
      * Get all available courses (for teacher registration)
      * This returns all courses with their details
      */
     public function getAllCourses()
     {
-        $courses = Course::select('course_id', 'course_name', 'subject', 'grade', 'monthly_fees')
+        try {
+            $courses = Course::select('course_id', 'course_name', 'grade', 'monthly_fees', 'course_desc', 'teacher_id')
+                ->orderBy('grade')
+                ->orderBy('course_name')
+                ->get();
+                
+            return response()->json($courses);
+        } catch (\Exception $e) {
+            Log::error('Error fetching all courses: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch courses'], 500);
+        }
+    }
+
+    /**
+     * Get available courses for teacher registration (courses without assigned teachers)
+     * This is specifically for teacher registration where we only want unassigned courses
+     */
+    public function getAvailableCoursesForTeacher()
+    {
+        try {
+            $courses = Course::select(
+                'course_id', 
+                'course_name', 
+                'grade', 
+                'monthly_fees', 
+                'course_desc'
+            )
+            ->whereNull('teacher_id')
+            ->orWhere('teacher_id', '')  // For empty string cases
             ->orderBy('grade')
             ->orderBy('course_name')
             ->get();
             
-        return response()->json($courses);
+            return response()->json($courses);
+        } catch (\Exception $e) {
+            Log::error('Error fetching available courses for teacher: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to fetch available courses'
+            ], 500);
+        }
     }
 
     /**
@@ -48,36 +81,55 @@ class UserRegistrationController extends Controller
      */
     public function getGrades()
     {
-        $grades = Course::select('grade')
-            ->distinct()
-            ->orderBy('grade')
-            ->get();
-            
-        return response()->json($grades);
+        try {
+            $grades = Course::select('grade')
+                ->distinct()
+                ->orderBy('grade')
+                ->pluck('grade')
+                ->toArray();
+                
+            return response()->json($grades);
+        } catch (\Exception $e) {
+            Log::error('Error fetching grades: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch grades'], 500);
+        }
     }
 
-
-
-    // Function to get courses by grade (for AJAX)
-    public function getCoursesByGrade(Request $request)
+    /**
+     * Get courses by grade (for AJAX filtering)
+     */
+    public function getCoursesByGrade($grade)
     {
-        $grade = $request->grade;
-        $courses = Course::where('grade', $grade)
-        ->select('course_id', 'course_name', 'course_desc', 'subject', 'monthly_fees')
-        ->get();
-        return response()->json($courses);
+        try {
+            $courses = Course::where('grade', $grade)
+                ->select('course_id', 'course_name', 'course_desc', 'monthly_fees', 'teacher_id')
+                ->get();
+                
+            return response()->json($courses);
+        } catch (\Exception $e) {
+            Log::error('Error fetching courses by grade: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch courses for grade ' . $grade], 500);
+        }
     }
 
+    /**
+     * Search courses by name, subject, or course ID
+     */
     public function searchCourses(Request $request)
     {
-        $search = $request->search;
-        $courses = Course::where('course_name', 'LIKE', "%{$search}%")
-            ->orWhere('subject', 'LIKE', "%{$search}%")
-            ->orWhere('course_id', 'LIKE', "%{$search}%")
-            ->select('course_id', 'course_name', 'subject', 'grade')
-            ->get();
-            
-        return response()->json($courses);
+        try {
+            $search = $request->search;
+            $courses = Course::where('course_name', 'LIKE', "%{$search}%")
+                ->orWhere('course_id', 'LIKE', "%{$search}%")
+                ->orWhere('course_desc', 'LIKE', "%{$search}%")
+                ->select('course_id', 'course_name', 'grade', 'monthly_fees', 'teacher_id')
+                ->get();
+                
+            return response()->json($courses);
+        } catch (\Exception $e) {
+            Log::error('Error searching courses: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to search courses'], 500);
+        }
     }
 
     /**
@@ -85,7 +137,6 @@ class UserRegistrationController extends Controller
      * Comprehensive registration method that handles different validation rules
      * and database operations based on user type
      */
-    
     public function registerUser(Request $request)
     {
         try {
@@ -100,39 +151,34 @@ class UserRegistrationController extends Controller
                 'dob' => 'required|date',
                 'tel_no' => 'required|string|max:20',
                 'address' => 'required|string',
-                'role' => 'required|in:admin,teacher,student',
             ]);
 
+            // Determine role from the route or request
+            $role = $this->determineRoleFromRequest($request);
+
             // Generate a temporary password
-            $temporaryPassword = Str::random(12);
+            $temporaryPassword = $request->password ?? Str::random(12);
 
             // Create user
             $user = User::create([
-                'name' => $request->first_name . ' ' . $request->last_name,
+                'name' => trim($request->first_name . ' ' . $request->last_name),
                 'email' => $request->email,
                 'password' => Hash::make($temporaryPassword),
-            
             ]);
 
-            // Send email verification
-            // event(new Registered($user)); // REMOVE or COMMENT THIS OUT
+            // Log the role lookup for debugging
+            Log::info('Registration attempt:', ['role' => $role, 'email' => $request->email]);
 
-            // Log the full request and role lookup for debugging
-            Log::info('Full registration request:', $request->all());
-
-            // Case-insensitive role lookup for robustness
-            $role = Role::whereRaw('LOWER(role_name) = ?', [strtolower($request->role)])->first();
-            Log::info('Role from request:', ['role' => $request->role]);
-            Log::info('Role found:', ['role' => $role]);
-            if (!$role) {
-                throw new \Exception('Role not found: ' . $request->role);
+            // Case-insensitive role lookup
+            $roleRecord = Role::whereRaw('LOWER(role_name) = ?', [strtolower($role)])->first();
+            
+            if (!$roleRecord) {
+                throw new \Exception('Role not found: ' . $role);
             }
-            $roleId = $role->role_id;
-            Log::info('Role ID:', ['role_id' => $roleId]);
 
             $userRegistration = UserRegistration::create([
                 'user_id' => $user->id,
-                'role_id' => $roleId,
+                'role_id' => $roleRecord->role_id,
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
                 'gender' => $request->gender,
@@ -144,59 +190,97 @@ class UserRegistrationController extends Controller
             ]);
 
             // Handle role-specific registration
-            switch ($request->role) {
+            switch (strtolower($role)) {
                 case 'student':
                     $this->registerStudent($request, $user->id);
                     break;
                 case 'teacher':
-                    $this->registerTeacher($request, $user->id);
+                    $this->registerTeacher($request, $user->id); // Now passing user->id
                     break;
                 case 'admin':
                     $this->registerAdmin($request, $user->id);
                     break;
+                default:
+                    throw new \Exception('Invalid role: ' . $role);
             }
 
-            Mail::to($user->email)->send(new SendPasswordEmail($userRegistration, $temporaryPassword));
+            // Send password email only if we generated a temporary password
+            if (!$request->password) {
+                Mail::to($user->email)->send(new SendPasswordEmail($userRegistration, $temporaryPassword));
+            }
 
             DB::commit();
 
-            // Always return JSON response
             return response()->json([
                 'status' => 'success',
-                'message' => ucfirst($request->role) . ' registered successfully!',
+                'message' => ucfirst($role) . ' registered successfully!',
                 'data' => [
                     'user_id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'role' => $request->role,
-                    'temporary_password' => $temporaryPassword // Only for development
+                    'role' => $role,
+                    'temporary_password' => !$request->password ? $temporaryPassword : null
                 ]
             ], 201);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+            
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('User registration error: ' . $e->getMessage());
             Log::error('Stack trace: ' . $e->getTraceAsString());
             
-            // Always return JSON response for errors
             return response()->json([
                 'status' => 'error',
                 'message' => 'Registration failed: ' . $e->getMessage(),
-                'errors' => $e instanceof \Illuminate\Validation\ValidationException ? $e->errors() : null
             ], 500);
         }
     }
 
+    /**
+     * Determine user role from request context
+     */
+    private function determineRoleFromRequest(Request $request)
+    {
+        // Check if role is explicitly provided
+        if ($request->has('role')) {
+            return $request->role;
+        }
+
+        // Determine from route name
+        $routeName = $request->route()->getName();
+        
+        if (str_contains($routeName, 'teacher')) {
+            return 'teacher';
+        } elseif (str_contains($routeName, 'student')) {
+            return 'student';
+        } elseif (str_contains($routeName, 'admin')) {
+            return 'admin';
+        }
+
+        // Default fallback
+        return 'student';
+    }
+
+    /**
+     * Register student with parent information and course enrollment
+     */
     private function registerStudent(Request $request, $userId)
     {
-        // Validate student-specific fields
         $request->validate([
             'parent_first_name' => 'required|string|max:255',
             'parent_last_name' => 'required|string|max:255',
             'parent_phone_number' => 'required|string|max:20',
             'relationship_type' => 'required|string|max:50',
             'grade' => 'required|string|max:10',
-            'courses' => 'required|array'
+            'courses' => 'required|array|min:1',
+            'courses.*' => 'exists:courses,course_id'
         ]);
 
         try {
@@ -233,51 +317,88 @@ class UserRegistrationController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Student registration error: ' . $e->getMessage());
-            Log::error('Stack trace: ' . $e->getTraceAsString());
             throw $e;
         }
     }
 
+    /**
+     * Register teacher with qualifications and course assignments
+     */
     private function registerTeacher(Request $request, $userId)
     {
-        // Validate teacher-specific fields
-        $request->validate([
-            'nic' => 'required|string|max:20',
-            'qualifications' => 'required|string',
-            'courses' => 'required|array'
-        ]);
+        try {
+            // Validate teacher-specific fields
+            $request->validate([
+                'nic' => [
+                    'required',
+                    'string',
+                    'max:20',
+                    'unique:teachers,nic',
+                    'regex:/^[0-9]{9}[vVxX]$|^[0-9]{12}$/'
+                ],
+                'qualifications' => 'required|string|max:500',
+                'courses' => [
+                    'required',
+                    'array',
+                    'min:1',
+                    function ($attribute, $value, $fail) {
+                        // Check if any selected courses are already assigned
+                        $assignedCourses = Course::whereIn('course_id', $value)
+                            ->whereNotNull('teacher_id')
+                            ->where('teacher_id', '!=', '')
+                            ->get();
 
-        // Create teacher
-        $teacher = Teacher::create([
-            'user_id' => $userId,
-            'nic' => $request->nic,
-            'qualifications' => $request->qualifications
-        ]);
+                        if ($assignedCourses->isNotEmpty()) {
+                            $courseNames = $assignedCourses->pluck('course_name')->join(', ');
+                            $fail("The following courses are already assigned to other teachers: {$courseNames}");
+                        }
+                    }
+                ],
+                'courses.*' => 'exists:courses,course_id'
+            ]);
 
-        // Update courses with teacher_id
-        Course::whereIn('course_id', $request->courses)
-            ->update(['teacher_id' => $teacher->tea_id]);
+            // Create teacher record
+            $teacher = Teacher::create([
+                'user_id' => $userId,  // Use the passed $userId
+                'nic' => $request->nic,
+                'qualifications' => $request->qualifications,
+                'salary' => 0
+            ]);
+
+            // Update courses with teacher_id
+            if (!empty($request->courses)) {
+                Course::whereIn('course_id', $request->courses)
+                    ->update(['teacher_id' => $teacher->tea_id]);
+            }
+
+            Log::info('Teacher registration completed successfully', [
+                'user_id' => $userId,
+                'teacher_id' => $teacher->tea_id,
+                'courses' => $request->courses
+            ]);
+
+            return $teacher;
+
+        } catch (\Exception $e) {
+            Log::error('Teacher registration error: ' . $e->getMessage());
+            throw $e;
+        }
     }
 
+    /**
+     * Register admin (basic registration)
+     */
     private function registerAdmin(Request $request, $userId)
     {
         // Add any admin-specific registration logic here
         // For now, we just need the user and user_registration records
-    }
-
-    private function getRoleId($role)
-    {
-        $roles = [
-            'admin' => 1,
-            'teacher' => 2,
-            'student' => 3
-        ];
-        return $roles[$role] ?? 1;
+        Log::info('Admin registration completed successfully', [
+            'user_id' => $userId
+        ]);
     }
 
     /**
      * Show the registration form based on user type
-     * These methods return the appropriate view for each user type
      */
     public function showAdminRegisterForm()
     {
@@ -286,8 +407,14 @@ class UserRegistrationController extends Controller
     
     public function showTeacherRegisterForm()
     {
-        // You may want to pass available courses to the view
-        $courses = Course::select('course_id', 'course_name', 'subject', 'grade')->get();
+        // Pass available courses to the view
+        $courses = Course::select('course_id', 'course_name', 'grade', 'monthly_fees')
+            ->whereNull('teacher_id')
+            ->orWhere('teacher_id', '')
+            ->orderBy('grade')
+            ->orderBy('course_name')
+            ->get();
+            
         return inertia('Auth/TeacherRegister', [
             'courses' => $courses
         ]);
@@ -303,72 +430,10 @@ class UserRegistrationController extends Controller
     }
     
     /**
-     * Register method for specifically students (kept for backward compatibility)
-     * This is your original register method, modified to use the new structure
+     * Legacy register method for backward compatibility
      */
     public function register(Request $request)
     {
-        // Set the user type to student and call the main registerUser method
-        $request->merge(['user_type' => 'student']);
         return $this->registerUser($request);
-    }
-    
-    /**
-     * Method to create a new course (admin functionality)
-     * This adds a new course to the database as shown in your first image
-     */
-    public function createCourse(Request $request)
-    {
-        $validated = $request->validate([
-            'subject_code' => 'required|string|max:50|unique:courses,course_id',
-            'subject_name' => 'required|string|max:255',
-            'teacher_id' => 'nullable|exists:teacher_details,id',
-            'grade' => 'required|string|max:20',
-            'course_fee' => 'required|numeric|min:0',
-            'course_description' => 'required|string',
-        ]);
-        
-        try {
-            $course = Course::create([
-                'course_id' => $validated['subject_code'],
-                'course_name' => $validated['subject_name'],
-                'subject' => $validated['subject_name'], // You might want to separate subject and course name
-                'course_desc' => $validated['course_description'],
-                'grade' => $validated['grade'],
-                'monthly_fees' => $validated['course_fee'],
-                // If teacher_id is provided, associate the course with the teacher
-                'teacher_id' => $validated['teacher_id'] ?? null,
-            ]);
-            
-            // If teacher_id is provided, also create an entry in teacher_courses
-            if ($validated['teacher_id']) {
-                TeacherCourse::create([
-                    'teacher_id' => $validated['teacher_id'],
-                    'course_id' => $course->course_id,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-            
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'message' => 'Course created successfully',
-                    'course' => $course
-                ], 201);
-            }
-            
-            return redirect()->route('admin.courses')
-                ->with('message', 'Course created successfully');
-                
-        } catch (\Exception $e) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'message' => 'Course creation failed',
-                    'error' => $e->getMessage()
-                ], 500);
-            }
-            
-            return back()->withErrors(['error' => 'Course creation failed: ' . $e->getMessage()]);
-        }
     }
 }

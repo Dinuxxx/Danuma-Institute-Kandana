@@ -519,6 +519,8 @@ Route::middleware(['auth', CheckRole::class . ':admin'])->group(function () {
     Route::get('/get-grades', [UserRegistrationController::class, 'getGrades']);
     Route::get('/courses-by-grade/{grade}', [UserRegistrationController::class, 'getCoursesByGrade']);
     Route::get('/all-courses', [UserRegistrationController::class, 'getAllCourses']);
+
+    }); 
 });
 
 
@@ -551,4 +553,7 @@ Route::post('/messages', [MessageController::class, 'store']);
 
 require __DIR__.'/auth.php';
 
+Route::put('/teachers/{teacher}/salary', [TeacherController::class, 'updateSalary'])
+    ->name('teachers.update.salary')
+    ->middleware(['auth', 'admin']);
 ?>

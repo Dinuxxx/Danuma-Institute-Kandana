@@ -1,16 +1,19 @@
 <?php
 
+
 namespace App\Http\Controllers;
 
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use App\Models\Course;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\StudentCourse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+//use App\Http\Controllers\Log;
 
 class CourseController extends Controller{
     /**
@@ -36,7 +39,7 @@ class CourseController extends Controller{
             ->exists();
         
         if ($existingCourse) {
-            return response()->json([
+            return response([
                 'errors' => [
                     'subjectName' => 'This subject name and grade combination already exists.',
                     'grade' => 'This subject name and grade combination already exists.'
@@ -53,7 +56,7 @@ class CourseController extends Controller{
             'grade' => $validatedData['grade'],
         ]);
         
-        return response()->json(['message' => 'Course created successfully!', 'course' => $course]);
+        return response(['message' => 'Course created successfully!', 'course' => $course]);
     }
 
 
@@ -68,7 +71,7 @@ class CourseController extends Controller{
     public function index()
     {
         $courses = Course::all();
-        return response()->json($courses);
+        return response($courses);
     }
 
     /**
@@ -82,10 +85,10 @@ class CourseController extends Controller{
         $teacher = Teacher::with(['user.registration'])->find($id);
         
         if (!$teacher) {
-            return response()->json(['error' => 'Teacher not found'], 404);
+            return response(['error' => 'Teacher not found'], 404);
         }
         
-        return response()->json($teacher);
+        return response($teacher);
     }
 
     /**
@@ -96,7 +99,7 @@ class CourseController extends Controller{
     public function getCoursesCount()
     {
         $count = Course::count(); // Assuming you have a Course model
-        return response()->json(['count' => $count]);
+        return response(['count' => $count]);
     }
 
 
@@ -189,7 +192,7 @@ class CourseController extends Controller{
         $course->delete();
         
         if (request()->wantsJson()) {
-            return response()->json(['success' => true]);
+            return response(['success' => true]);
         }
         
         return Redirect::route('admin.courses');
@@ -303,6 +306,58 @@ class CourseController extends Controller{
         } catch (\Exception $e) {
             \Log::error('Error fetching teacher grades: ' . $e->getMessage());
             return response()->json(['grades' => [], 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function checkCourseAvailability($courseIds)
+    {
+        $unavailableCourses = Course::whereIn('course_id', $courseIds)
+            ->whereNotNull('teacher_id')
+            ->where('teacher_id', '!=', '')
+            ->get();
+
+        if ($unavailableCourses->isNotEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Some selected courses are no longer available',
+                'unavailable_courses' => $unavailableCourses
+            ], 422);
+        }
+
+        return response()->json(['status' => 'success']);
+    }
+
+    public function getAvailableCoursesForTeacher()
+    {
+        try {
+            // Get all courses
+            $courses = Course::select(
+                'course_id',
+                'course_name',
+                'grade', 
+                'monthly_fees',
+                'course_desc',
+                'teacher_id'
+            )
+            ->whereNull('teacher_id')  // Get courses with no teacher
+            ->orWhere('teacher_id', '') // Or empty teacher_id
+            ->orderBy('grade')
+            ->orderBy('course_name')
+            ->get();
+
+            if ($courses->isEmpty()) {
+                Log::info('No available courses found');
+                return response()->json([]);
+            }
+
+            Log::info('Available courses found:', ['count' => $courses->count()]);
+            return response()->json($courses);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching available courses: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to fetch available courses'
+            ], 500);
         }
     }
 }

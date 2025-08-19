@@ -253,7 +253,9 @@ export default function TeacherRegister() {
 
             // Handle specific validation errors
             if (error.response?.status === 422) {
-                const errorData = error.response.data;
+                const errorData = (
+                    <error className="response data errors"></error>
+                );
                 console.log("Validation errors:", errorData);
 
                 if (errorData.errors) {

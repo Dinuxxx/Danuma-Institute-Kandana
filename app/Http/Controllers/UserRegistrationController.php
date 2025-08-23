@@ -388,14 +388,78 @@ class UserRegistrationController extends Controller
     /**
      * Register admin (basic registration)
      */
-    private function registerAdmin(Request $request, $userId)
+    /*private function registerAdmin(Request $request, $userId)
     {
         // Add any admin-specific registration logic here
         // For now, we just need the user and user_registration records
         Log::info('Admin registration completed successfully', [
             'user_id' => $userId
         ]);
+    }*/
+        /**
+ * Register admin with admin-specific fields (NIC and salary)
+ * This method creates a record in the admins table with admin-specific data
+ */
+private function registerAdmin(Request $request, $userId)
+{
+    try {
+        // Validate admin-specific fields
+        $request->validate([
+            'nic' => [
+                'required',
+                'string',
+                'max:20',
+                'unique:admins,nic', // Ensure NIC is unique in admins table
+                'regex:/^[0-9]{9}[vVxX]$|^[0-9]{12}$/' // Sri Lankan NIC format validation
+            ],
+            'salary' => [
+                'required',
+                'numeric',
+                'min:0',
+                'max:999999999.99' // Reasonable salary limit
+            ]
+        ]);
+
+        // Create admin record in admins table
+        $admin = Admin::create([
+            'user_id' => $userId,        // Foreign key linking to users table
+            'nic' => $request->nic,      // National Identity Card number
+            'salary' => $request->salary // Monthly salary amount
+        ]);
+
+        // Log successful admin creation for audit purposes
+        Log::info('Admin registration completed successfully', [
+            'user_id' => $userId,
+            'admin_id' => $admin->id,    // Assuming primary key is 'id'
+            'nic' => $request->nic,
+            'salary' => $request->salary
+        ]);
+
+        return $admin;
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        // Log validation errors for debugging
+        Log::error('Admin registration validation failed', [
+            'user_id' => $userId,
+            'errors' => $e->errors(),
+            'request_data' => $request->except(['password', 'password_confirmation'])
+        ]);
+        
+        // Re-throw validation exception to be handled by parent method
+        throw $e;
+
+    } catch (\Exception $e) {
+        // Log any other errors that occur during admin registration
+        Log::error('Admin registration error: ' . $e->getMessage(), [
+            'user_id' => $userId,
+            'request_data' => $request->except(['password', 'password_confirmation']),
+            'stack_trace' => $e->getTraceAsString()
+        ]);
+        
+        // Re-throw exception to trigger rollback in parent method
+        throw new \Exception('Failed to create admin record: ' . $e->getMessage());
     }
+}
 
     /**
      * Show the registration form based on user type

@@ -189,6 +189,8 @@ class UserRegistrationController extends Controller
                 'added_by' => auth()->id()
             ]);
 
+            //event(new Registered($user));
+
             // Handle role-specific registration
             switch (strtolower($role)) {
                 case 'student':

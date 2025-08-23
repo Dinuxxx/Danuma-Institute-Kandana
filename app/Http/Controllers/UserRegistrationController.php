@@ -208,7 +208,20 @@ class UserRegistrationController extends Controller
 
             // Send password email only if we generated a temporary password
             if (!$request->password) {
-                Mail::to($user->email)->send(new SendPasswordEmail($userRegistration, $temporaryPassword));
+                try {
+                    Mail::to($user->email)->send(new SendPasswordEmail($user, $temporaryPassword));
+                    Log::info('Password email sent successfully', [
+                        'user_id' => $user->id,
+                        'user_email' => $user->email
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send password email: ' . $e->getMessage(), [
+                        'user_id' => $user->id,
+                        'user_email' => $user->email,
+                        'error' => $e->getMessage()
+                    ]);
+                    // Don't fail the registration if email fails
+                }
             }
 
             DB::commit();

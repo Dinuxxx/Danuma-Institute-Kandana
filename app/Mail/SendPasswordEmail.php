@@ -8,6 +8,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class SendPasswordEmail extends Mailable
 {
@@ -16,12 +17,57 @@ class SendPasswordEmail extends Mailable
     public $user;
     public $temporaryPassword;
 
+    /**
+     * Create a new message instance.
+     */
     public function __construct($user, $temporaryPassword)
     {
         $this->user = $user;
         $this->temporaryPassword = $temporaryPassword;
+        
+        // Log email creation for debugging
+        Log::info('SendPasswordEmail created', [
+            'user_id' => $user->id,
+            'user_email' => $user->email,
+            'role' => $user->role->role_name ?? 'Unknown'
+        ]);
     }
 
+    /**
+     * Get the message envelope.
+     */
+    public function envelope(): Envelope
+    {
+        return new Envelope(
+            subject: 'Your Account Temporary Password - ' . config('app.name'),
+        );
+    }
+
+    /**
+     * Get the message content definition.
+     */
+    public function content(): Content
+    {
+        return new Content(
+            view: 'emails.send_password',
+        );
+    }
+
+    /**
+     * Get the attachments for the message.
+     *
+     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     */
+    public function attachments(): array
+    {
+        return [];
+    }
+
+    /**
+     * Build the message.
+     * 
+     * @deprecated Use envelope() and content() methods instead
+     */
     public function build()
     {
         return $this->subject('Your Account Temporary Password')

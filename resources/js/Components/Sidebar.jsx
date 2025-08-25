@@ -70,7 +70,6 @@ function Sidebar({ isOpen, toggleSidebar, role }) {
         admin: [
             { icon: <FaHome />, text: "Dashboard", link: "/admin/dashboard" },
             { icon: <FaBook />, text: "Courses", link: "/admin/courses" },
-            { icon: <FaTrophy />, text: "Exams", link: "/admin/exams" },
             {
                 icon: <FaClipboardList />,
                 text: "Attendance",

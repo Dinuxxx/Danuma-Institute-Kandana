@@ -171,7 +171,7 @@ const TimeTables = ({ timetables = [], courses = [] }) => {
               <div className="flex flex-col md:flex-row justify-between items-center mb-24 gap-4">
                 <div className="flex flex-wrap gap-2">
                   {/* Search input */}
-                  <div className="relative w-full md:w-auto">
+                  <div className="relative w-auto md:w-auto">
                     <input
                       type="text"
                       placeholder="Search subjects, days, rooms..."
@@ -209,7 +209,7 @@ const TimeTables = ({ timetables = [], courses = [] }) => {
                   </select>
                 </div>
                 
-                <div className="flex gap-4 w-full md:w-auto">
+                <div className="flex gap-4 w-auto md:w-auto">
                   {/* Print button */}
                   <button
                     onClick={handlePrint}

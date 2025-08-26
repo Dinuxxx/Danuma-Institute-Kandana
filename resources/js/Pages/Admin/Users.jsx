@@ -297,7 +297,7 @@ const Users = () => {
               </div>
             ) : (
               <div>
-                <div className="flex justify-between mb-4 px-6 md:px-12">
+                <div className="flex justify-between mb-20 md:mb-4 px-6 md:px-12">
                   <div className="flex items-center gap-2 md:mb-16 ml-auto">
                     <span className="text-gray-600">Rows per page:</span>
                     <select

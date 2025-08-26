@@ -105,8 +105,8 @@ const CreateNotice = ({ onNoticeCreated }) => {
   };
 
   return (
-    <div className="p-6">
-      <div className="border-b text-gray-600 text-sm font-medium pb-2 w-fit mb-4">
+    <div className="md:p-6">
+      <div className="border-b text-orange-500 text-sm font-medium pb-2 w-fit mb-4">
         Create Notice
       </div>
       <div className="p-6 bg-gray-200 rounded-xl">
@@ -155,7 +155,7 @@ const CreateNotice = ({ onNoticeCreated }) => {
           <div className="flex items-start gap-4">
             <label className="w-1/4 text-gray-700 pt-2">Visibility</label>
             <div className="w-3/4">
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid md:grid-cols-3 grid-cols-2 gap-2">
                 {visibilityOptions.map(option => (
                   <div key={option} className="flex items-center">
                     <input
@@ -176,7 +176,7 @@ const CreateNotice = ({ onNoticeCreated }) => {
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-gray-700 text-white rounded hover:bg-gray-800 disabled:bg-gray-400 transition shadow-sm"
+              className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-gray-800 disabled:bg-gray-400 transition shadow-sm"
             >
               {loading ? 'SUBMITTING...' : 'SUBMIT'}
             </button>

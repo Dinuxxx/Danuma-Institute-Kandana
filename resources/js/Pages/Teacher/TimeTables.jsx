@@ -180,10 +180,10 @@ const TimeTables = ({ timetables: initialTimetables, courses: initialCourses }) 
           <h1 className="text-3xl font-bold text-[#FC9C02] mb-6">My Teaching Timetable</h1>
           <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div className="p-6">
-              <div className="flex flex-col md:flex-row justify-between items-center md:mb-24 gap-4">
+              <div className="flex flex-col md:flex-row justify-between items-center md:mb-24 mb-20 gap-4">
                 <div className="flex flex-wrap gap-2">
                   {/* Search input */}
-                  <div className="relative w-full md:w-auto">
+                  <div className="relative w-auto md:w-auto">
                     <input
                       type="text"
                       placeholder="Search subjects, grades, days, rooms..."
@@ -226,7 +226,7 @@ const TimeTables = ({ timetables: initialTimetables, courses: initialCourses }) 
                   {/* Print button */}
                   <button
                     onClick={handlePrint}
-                    className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-8 rounded-lg w-full md:w-auto flex items-center justify-center gap-2"
+                    className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-8 rounded-lg w-auto md:w-auto flex items-center justify-center gap-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />

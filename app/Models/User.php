@@ -75,10 +75,19 @@ class User extends Authenticatable implements MustVerifyEmail
             Role::class, 
             UserRegistration::class, 
             'user_id',    // Foreign key on UserRegistration table
-            'role_id',         // Foreign key on Role table  
+            'role_id',    // Foreign key on Role table  
             'id',         // Local key on User table
             'role_id'     // Local key on UserRegistration table
         );
+    }
+
+    // Alternative role method using the registration relationship
+    public function getRoleAttribute()
+    {
+        if ($this->registration && $this->registration->role) {
+            return $this->registration->role;
+        }
+        return null;
     }
 
     // ============ ROLE CHECKING METHODS ============
@@ -88,8 +97,8 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getRoleNameAttribute(): string
     {
-        if ($this->registration && $this->registration->role) {
-            return $this->registration->role->role_name;
+        if ($this->role) {
+            return $this->role->role_name;
         }
         
         return 'No Role';
@@ -100,9 +109,8 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function hasRole(string $role): bool
     {
-        return $this->registration && 
-               $this->registration->role && 
-               strtolower($this->registration->role->role_name) === strtolower($role);
+        return $this->role && 
+               strtolower($this->role->role_name) === strtolower($role);
     }
 
     /**

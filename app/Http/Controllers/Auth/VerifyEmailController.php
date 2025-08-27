@@ -34,17 +34,28 @@ class VerifyEmailController extends Controller
 
     private function redirectByRole($user)
     {
-        $role = optional($user->registration)->role->role_name ?? null;
-        if ($role) {
-            $role = strtolower($role);
-            if ($role === 'student') {
-                return redirect()->route('student.dashboard');
-            } elseif ($role === 'teacher') {
-                return redirect()->route('teacher.dashboard');
-            } elseif ($role === 'admin') {
-                return redirect()->route('admin.dashboard');
+        try {
+            $role = $user->role->role_name ?? null;
+            if ($role) {
+                $role = strtolower($role);
+                switch ($role) {
+                    case 'student':
+                        return redirect()->route('student.dashboard');
+                    case 'teacher':
+                        return redirect()->route('teacher.dashboard');
+                    case 'admin':
+                        return redirect()->route('admin.dashboard');
+                    default:
+                        return redirect()->route('dashboard');
+                }
             }
+            return redirect()->route('dashboard');
+        } catch (\Exception $e) {
+            // Log error and redirect to default dashboard
+            \Log::error('Error in redirectByRole: ' . $e->getMessage(), [
+                'user_id' => $user->id
+            ]);
+            return redirect()->route('dashboard');
         }
-        return redirect()->route('dashboard');
     }
 }

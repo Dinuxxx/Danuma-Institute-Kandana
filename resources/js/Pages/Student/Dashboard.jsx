@@ -30,7 +30,6 @@ import {
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DatePicker from "@/Components/Admin Components/DatePicker";
 import axios from "axios";
-import { TrendingUp, DollarSign } from "lucide-react";
 
 const Dashboard = ({ auth }) => {
     // State for dashboard data

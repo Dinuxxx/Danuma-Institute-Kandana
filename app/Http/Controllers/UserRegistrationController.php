@@ -189,15 +189,13 @@ class UserRegistrationController extends Controller
                 'added_by' => auth()->id()
             ]);
 
-            //event(new Registered($user));
-
             // Handle role-specific registration
             switch (strtolower($role)) {
                 case 'student':
                     $this->registerStudent($request, $user->id);
                     break;
                 case 'teacher':
-                    $this->registerTeacher($request, $user->id); // Now passing user->id
+                    $this->registerTeacher($request, $user->id);
                     break;
                 case 'admin':
                     $this->registerAdmin($request, $user->id);
@@ -206,23 +204,26 @@ class UserRegistrationController extends Controller
                     throw new \Exception('Invalid role: ' . $role);
             }
 
-            // Send password email only if we generated a temporary password
-            if (!$request->password) {
-                try {
-                    Mail::to($user->email)->send(new SendPasswordEmail($user, $temporaryPassword));
-                    Log::info('Password email sent successfully', [
-                        'user_id' => $user->id,
-                        'user_email' => $user->email
-                    ]);
-                } catch (\Exception $e) {
-                    Log::error('Failed to send password email: ' . $e->getMessage(), [
-                        'user_id' => $user->id,
-                        'user_email' => $user->email,
-                        'error' => $e->getMessage()
-                    ]);
-                    // Don't fail the registration if email fails
-                }
+            // Send password email for ALL users (always send welcome email)
+            try {
+                Mail::to($user->email)->send(new SendPasswordEmail($user, $temporaryPassword));
+                Log::info('Password email sent successfully', [
+                    'user_id' => $user->id,
+                    'user_email' => $user->email,
+                    'role' => $role,
+                    'temporary_password' => $temporaryPassword
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Failed to send password email: ' . $e->getMessage(), [
+                    'user_id' => $user->id,
+                    'user_email' => $user->email,
+                    'error' => $e->getMessage()
+                ]);
+                // Don't fail the registration if email fails
             }
+
+            // Remove email verification sending during registration
+            // Verification will be sent on first login instead
 
             DB::commit();
 
@@ -265,21 +266,28 @@ class UserRegistrationController extends Controller
     {
         // Check if role is explicitly provided
         if ($request->has('role')) {
-            return $request->role;
+            $role = $request->role;
+            Log::info('Role determined from request parameter', ['role' => $role]);
+            return $role;
         }
 
         // Determine from route name
         $routeName = $request->route()->getName();
+        Log::info('Route name for role determination', ['route_name' => $routeName]);
         
         if (str_contains($routeName, 'teacher')) {
+            Log::info('Role determined from route: teacher');
             return 'teacher';
         } elseif (str_contains($routeName, 'student')) {
+            Log::info('Role determined from route: student');
             return 'student';
         } elseif (str_contains($routeName, 'admin')) {
+            Log::info('Role determined from route: admin');
             return 'admin';
         }
 
         // Default fallback
+        Log::info('Role defaulting to student');
         return 'student';
     }
 

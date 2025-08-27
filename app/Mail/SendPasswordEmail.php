@@ -27,9 +27,11 @@ class SendPasswordEmail extends Mailable
         
         // Log email creation for debugging
         Log::info('SendPasswordEmail created', [
-            'user_id' => $user->id,
-            'user_email' => $user->email,
-            'role' => $user->role->role_name ?? 'Unknown'
+            'user_id' => $user->id ?? 'unknown',
+            'user_email' => $user->email ?? 'unknown',
+            'user_name' => $user->name ?? 'unknown',
+            'role' => $user->role->role_name ?? 'unknown',
+            'temporary_password' => $temporaryPassword
         ]);
     }
 

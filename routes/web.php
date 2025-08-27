@@ -52,99 +52,12 @@ Route::get('/', function () {
 Route::get('/get-grades', [CourseController::class, 'getGrades'])->name('get.grades');
 Route::get('/courses-by-grade/{grade}', [CourseController::class, 'getCoursesByGrade'])->name('courses.by.grade');
 
-// teacher routes
-
-Route::get('/teacher/dashboard', function () {
-    return Inertia::render('Teacher/Dashboard'); 
-})->name('teacher.dashboard');
-
-Route::get('/teacher/courses', function () {
-    return Inertia::render('Teacher/Courses'); 
-})->name('admin.viewexams');
-
-Route::get('/teacher/courses/{course_id}', function ($course_id) {
-    $course = \App\Models\Course::where('course_id', $course_id)->firstOrFail();
-    return Inertia::render('Teacher/TeacherLessons', [
-        'course_id' => $course->course_id,
-        'course_name' => $course->course_name,
-        'grade' => $course->grade
-    ]);
-})->name('teacher.lessons');
-
-Route::get('/teacher/lessons/create', function () {
-    return Inertia::render('Teacher/CreateLesson'); 
-})->name('admin.viewexams');
-
-Route::get('/teacher/lessons/edit/{id}', function ($id) {
-    return Inertia::render('Teacher/EditLesson');
-});
-
-Route::get('/study-materials', [TeacherLessonController::class, 'index']);
-Route::post('/study-materials', [TeacherLessonController::class, 'store']);
-Route::get('/study-materials/{id}', [TeacherLessonController::class, 'show']);
-Route::put('/study-materials/{id}', [TeacherLessonController::class, 'update']);
-Route::delete('/study-materials/{id}', [TeacherLessonController::class, 'destroy']);
-Route::patch('/study-materials/{id}/toggle-visibility', [TeacherLessonController::class, 'toggleVisibility']);
-
-Route::get('/teacher/attendance', function () {
-    return Inertia::render('Teacher/Attendance'); 
-})->name('admin.viewexams');
-
-Route::get('/teacher/exams', function () {
-    return Inertia::render('Teacher/Exams'); 
-})->name('admin.viewexams');
-
-Route::get('/teacher/notices', function () {
-    return Inertia::render('Teacher/Notices'); 
-})->name('admin.viewexams');
-
-Route::get('/teacher/payments', function () {
-    return Inertia::render('Teacher/Payments'); 
-})->name('admin.viewexams');
-
-Route::get('/teacher/time-tables', function () {
-    return Inertia::render('Teacher/TimeTables'); 
-})->name('admin.viewexams');
+// teacher routes (removed duplicate routes - using controller-based routes below)
 
 
 
 
-// student routes
-
-Route::get('/student/dashboard', function () {
-    return Inertia::render('Student/Dashboard'); 
-})->name('student.dashboard');
-
-Route::get('/student/courses', function () {
-    return Inertia::render('Student/Courses'); 
-}); // ->name('admin.viewexams');
-
-Route::get('/student/courses/{course_id}', function ($course_id) {
-    $course = \App\Models\Course::where('course_id', $course_id)->firstOrFail();
-    return Inertia::render('Student/StudentLessons', [
-        'course_id' => $course->course_id,
-        'course_name' => $course->course_name,
-        'grade' => $course->grade
-    ]);
-})->name('teacher.lessons');
-
-Route::get('/student/attendance', function () {
-    return Inertia::render('Student/Attendance'); 
-}); //->name('admin.viewexams');
-
-Route::get('/student/exams', function () {
-    return Inertia::render('Student/Exams'); 
-}); //->name('admin.viewexams');
-
-Route::get('/student/notices', function () {
-    return Inertia::render('Student/Notices'); 
-}); //->name('admin.viewexams');
-
-Route::get('/student/payments', function () {
-    return Inertia::render('Student/Payments'); 
-}); //->name('admin.viewexams');
-
-Route::get('/student/time-tables', [TimetableController::class, 'studentView'])->name('student.timetables');
+// student routes (removed duplicate routes - using controller-based routes below)
 
 Route::get('/aboutus', function () {
     return Inertia::render('AboutUs'); 
@@ -160,21 +73,32 @@ Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('adm
 // Dashboard route that redirects based on user role
 Route::get('/dashboard', function () {
     $user = Auth::user();
-    $userRegistration = $user->registration;
     
-    if ($userRegistration && $userRegistration->role) {
-        $userRole = strtolower($userRegistration->role->role_name);
-        
-        if ($userRole === 'admin') {
-            return redirect()->route('admin.dashboard');
-        } elseif ($userRole === 'teacher') {
-            return redirect()->route('teacher.dashboard');
-        } elseif ($userRole === 'student') {
-            return redirect()->route('student.dashboard');
+    try {
+        // Use the User model's role relationship
+        if (!$user->role) {
+            return redirect('/');
         }
+        
+        $userRole = strtolower($user->role->role_name);
+        
+        switch ($userRole) {
+            case 'admin':
+                return redirect()->route('admin.dashboard');
+            case 'teacher':
+                return redirect()->route('teacher.dashboard');
+            case 'student':
+                return redirect()->route('student.dashboard');
+            default:
+                return redirect('/');
+        }
+        
+    } catch (\Exception $e) {
+        \Log::error('Error in dashboard redirect: ' . $e->getMessage(), [
+            'user_id' => $user->id
+        ]);
+        return redirect('/');
     }
-    
-    return redirect('/');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 
@@ -351,10 +275,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ]);
         })->name('student.lessons');
         
-        Route::get('/attendance', function () {
-            return Inertia::render('Student/Attendance');
-        });
-
         Route::get('/attendance', [StudentAttendanceController::class, 'index'])->name('student.attendance');
         Route::get('/attendance/report', [StudentAttendanceController::class, 'getAttendanceReport'])->name('student.attendance.report');
         Route::get('/attendance/stats', [StudentAttendanceController::class, 'getAttendanceStats'])->name('student.attendance.stats');
@@ -526,28 +446,14 @@ Route::middleware(['auth', CheckRole::class . ':admin'])->group(function () {
 
 
 
-// Email verification routes
-
-Route::get('/email/verify', [EmailVerificationPromptController::class, '__invoke'])
-    ->middleware('auth')
-    ->name('verification.notice');
-
-    // In routes/web.php
-Route::middleware('auth')->get('/verification-status', function (Request $request) {
-    return response()->json([
-        'verified' => $request->user()->hasVerifiedEmail()
-    ]);
+// Email verification routes (consolidated)
+Route::middleware('auth')->group(function () {
+    Route::get('/verification-status', function (Request $request) {
+        return response()->json([
+            'verified' => $request->user()->hasVerifiedEmail()
+        ]);
+    });
 });
-
-// Email verification handler (this is already handled by Laravel)
-
-Route::get('/email/verify/{id}/{hash}', [VerifyEmailController::class, 'verify'])
-    ->middleware(['auth', 'signed'])
-    ->name('verification.verify');
-
-Route::post('/email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
-    ->middleware('auth')
-    ->name('verification.send');
 
 Route::post('/messages', [MessageController::class, 'store']);
 
@@ -556,4 +462,65 @@ require __DIR__.'/auth.php';
 Route::put('/teachers/{teacher}/salary', [TeacherController::class, 'updateSalary'])
     ->name('teachers.update.salary')
     ->middleware(['auth', 'admin']);
+
+// Test route for teacher role verification
+Route::get('/test-teacher-role', function () {
+    if (!auth()->check()) {
+        return response()->json(['error' => 'Not authenticated']);
+    }
+    
+    $user = auth()->user();
+    
+    return response()->json([
+        'user_id' => $user->id,
+        'user_email' => $user->email,
+        'user_name' => $user->name,
+        'role' => $user->role ? $user->role->role_name : 'No role',
+        'email_verified' => $user->hasVerifiedEmail(),
+        'email_verified_at' => $user->email_verified_at,
+        'middleware' => 'auth only',
+        'can_access_teacher_dashboard' => $user->role && strtolower($user->role->role_name) === 'teacher'
+    ]);
+})->middleware('auth');
+
+// Test route for dashboard access (no middleware)
+Route::get('/test-dashboard', function () {
+    if (!auth()->check()) {
+        return response()->json(['error' => 'Not authenticated']);
+    }
+    
+    $user = auth()->user();
+    
+    return response()->json([
+        'user_id' => $user->id,
+        'user_email' => $user->email,
+        'user_name' => $user->name,
+        'role' => $user->role ? $user->role->role_name : 'No role',
+        'email_verified' => $user->hasVerifiedEmail(),
+        'email_verified_at' => $user->email_verified_at,
+        'available_routes' => [
+            'admin_dashboard' => route('admin.dashboard'),
+            'teacher_dashboard' => route('teacher.dashboard'),
+            'student_dashboard' => route('student.dashboard'),
+            'main_dashboard' => route('dashboard')
+        ]
+    ]);
+})->middleware('auth');
+
+// Test route for teacher dashboard without role check
+Route::get('/test-teacher-dashboard-no-role', function () {
+    if (!auth()->check()) {
+        return response()->json(['error' => 'Not authenticated']);
+    }
+    
+    try {
+        return Inertia::render('Teacher/Dashboard');
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => 'Failed to render Teacher Dashboard',
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+    }
+})->middleware('auth');
 ?>

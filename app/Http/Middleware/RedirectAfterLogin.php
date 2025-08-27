@@ -24,32 +24,23 @@ class RedirectAfterLogin
             $user = Auth::user();
             
             try {
-                // Get user role from user_registrations table
-                $userRegistration = UserRegistration::where('user_id', $user->id)->first();
-                
-                if (!$userRegistration) {
-                    Log::warning('User registration not found for authenticated user', [
+                // Use the User model's role relationship
+                if (!$user->role) {
+                    Log::warning('User role not found', [
                         'user_id' => $user->id,
                         'email' => $user->email
                     ]);
-                    // Default to admin dashboard if no registration found
-                    return redirect()->route('admin.dashboard');
+                    return redirect()->route('dashboard');
                 }
                 
-                // Get role information
-                $role = Role::find($userRegistration->role_id);
+                $roleName = strtolower($user->role->role_name);
+                Log::info('User login redirect', [
+                    'user_id' => $user->id,
+                    'role' => $roleName
+                ]);
                 
-                if (!$role) {
-                    Log::warning('Role not found for user registration', [
-                        'user_id' => $user->id,
-                        'role_id' => $userRegistration->role_id
-                    ]);
-                    // Default to admin dashboard if role not found
-                    return redirect()->route('admin.dashboard');
-                }
-                
-                // Redirect based on user role (case-insensitive comparison)
-                switch (strtolower($role->role_name)) {
+                // Redirect based on user role
+                switch ($roleName) {
                     case 'admin':
                         return redirect()->route('admin.dashboard');
                         
@@ -60,25 +51,21 @@ class RedirectAfterLogin
                         return redirect()->route('student.dashboard');
                         
                     default:
-                        // Log unknown role and default to admin dashboard
                         Log::warning('Unknown user role detected', [
                             'user_id' => $user->id,
-                            'role_name' => $role->role_name,
-                            'role_id' => $role->role_id
+                            'role_name' => $user->role->role_name
                         ]);
-                        return redirect()->route('admin.dashboard');
+                        return redirect()->route('dashboard');
                 }
                 
             } catch (\Exception $e) {
-                // Log the error and default to admin dashboard
                 Log::error('Error determining user role for redirect', [
                     'user_id' => $user->id,
                     'email' => $user->email,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
+                    'error' => $e->getMessage()
                 ]);
                 
-                return redirect()->route('admin.dashboard');
+                return redirect()->route('dashboard');
             }
         }
 

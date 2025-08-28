@@ -4,7 +4,7 @@ import InputLabel from "@/Components/InputLabel";
 import PrimaryButton from "@/Components/PrimaryButton";
 import TextInput from "@/Components/TextInput";
 import GuestLayout from "@/Layouts/GuestLayout";
-import { Head, useForm } from "@inertiajs/react";
+import { Head, useForm, router } from "@inertiajs/react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { route } from "ziggy-js";
@@ -127,29 +127,47 @@ export default function TeacherRegister() {
         }
     };
 
-    // Handle course selection/deselection
+    // Handle course selection/deselection (unique by base code before _teacherId)
     const handleCourseToggle = (course) => {
         setSelectedCourses((prevSelected) => {
-            // Check if course is already selected
-            const isAlreadySelected = prevSelected.some(
-                (c) => c.course_id === course.course_id
+            const base = String(course.course_id || '').split('_')[0];
+            const already = prevSelected.some(
+                (c) => String(c.course_id || '').split('_')[0] === base
             );
 
-            if (isAlreadySelected) {
-                // Remove course if it's already selected
+            if (already) {
                 return prevSelected.filter(
-                    (c) => c.course_id !== course.course_id
+                    (c) => String(c.course_id || '').split('_')[0] !== base
                 );
-            } else {
-                // Add course if it's not already selected
-                return [...prevSelected, course];
             }
+
+            // Attach a real course id to submit: prefer an unsuffixed id if available
+            const matches = availableCourses.filter(
+                (c) =>
+                    String(c.course_id || '').split('_')[0] === base &&
+                    c.course_name === course.course_name &&
+                    c.grade === course.grade
+            );
+            const preferred =
+                matches.find((m) => !String(m.course_id).includes('_')) ||
+                matches[0] ||
+                course;
+
+            const toAdd = {
+                ...course,
+                actual_course_id: course.actual_course_id || preferred.course_id,
+            };
+            return [...prevSelected, toAdd];
         });
     };
 
-    // Check if course is already added to the final courses list
-    const isCourseAdded = (courseId) =>
-        courses.some((c) => c.course_id === courseId);
+    // Check if course is already added (by base code)
+    const isCourseAdded = (courseId) => {
+        const base = String(courseId || '').split('_')[0];
+        return courses.some(
+            (c) => String(c.course_id || '').split('_')[0] === base
+        );
+    };
 
     // Helper function for grade colors
     const getGradeColor = (grade) => {
@@ -160,8 +178,33 @@ export default function TeacherRegister() {
         return "bg-purple-100 text-purple-800";
     };
 
-    // Filter courses based on search term
-    const filteredCourses = availableCourses.filter(
+    // Group available courses by base code + subject + grade, keep one representative
+    const groupedCoursesMap = availableCourses.reduce((acc, course) => {
+        const base = String(course.course_id || '').split('_')[0];
+        const key = `${course.course_name}__${course.grade}__${base}`;
+        if (!acc[key]) {
+            const matches = availableCourses.filter(
+                (c) =>
+                    String(c.course_id || '').split('_')[0] === base &&
+                    c.course_name === course.course_name &&
+                    c.grade === course.grade
+            );
+            const preferred =
+                matches.find((m) => !String(m.course_id).includes('_')) ||
+                matches[0] ||
+                course;
+            acc[key] = {
+                ...course,
+                course_id: base, // display base only
+                display_name: `${course.course_name} (Grade ${course.grade})`,
+                actual_course_id: preferred.course_id, // real id to submit
+            };
+        }
+        return acc;
+    }, {});
+
+    // Filter on grouped list
+    const filteredCourses = Object.values(groupedCoursesMap).filter(
         (course) =>
             course.course_name
                 ?.toLowerCase()
@@ -219,7 +262,7 @@ export default function TeacherRegister() {
             gender: data.gender,
             nic: data.nic,
             qualifications: data.qualifications,
-            courses: courses.map((course) => course.course_id),
+            courses: courses.map((course) => course.actual_course_id || course.course_id),
             name: `${data.first_name} ${data.last_name}`.trim(),
             password: temporaryPassword,
             password_confirmation: temporaryPassword,
@@ -227,6 +270,7 @@ export default function TeacherRegister() {
         };
 
         console.log("Submitting data:", finalData); // Debug log
+        console.log("Courses being submitted:", courses); // Debug log for courses
 
         setLoading(true);
         setError(null);
@@ -241,7 +285,7 @@ export default function TeacherRegister() {
                 notifySuccess(
                     "Teacher registered successfully! Verification email has been sent."
                 );
-                notifySuccess(`Temporary password: ${temporaryPassword}`);
+                // notifySuccess(`Temporary password: ${temporaryPassword}`);
 
                 // Clear form and reset state
                 reset();
@@ -253,9 +297,7 @@ export default function TeacherRegister() {
 
             // Handle specific validation errors
             if (error.response?.status === 422) {
-                const errorData = (
-                    <error className="response data errors"></error>
-                );
+                const errorData = error.response.data;
                 console.log("Validation errors:", errorData);
 
                 if (errorData.errors) {
@@ -272,6 +314,14 @@ export default function TeacherRegister() {
                             "Validation failed. Please check your input."
                     );
                 }
+            } else if (error.response?.status === 400) {
+                // Handle other types of errors
+                const errorData = error.response.data;
+                console.log("Error response:", errorData);
+                notifyError(
+                    errorData.message ||
+                        "Registration failed. Please try again."
+                );
             } else {
                 notifyError(
                     error.response?.data?.message ||
@@ -696,9 +746,9 @@ export default function TeacherRegister() {
                                                                             <div className="text-sm text-gray-500 mt-1">
                                                                                 Course
                                                                                 ID:{" "}
-                                                                                {
-                                                                                    course.course_id
-                                                                                }
+                                                                                <span className="font-mono">
+                                                                                    {course.course_id.split('_')[0]}
+                                                                                </span>
                                                                                 {isCourseAdded(
                                                                                     course.course_id
                                                                                 ) && (
@@ -783,6 +833,9 @@ export default function TeacherRegister() {
                                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                                         Monthly Fee
                                                     </th>
+                                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                        Teacher
+                                                    </th>
                                                     <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                                         Action
                                                     </th>
@@ -806,9 +859,9 @@ export default function TeacherRegister() {
                                                                     </div>
                                                                     <div className="text-sm text-gray-500">
                                                                         ID:{" "}
-                                                                        {
-                                                                            course.course_id
-                                                                        }
+                                                                        <span className="font-mono">
+                                                                            {course.course_id.split('_')[0]}
+                                                                        </span>
                                                                     </div>
                                                                 </div>
                                                             </td>
@@ -832,6 +885,11 @@ export default function TeacherRegister() {
                                                                     Rs.{" "}
                                                                     {course.monthly_fees ||
                                                                         "N/A"}
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <div className="text-sm text-gray-600">
+                                                                    {course.teacher_name || "No Teacher"}
                                                                 </div>
                                                             </td>
                                                             <td className="px-6 py-4 text-center">

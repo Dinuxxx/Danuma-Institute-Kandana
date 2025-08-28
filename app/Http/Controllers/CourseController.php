@@ -34,17 +34,44 @@ class CourseController extends Controller{
             'courseDesc' => 'nullable|string',
         ]);
         
-        $existingCourse = Course::where('course_name', $validatedData['subjectName'])
-            ->where('grade', $validatedData['grade'])
-            ->exists();
-        
-        if ($existingCourse) {
-            return response([
-                'errors' => [
-                    'subjectName' => 'This subject name and grade combination already exists.',
-                    'grade' => 'This subject name and grade combination already exists.'
-                ]
-            ], 422);
+        // Enforce that the subject code ends with _{teacherId} when a teacher is provided
+        if (!empty($validatedData['teacherId'])) {
+            $matches = [];
+            $hasSuffix = preg_match('/_(\d+)$/', (string) $validatedData['subjectCode'], $matches);
+            if (!$hasSuffix) {
+                return response([
+                    'errors' => [
+                        'subjectCode' => 'Subject code must end with _{teacher_id} (e.g., MA202511_30) when a teacher is assigned.',
+                    ]
+                ], 422);
+            }
+
+            $suffixTeacherId = (int) $matches[1];
+            if ($suffixTeacherId !== (int) $validatedData['teacherId']) {
+                return response([
+                    'errors' => [
+                        'subjectCode' => 'Subject code suffix does not match the selected teacher. It must end with _' . $validatedData['teacherId'] . '.',
+                        'teacherId' => 'Selected teacher must match the subject code suffix.'
+                    ]
+                ], 422);
+            }
+        }
+
+        // Allow multiple courses with the same name and grade
+        // Only check if the specific teacher is already assigned to this subject and grade
+        if ($validatedData['teacherId']) {
+            $existingTeacherCourse = Course::where('course_name', $validatedData['subjectName'])
+                ->where('grade', $validatedData['grade'])
+                ->where('teacher_id', $validatedData['teacherId'])
+                ->exists();
+            
+            if ($existingTeacherCourse) {
+                return response([
+                    'errors' => [
+                        'teacherId' => 'This teacher is already assigned to this subject and grade combination.',
+                    ]
+                ], 422);
+            }
         }
         
         $course = Course::create([
@@ -58,7 +85,7 @@ class CourseController extends Controller{
         
         return response(['message' => 'Course created successfully!', 'course' => $course]);
     }
-
+    
 
     //The index method retrieves all courses from the database and returns them as JSON. This is used when listing all courses.
 
@@ -361,3 +388,4 @@ class CourseController extends Controller{
         }
     }
 }
+?>

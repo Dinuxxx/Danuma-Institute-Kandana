@@ -4,6 +4,8 @@ import ExamCard from '@/Components/Teacher Components/ExamCard';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Exams = ({ exams = [] }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -18,6 +20,32 @@ const Exams = ({ exams = [] }) => {
     grade: '',
     date: ''
   });
+
+  const notifySuccess = (message) =>
+      toast.success(message, {
+          position: "bottom-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progressClassName: "bg-green-500",
+          className: "border border-green-600 rounded-lg shadow-md",
+          style: { backgroundColor: "#ebfeee" },
+      });
+
+  const notifyError = (message) =>
+      toast.error(message, {
+          position: "bottom-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progressClassName: "bg-red-500",
+          className: "border border-red-600 rounded-lg shadow-md",
+          style: { backgroundColor: "#fcf0f0" },
+      });
 
   // Configure axios defaults
   useEffect(() => {
@@ -124,16 +152,20 @@ const Exams = ({ exams = [] }) => {
       const response = await axios.post('/teacher/exams', newExam);
 
       if (response.data && response.data.success) {
-        // Refresh the page to show the new exam
-        router.visit('/teacher/exams', {
-          method: 'get',
-          preserveState: false,
-          onSuccess: () => {
-            setShowModal(false);
-            setNewExam({ name: '', grade: '', date: '' });
-          }
-        });
+        notifySuccess("Exam successfully created!");
+        setTimeout(() => {    
+          // Refresh the page to show the new exam
+          router.visit('/teacher/exams', {
+            method: 'get',
+            preserveState: false,
+            onSuccess: () => {
+              setShowModal(false);
+              setNewExam({ name: '', grade: '', date: '' });
+            }
+          });
+        }, 1500);
       }
+      
     } catch (error) {
       console.error('Error creating exam:', error);
       
@@ -341,6 +373,7 @@ const Exams = ({ exams = [] }) => {
           </div>
         )}
       </div>
+      <ToastContainer />
     </AuthenticatedLayout>
   );
 };

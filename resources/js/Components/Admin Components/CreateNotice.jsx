@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { FaUpload } from "react-icons/fa";
 import axios from 'axios';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const CreateNotice = ({ onNoticeCreated }) => {
   const [title, setTitle] = useState("");
@@ -20,6 +22,32 @@ const CreateNotice = ({ onNoticeCreated }) => {
       }
     });
   };
+
+  const notifySuccess = (message) =>
+      toast.success(message, {
+          position: "bottom-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progressClassName: "bg-green-500",
+          className: "border border-green-600 rounded-lg shadow-md",
+          style: { backgroundColor: "#ebfeee" },
+      });
+
+  const notifyError = (message) =>
+      toast.error(message, {
+          position: "bottom-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progressClassName: "bg-red-500",
+          className: "border border-red-600 rounded-lg shadow-md",
+          style: { backgroundColor: "#fcf0f0" },
+      });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -62,6 +90,7 @@ const CreateNotice = ({ onNoticeCreated }) => {
       if (onNoticeCreated) {
         onNoticeCreated();
       }
+      notifySuccess("Notice created successfully!");
     } catch (error) {
       console.error('Error creating notice:', error);
       setError(error.response?.data?.message || "Failed to create notice. Please try again.");
@@ -146,6 +175,7 @@ const CreateNotice = ({ onNoticeCreated }) => {
           </div>
         </form>
       </div>
+      <ToastContainer />
     </div>
   );
 };

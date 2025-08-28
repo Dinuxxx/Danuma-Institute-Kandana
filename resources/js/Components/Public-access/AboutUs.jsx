@@ -3,12 +3,12 @@ import ImageCarousel from "./ImageCarousel";
 
 const AboutUs = () => {
     const images = [
-        "/images/about/image1.jpg",
-        "/images/about/image2.jpg",
-        "/images/about/image3.jpg",
-        "/images/about/image4.jpg",
-        "/images/about/image5.jpg",
-        "/images/about/image6.jpg",
+        "/images/ImageCarousel/01.jpeg",
+        "/images/ImageCarousel/02.jpeg",
+        "/images/ImageCarousel/03.jpeg",
+        "/images/ImageCarousel/04.jpeg",
+        "/images/ImageCarousel/05.jpeg",
+        "/images/ImageCarousel/06.jpeg",
     ];
 
     return (

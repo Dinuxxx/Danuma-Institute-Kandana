@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Student;
 use App\Models\Role;
 use App\Models\UserRegistration;
 use Illuminate\Http\Request;
@@ -80,13 +81,27 @@ class UsersController extends Controller
                 
                 // Start transaction to ensure data consistency
                 DB::beginTransaction();
-                
+
                 // Delete user registration
                 $registration->delete();
                 
+                // Find the student record linked to this user
+                $student = Student::where('user_id', $userId)->first();
+                
+                if ($student) {
+                    // Get the parent
+                    $parent = $student->parent;
+
+                    // Delete parent if exists
+                    if ($parent) {
+                        $parent->delete();
+                    }
+                }
+
                 // Delete user account
                 User::where('id', $userId)->delete();
                 
+                   
                 DB::commit();
                 
                 return response()->json(['message' => 'User deleted successfully'], 200);
@@ -102,7 +117,20 @@ class UsersController extends Controller
                     if ($registration) {
                         $userId = $registration->user_id;
                         $registration->delete();
+                        
+                        $student = Student::where('user_id', $userId)->first();
+
+                        if ($student) {
+                            $parent = $student->parent;
+                
+                            if ($parent) {
+                                $parent->delete();
+                            }
+                        }
+                        
                         User::where('id', $userId)->delete();
+
+                        
                     }
                 }
                 

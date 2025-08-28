@@ -633,6 +633,9 @@ export default function Register() {
                                             >
                                                 {course.course_name} (
                                                 {course.course_id})
+                                                <span className="ml-2 text-xs text-gray-600">
+                                                    – Teacher: {course.teacher_name || "No Teacher Assigned"}
+                                                </span>
                                             </label>
                                         </div>
                                     ))}
@@ -722,3 +725,5 @@ export default function Register() {
         </GuestLayout>
     );
 }
+
+

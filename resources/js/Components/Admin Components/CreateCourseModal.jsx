@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BsPlus } from 'react-icons/bs';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const CreateCourseModal = ({ isOpen, onClose, onCourseCreated }) => {
   const [formData, setFormData] = useState({
@@ -13,6 +15,33 @@ const CreateCourseModal = ({ isOpen, onClose, onCourseCreated }) => {
   });
 
   const [errors, setErrors] = useState({});
+
+  const notifySuccess = (message) =>
+      toast.success(message, {
+          position: "bottom-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progressClassName: "bg-green-500",
+          className: "border border-green-600 rounded-lg shadow-md",
+          style: { backgroundColor: "#ebfeee" },
+      });
+
+  const notifyError = (message) =>
+      toast.error(message, {
+          position: "bottom-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progressClassName: "bg-red-500",
+          className: "border border-red-600 rounded-lg shadow-md",
+          style: { backgroundColor: "#fcf0f0" },
+      });
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -46,8 +75,11 @@ const CreateCourseModal = ({ isOpen, onClose, onCourseCreated }) => {
       if (onCourseCreated) {
         onCourseCreated(newCourse);
       }
-      
-      onClose();
+      notifySuccess("Student registered successfully!");
+
+      setTimeout(() => {
+        onClose();
+      }, 1500);
     } catch (error) {
       if (error.response && error.response.data.errors) {
         setErrors(error.response.data.errors);
@@ -167,6 +199,7 @@ const CreateCourseModal = ({ isOpen, onClose, onCourseCreated }) => {
           </div>
         </form>
       </div>
+      <ToastContainer />
     </div>
   );
 };

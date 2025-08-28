@@ -380,8 +380,11 @@ Route::get('/teachers/search', [App\Http\Controllers\TeacherSearchController::cl
 // Profile management
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile/update', [ProfileController::class, 'update'])
+        ->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::patch('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    Route::patch('/profile/contact', [ProfileController::class, 'updateContact'])->name('profile.contact.update');
 });
 
 // Authentication routes
@@ -507,4 +510,27 @@ Route::get('/test-teacher-dashboard-no-role', function () {
         ]);
     }
 })->middleware('auth');
+
+// Add these routes inside your auth middleware group
+Route::middleware(['auth'])->group(function () {
+    // Profile routes
+    Route::get('/profile', [ProfileController::class, 'edit'])
+        ->name('profile.edit');
+        
+    Route::patch('/profile', [ProfileController::class, 'update'])
+        ->name('profile.update');
+        
+    // Route for updating only contact information in settings
+    Route::patch('/profile/contact', [ProfileController::class, 'updateContact'])
+        ->name('profile.contact.update');
+        
+    // Route for updating password in settings
+    Route::patch('/profile/password', [ProfileController::class, 'updatePassword'])
+        ->name('profile.password.update');
+        
+    // Route for updating guardian information (students only)
+    Route::patch('/profile/guardian', [ProfileController::class, 'updateGuardian'])
+        ->middleware('role:student')
+        ->name('profile.guardian.update');
+});
 ?>

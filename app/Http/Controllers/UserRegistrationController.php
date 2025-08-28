@@ -53,12 +53,14 @@ class UserRegistrationController extends Controller
     public function getAvailableCoursesForTeacher()
     {
         try {
+            // Show all courses including those with the same name and grade
             $courses = Course::select(
                 'course_id', 
                 'course_name', 
                 'grade', 
                 'monthly_fees', 
-                'course_desc'
+                'course_desc',
+                'teacher_id'
             )
             ->whereNull('teacher_id')
             ->orWhere('teacher_id', '')  // For empty string cases
@@ -189,13 +191,15 @@ class UserRegistrationController extends Controller
                 'added_by' => auth()->id()
             ]);
 
+            //event(new Registered($user));
+
             // Handle role-specific registration
             switch (strtolower($role)) {
                 case 'student':
                     $this->registerStudent($request, $user->id);
                     break;
                 case 'teacher':
-                    $this->registerTeacher($request, $user->id);
+                    $this->registerTeacher($request, $user->id); // Now passing user->id
                     break;
                 case 'admin':
                     $this->registerAdmin($request, $user->id);
@@ -204,26 +208,23 @@ class UserRegistrationController extends Controller
                     throw new \Exception('Invalid role: ' . $role);
             }
 
-            // Send password email for ALL users (always send welcome email)
-            try {
-                Mail::to($user->email)->send(new SendPasswordEmail($user, $temporaryPassword));
-                Log::info('Password email sent successfully', [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'role' => $role,
-                    'temporary_password' => $temporaryPassword
-                ]);
-            } catch (\Exception $e) {
-                Log::error('Failed to send password email: ' . $e->getMessage(), [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'error' => $e->getMessage()
-                ]);
-                // Don't fail the registration if email fails
+            // Send password email only if we generated a temporary password
+            if (!$request->password) {
+                try {
+                    Mail::to($user->email)->send(new SendPasswordEmail($user, $temporaryPassword));
+                    Log::info('Password email sent successfully', [
+                        'user_id' => $user->id,
+                        'user_email' => $user->email
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send password email: ' . $e->getMessage(), [
+                        'user_id' => $user->id,
+                        'user_email' => $user->email,
+                        'error' => $e->getMessage()
+                    ]);
+                    // Don't fail the registration if email fails
+                }
             }
-
-            // Remove email verification sending during registration
-            // Verification will be sent on first login instead
 
             DB::commit();
 
@@ -365,15 +366,15 @@ class UserRegistrationController extends Controller
                     'array',
                     'min:1',
                     function ($attribute, $value, $fail) {
-                        // Check if any selected courses are already assigned
-                        $assignedCourses = Course::whereIn('course_id', $value)
-                            ->whereNotNull('teacher_id')
-                            ->where('teacher_id', '!=', '')
+                        // Allow multiple teachers for the same course
+                        // Only check if the course exists and is valid
+                        $invalidCourses = Course::whereIn('course_id', $value)
+                            ->whereNull('course_name')
                             ->get();
 
-                        if ($assignedCourses->isNotEmpty()) {
-                            $courseNames = $assignedCourses->pluck('course_name')->join(', ');
-                            $fail("The following courses are already assigned to other teachers: {$courseNames}");
+                        if ($invalidCourses->isNotEmpty()) {
+                            $courseIds = $invalidCourses->pluck('course_id')->join(', ');
+                            $fail("The following course IDs are invalid: {$courseIds}");
                         }
                     }
                 ],
@@ -388,10 +389,25 @@ class UserRegistrationController extends Controller
                 'salary' => 0
             ]);
 
-            // Update courses with teacher_id
+            // Assign teacher to selected courses (allowing multiple teachers per course)
             if (!empty($request->courses)) {
-                Course::whereIn('course_id', $request->courses)
-                    ->update(['teacher_id' => $teacher->tea_id]);
+                foreach ($request->courses as $courseId) {
+                    $course = Course::find($courseId);
+                    if ($course && !$course->teacher_id) {
+                        // Update the course with teacher_id if it's not already assigned
+                        $course->update(['teacher_id' => $teacher->tea_id]);
+                    } elseif ($course && $course->teacher_id) {
+                        // If course already has a teacher, create a new instance for this teacher
+                        Course::create([
+                            'course_id' => $course->course_id . '_' . $teacher->tea_id,
+                            'course_name' => $course->course_name,
+                            'grade' => $course->grade,
+                            'monthly_fees' => $course->monthly_fees,
+                            'course_desc' => $course->course_desc,
+                            'teacher_id' => $teacher->tea_id,
+                        ]);
+                    }
+                }
             }
 
             Log::info('Teacher registration completed successfully', [

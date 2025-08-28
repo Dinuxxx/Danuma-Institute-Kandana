@@ -22,9 +22,14 @@ class TeacherController extends Controller
     {
         try {
             // Option 1: Get courses without assigned teachers
-            $courses = Course::whereNull('teacher_id')
-                ->orWhere('teacher_id', 0)
-                ->select('course_id', 'course_name', 'grade', 'monthly_fees')
+            // $courses = Course::whereNull('teacher_id')
+            //     ->orWhere('teacher_id', 0)
+            //     ->select('course_id', 'course_name', 'grade', 'monthly_fees')
+            //     ->orderBy('grade')
+            //     ->orderBy('course_name')
+            //     ->get();
+            // Get all courses including those with the same name and grade
+            $courses = Course::select('course_id', 'course_name', 'grade', 'monthly_fees', 'teacher_id')
                 ->orderBy('grade')
                 ->orderBy('course_name')
                 ->get();

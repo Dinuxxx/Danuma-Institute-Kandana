@@ -4,7 +4,7 @@ import InputLabel from "@/Components/InputLabel";
 import PrimaryButton from "@/Components/PrimaryButton";
 import TextInput from "@/Components/TextInput";
 import GuestLayout from "@/Layouts/GuestLayout";
-import { Head, useForm } from "@inertiajs/react";
+import { Head, useForm, router } from "@inertiajs/react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { route } from "ziggy-js";
@@ -227,6 +227,7 @@ export default function TeacherRegister() {
         };
 
         console.log("Submitting data:", finalData); // Debug log
+        console.log("Courses being submitted:", courses); // Debug log for courses
 
         setLoading(true);
         setError(null);
@@ -241,7 +242,7 @@ export default function TeacherRegister() {
                 notifySuccess(
                     "Teacher registered successfully! Verification email has been sent."
                 );
-                notifySuccess(`Temporary password: ${temporaryPassword}`);
+                // notifySuccess(`Temporary password: ${temporaryPassword}`);
 
                 // Clear form and reset state
                 reset();
@@ -253,9 +254,7 @@ export default function TeacherRegister() {
 
             // Handle specific validation errors
             if (error.response?.status === 422) {
-                const errorData = (
-                    <error className="response data errors"></error>
-                );
+                const errorData = error.response.data;
                 console.log("Validation errors:", errorData);
 
                 if (errorData.errors) {
@@ -272,6 +271,14 @@ export default function TeacherRegister() {
                             "Validation failed. Please check your input."
                     );
                 }
+            } else if (error.response?.status === 400) {
+                // Handle other types of errors
+                const errorData = error.response.data;
+                console.log("Error response:", errorData);
+                notifyError(
+                    errorData.message ||
+                        "Registration failed. Please try again."
+                );
             } else {
                 notifyError(
                     error.response?.data?.message ||
@@ -696,9 +703,9 @@ export default function TeacherRegister() {
                                                                             <div className="text-sm text-gray-500 mt-1">
                                                                                 Course
                                                                                 ID:{" "}
-                                                                                {
-                                                                                    course.course_id
-                                                                                }
+                                                                                <span className="font-mono">
+                                                                                    {course.course_id.split('_')[0]}
+                                                                                </span>
                                                                                 {isCourseAdded(
                                                                                     course.course_id
                                                                                 ) && (
@@ -783,6 +790,9 @@ export default function TeacherRegister() {
                                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                                         Monthly Fee
                                                     </th>
+                                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                        Teacher
+                                                    </th>
                                                     <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                                         Action
                                                     </th>
@@ -806,9 +816,9 @@ export default function TeacherRegister() {
                                                                     </div>
                                                                     <div className="text-sm text-gray-500">
                                                                         ID:{" "}
-                                                                        {
-                                                                            course.course_id
-                                                                        }
+                                                                        <span className="font-mono">
+                                                                            {course.course_id.split('_')[0]}
+                                                                        </span>
                                                                     </div>
                                                                 </div>
                                                             </td>
@@ -832,6 +842,11 @@ export default function TeacherRegister() {
                                                                     Rs.{" "}
                                                                     {course.monthly_fees ||
                                                                         "N/A"}
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <div className="text-sm text-gray-600">
+                                                                    {course.teacher_name || "No Teacher"}
                                                                 </div>
                                                             </td>
                                                             <td className="px-6 py-4 text-center">

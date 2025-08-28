@@ -365,3 +365,4 @@ class CourseController extends Controller{
         }
     }
 }
+?>

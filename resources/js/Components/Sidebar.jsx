@@ -116,7 +116,7 @@ function Sidebar({ isOpen, toggleSidebar, role }) {
             color: "#333",
             cursor: "pointer",
             padding: "5px",
-        }
+        },
     };
 
     const menuItemsByRole = {
@@ -183,7 +183,7 @@ function Sidebar({ isOpen, toggleSidebar, role }) {
     const menuItems = menuItemsByRole[role] || [];
 
     // Check if mobile/tablet
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 1024;
 
     // Mobile/Tablet Sidebar
     if (isMobile) {
@@ -191,23 +191,20 @@ function Sidebar({ isOpen, toggleSidebar, role }) {
             <>
                 {/* Overlay */}
                 {isOpen && (
-                    <div 
-                        style={styles.mobileOverlay}
-                        onClick={toggleSidebar}
-                    />
+                    <div style={styles.mobileOverlay} onClick={toggleSidebar} />
                 )}
-                
+
                 {/* Mobile Sidebar */}
                 <div style={styles.mobileSidebar}>
                     {/* Close Button */}
-                    <button 
-                        onClick={toggleSidebar} 
+                    <button
+                        onClick={toggleSidebar}
                         style={styles.mobileCloseBtn}
                         aria-label="Close menu"
                     >
                         ✕
                     </button>
-                    
+
                     {/* Menu Items */}
                     <div style={styles.mobileMenuItems}>
                         {menuItems.map((item, index) => {
@@ -222,11 +219,15 @@ function Sidebar({ isOpen, toggleSidebar, role }) {
                                     <div
                                         style={{
                                             ...styles.mobileMenuItem,
-                                            ...(isActive ? styles.activeMenuItem : {}),
+                                            ...(isActive
+                                                ? styles.activeMenuItem
+                                                : {}),
                                         }}
                                         className="hover:bg-white hover:bg-opacity-20 transition-colors duration-200"
                                     >
-                                        <div style={styles.mobileMenuIcon}>{item.icon}</div>
+                                        <div style={styles.mobileMenuIcon}>
+                                            {item.icon}
+                                        </div>
                                         <span>{item.text}</span>
                                     </div>
                                 </Link>
@@ -234,7 +235,7 @@ function Sidebar({ isOpen, toggleSidebar, role }) {
                         })}
                     </div>
                     <div className="fixed bottom-12 flex justify-center w-full">
-                        <ApplicationLogo className="w-[50%]"/>
+                        <ApplicationLogo className="w-[50%]" />
                     </div>
                 </div>
             </>

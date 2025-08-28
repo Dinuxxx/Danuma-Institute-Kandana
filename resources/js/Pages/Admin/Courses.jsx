@@ -148,7 +148,7 @@ const Courses = () => {
             </div>
             <button
               onClick={handleCreateClick}
-              className="text-white bg-blue-600 font-bold p-2 rounded-md flex items-center justify-center px-2 py-2"
+              className="text-white bg-blue-600 font-bold p-2 rounded-md flex items-center justify-center px-2 py-2 ml-2"
             >
               <div className="flex items-center justify-center w-5 h-5 bg-blue-600 text-white rounded-full border-2 mr-2">
                 <BsPlus size={32} className="stroke-1" />

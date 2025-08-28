@@ -52,23 +52,12 @@ Route::get('/', function () {
 Route::get('/get-grades', [CourseController::class, 'getGrades'])->name('get.grades');
 Route::get('/courses-by-grade/{grade}', [CourseController::class, 'getCoursesByGrade'])->name('courses.by.grade');
 
-// teacher routes (removed duplicate routes - using controller-based routes below)
-
-
-
-
-// student routes (removed duplicate routes - using controller-based routes below)
 
 Route::get('/aboutus', function () {
     return Inertia::render('AboutUs'); 
 })->name('admin.viewexams');
 
 
-
-
-// Admin routes
-
-Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
 // Dashboard route that redirects based on user role
 Route::get('/dashboard', function () {
@@ -102,11 +91,10 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 
-// Manually apply the CheckRole middleware
 Route::middleware(['auth', 'verified'])->group(function () {
     // Admin routes
     Route::prefix('admin')->middleware([CheckRole::class . ':admin'])->group(function () {
-        //Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+        Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
         Route::get('/users/create', [AdminController::class, 'createUser'])->name('admin.users.create');
         Route::post('/users/store', [AdminController::class, 'storeUser'])->name('admin.users.store');
         Route::get('/courses', function () {
@@ -148,10 +136,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         
         Route::get('/time-tables', function () {
             return Inertia::render('Admin/Timetable');
-        });
-        
-        Route::get('/exams', function () {
-            return Inertia::render('Admin/Exams');
         });
 
         // User Registration Routes

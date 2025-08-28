@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import ApplicationLogo from "./ApplicationLogo";
 import { Link, usePage, router } from '@inertiajs/react';
 
-export default function Header() {
+export default function Header({ isSidebarOpen, toggleSidebar }) {
     const headerRef = useRef();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -114,110 +114,34 @@ export default function Header() {
             ref={headerRef}
             className="fixed top-0 w-full bg-gray-100 z-50 flex justify-between items-center px-[3%] py-4 transition-shadow duration-300"
         >
-            {/* Logo Section */}
-            <div>
+            {/* Left Section - Mobile Hamburger + Logo */}
+            <div className="flex items-center space-x-3">
+                {/* Mobile/Tablet Hamburger Menu - Hidden on desktop */}
+                <button
+                    onClick={toggleSidebar}
+                    className="lg:hidden p-2 rounded-md hover:bg-gray-200 transition-colors duration-200"
+                    aria-label="Toggle menu"
+                >
+                    <svg 
+                        className="w-6 h-6 text-gray-700" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                    >
+                        {isSidebarOpen ? (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        ) : (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                        )}
+                    </svg>
+                </button>
+                
+                {/* Logo */}
                 <ApplicationLogo className="md:h-16 h-12" />
             </div>
             
             {/* Notification, User Info and Profile Section */}
             <div className="relative flex items-center space-x-6">
-                {/* Notification Icon */}
-                <div className="notification-container relative">
-                    <button 
-                        className="relative p-2 rounded-full hover:bg-gray-200 transition-colors"
-                        onClick={toggleNotifications}
-                    >
-                        {/* Bell Icon SVG */}
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                        </svg>
-                        {unreadCount > 0 && (
-                            <span className="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                                {unreadCount}
-                            </span>
-                        )}
-                    </button>
-                    
-                    {/* Notification Panel */}
-                    {notificationsOpen && (
-                        <div className="notification-panel absolute right-0 top-12 w-80 bg-white rounded-lg shadow-xl overflow-hidden z-10 transform transition-all duration-300 origin-top-right">
-                            {/* Header */}
-                            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-3 flex justify-between items-center">
-                                <h3 className="text-white font-semibold">Notifications</h3>
-                                <div className="flex items-center space-x-2">
-                                    <span className="text-xs text-white opacity-80">{unreadCount} unread</span>
-                                    {unreadCount > 0 && (
-                                        <button 
-                                            className="text-xs text-white hover:underline"
-                                            onClick={() => router.post(route('notifications.mark-all-read'))}
-                                        >
-                                            Mark all as read
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                            
-                            {/* Notifications List */}
-                            <div className="max-h-80 overflow-y-auto">
-                                {notifications.length > 0 ? (
-                                    notifications.map((notification) => (
-                                        <div 
-                                            key={notification.id} 
-                                            className={`cursor-pointer border-b border-gray-100 hover:bg-gray-50 transition-colors ${!notification.read ? 'bg-blue-50' : ''}`}
-                                            onClick={() => {
-                                                toggleNotificationExpansion(notification.id);
-                                                if (!notification.read) markAsRead(notification.id);
-                                            }}
-                                        >
-                                            <div className="flex items-start px-4 py-3">
-                                                <div className="flex-shrink-0">
-                                                    {getNotificationIcon(notification.type)}
-                                                </div>
-                                                <div className="ml-3 flex-1">
-                                                    <p className="text-sm text-gray-800 font-medium">{notification.title}</p>
-                                                    <p className="text-xs text-gray-500 mt-1">{notification.created_at_formatted}</p>
-                                                </div>
-                                                {!notification.read && (
-                                                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                                                )}
-                                            </div>
-                                            
-                                            {/* Expanded content */}
-                                            {expandedNotificationId === notification.id && (
-                                                <div className="px-4 py-2 bg-gray-50 border-t border-gray-100">
-                                                    <p className="text-sm text-gray-700">{notification.message}</p>
-                                                    <div className="mt-2 text-right">
-                                                        <button 
-                                                            onClick={(e) => handleSeeMoreClick(notification, e)}
-                                                            className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
-                                                        >
-                                                            See more
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="py-6 text-center text-gray-500">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                                        </svg>
-                                        <p className="mt-1">No notifications</p>
-                                    </div>
-                                )}
-                            </div>
-                            
-                            {/* Footer */}
-                            <div className="px-4 py-2 bg-gray-50 text-center">
-                                <Link href={route('notifications.index')} className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
-                                    View all notifications
-                                </Link>
-                            </div>
-                        </div>
-                    )}
-                </div>
-                
                 {/* User Name and Profile */}
                 <div className="profile-dropdown relative flex items-center space-x-2 cursor-pointer">
                     {/* User First Name */}
@@ -229,13 +153,13 @@ export default function Header() {
                     <img
                         src={user.profile_photo_url || "/images/default-avatar-svg.svg"}
                         alt="Profile"
-                        className="w-10 h-10 rounded-full"
+                        className="w-10 h-10 rounded-full hover:ring-2 hover:ring-gray-300 transition-all duration-200"
                         onClick={toggleDropdown}
                     />
                     
                     {/* Dropdown Menu */}
                     {dropdownOpen && (
-                        <div className="absolute right-0 top-12 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                        <div className="absolute right-0 top-12 w-48 bg-white rounded-md shadow-lg py-1 z-10 border">
                             <Link href="/profile" className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
                                 {/* User Icon SVG */}
                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">

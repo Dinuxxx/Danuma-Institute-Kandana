@@ -72,7 +72,7 @@ const CreateNotice = ({ onNoticeCreated }) => {
 
   return (
     <div className="p-6">
-      <div className="border-b text-gray-600 text-sm font-medium pb-2 w-fit mb-4">
+      <div className="border-b text-orange-500 text-sm font-medium pb-2 w-fit mb-4">
         Create Notice
       </div>
       <div className="p-6 bg-gray-200 rounded-xl">
@@ -139,7 +139,7 @@ const CreateNotice = ({ onNoticeCreated }) => {
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-gray-700 text-white rounded hover:bg-gray-800 disabled:bg-gray-400 transition shadow-sm"
+              className="text-white bg-blue-600 font-bold p-2 rounded-md flex items-center justify-center px-2 py-2"
             >
               {loading ? 'SUBMITTING...' : 'SUBMIT'}
             </button>

@@ -395,10 +395,13 @@ const Notices = ({ auth, initialNotices = [] }) => {
     <AuthenticatedLayout auth={auth}>
       <Head title="Notices" />
       <div className="p-4">
+        <h1 className="md:text-3xl text-2xl font-bold text-orange-500">
+          Notices
+        </h1>
         <CreateNotice onNoticeCreated={handleNoticeCreated} />
         
         <div className="mt-8">
-          <div className="border-b text-gray-600 text-sm font-medium pb-2 w-fit ml-8">
+          <div className="border-b text-orange-500 text-sm font-medium pb-2 w-fit ml-8">
             Manage Notices
           </div>
           

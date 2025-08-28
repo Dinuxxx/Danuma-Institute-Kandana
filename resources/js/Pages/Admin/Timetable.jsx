@@ -222,7 +222,7 @@ const Timetable = ({ timetables, courses }) => {
       <Head title="Timetable" />
       <div className="p-4">
         {/* Header and controls */}
-        <h1 className="text-2xl font-bold text-orange-400 mb-4">Time Table</h1>
+        <h1 className="md:text-3xl text-2xl font-bold text-orange-500 mb-4">Time Table</h1>
         
         <div className="relative mb-6 ml-8">
           <select 
@@ -329,7 +329,7 @@ const Timetable = ({ timetables, courses }) => {
         
         {/* Table component - show table only when there's data or grade is selected */}
         {selectedGrade && (
-          <div className="md:mt-24 mt-6">
+          <div className="md:mt-24 mt-20">
             <TableComponent 
               columns={columns}
               data={filteredTimetables}

@@ -34,17 +34,21 @@ class CourseController extends Controller{
             'courseDesc' => 'nullable|string',
         ]);
         
-        $existingCourse = Course::where('course_name', $validatedData['subjectName'])
-            ->where('grade', $validatedData['grade'])
-            ->exists();
-        
-        if ($existingCourse) {
-            return response([
-                'errors' => [
-                    'subjectName' => 'This subject name and grade combination already exists.',
-                    'grade' => 'This subject name and grade combination already exists.'
-                ]
-            ], 422);
+        // Allow multiple courses with the same name and grade
+        // Only check if the specific teacher is already assigned to this subject and grade
+        if ($validatedData['teacherId']) {
+            $existingTeacherCourse = Course::where('course_name', $validatedData['subjectName'])
+                ->where('grade', $validatedData['grade'])
+                ->where('teacher_id', $validatedData['teacherId'])
+                ->exists();
+            
+            if ($existingTeacherCourse) {
+                return response([
+                    'errors' => [
+                        'teacherId' => 'This teacher is already assigned to this subject and grade combination.',
+                    ]
+                ], 422);
+            }
         }
         
         $course = Course::create([
@@ -58,7 +62,7 @@ class CourseController extends Controller{
         
         return response(['message' => 'Course created successfully!', 'course' => $course]);
     }
-
+    
 
     //The index method retrieves all courses from the database and returns them as JSON. This is used when listing all courses.
 

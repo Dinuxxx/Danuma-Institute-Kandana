@@ -3,12 +3,12 @@ import ImageCarousel from './ImageCarousel';
 
 const AboutUs = () => {
   const images = [
-    'https://via.placeholder.com/800x400/FF5733/FFFFFF?text=Slide+1',
-    'https://via.placeholder.com/800x400/33CFFF/FFFFFF?text=Slide+2',
-    'https://via.placeholder.com/800x400/FF33A6/FFFFFF?text=Slide+3',
-    'https://via.placeholder.com/800x400/FF5733/FFFFFF?text=Slide+4',
-    'https://via.placeholder.com/800x400/33CFFF/FFFFFF?text=Slide+5',
-    'https://via.placeholder.com/800x400/FF33A6/FFFFFF?text=Slide+6'
+    '/images/ImageCarousel/01.jpeg',
+    '/images/ImageCarousel/02.jpeg',
+    '/images/ImageCarousel/03.jpeg',
+    '/images/ImageCarousel/04.jpeg',
+    '/images/ImageCarousel/05.jpeg',
+    '/images/ImageCarousel/06.jpeg'
   ];
 
   return (

@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import axios from 'axios';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const CreateTimetable = ({ closeModal, selectedGrade, courses, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -10,6 +12,32 @@ const CreateTimetable = ({ closeModal, selectedGrade, courses, onSuccess }) => {
     classroom_no: "",
     subject_name: ""
   });
+  
+  const notifySuccess = (message) =>
+      toast.success(message, {
+          position: "bottom-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progressClassName: "bg-green-500",
+          className: "border border-green-600 rounded-lg shadow-md",
+          style: { backgroundColor: "#ebfeee" },
+      });
+
+  const notifyError = (message) =>
+      toast.error(message, {
+          position: "bottom-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progressClassName: "bg-red-500",
+          className: "border border-red-600 rounded-lg shadow-md",
+          style: { backgroundColor: "#fcf0f0" },
+      });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -86,10 +114,12 @@ const CreateTimetable = ({ closeModal, selectedGrade, courses, onSuccess }) => {
           ttable_id: response.data.ttable_id || response.data.id, // Depending on what your API returns
           course: selectedCourse // Include course details
         };
-        
+        notifySuccess("Timetable created successfully!");
         // Call the onSuccess callback with the new timetable entry
         onSuccess(newTimetableEntry);
-        closeModal();
+        setTimeout(() => {
+          closeModal();
+        }, 1500);
       })
       .catch(error => {
         console.error("Error adding timetable:", error);
@@ -263,6 +293,7 @@ const CreateTimetable = ({ closeModal, selectedGrade, courses, onSuccess }) => {
           </form>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };

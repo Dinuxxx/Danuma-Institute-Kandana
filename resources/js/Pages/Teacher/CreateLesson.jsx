@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { usePage } from "@inertiajs/react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const CreateLesson = () => {
   const { url } = usePage();
@@ -27,6 +29,32 @@ const CreateLesson = () => {
   const [charCount, setCharCount] = useState(0);
   const [originalFileName, setOriginalFileName] = useState("");
   const MAX_CHARS = 1000;
+
+  const notifySuccess = (message) =>
+      toast.success(message, {
+          position: "bottom-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progressClassName: "bg-green-500",
+          className: "border border-green-600 rounded-lg shadow-md",
+          style: { backgroundColor: "#ebfeee" },
+      });
+
+  const notifyError = (message) =>
+      toast.error(message, {
+          position: "bottom-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progressClassName: "bg-red-500",
+          className: "border border-red-600 rounded-lg shadow-md",
+          style: { backgroundColor: "#fcf0f0" },
+      });
 
   // Update course_id when URL parameter changes
   useEffect(() => {
@@ -135,8 +163,8 @@ const CreateLesson = () => {
         },
       });
       
-      console.log("Success:", response.data);
-      alert("Lesson created successfully!");
+      // console.log("Success:", response.data);
+      // alert("Lesson created successfully!");
       
       // Reset form
       setFormData({
@@ -152,13 +180,17 @@ const CreateLesson = () => {
       setFileSelected(false);
       setCharCount(0);
       setOriginalFileName("");
+      notifySuccess("Lesson created successfully!");
+      setTimeout(() => {
+        window.location.href = `/teacher/courses/${formData.course_id}`;
+      }, 1500);
       
     } catch (error) {
       console.error("Error:", error);
       const errorMessage = error.response?.data?.errors 
         ? Object.values(error.response.data.errors).flat().join("\n")
         : error.response?.data?.message || "Unknown error";
-      
+      notifyError("Failed to create lesson");
       alert("Failed to create lesson: " + errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -378,6 +410,7 @@ const CreateLesson = () => {
           </form>
         </div>
       </div>
+      <ToastContainer />
     </AuthenticatedLayout>
   );
 };

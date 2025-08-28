@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, Clock, LogIn, LogOut, UserCheck, ArrowLeft, FileCheck, DollarSign, CreditCard, CheckCircle, ChevronRight } from 'lucide-react';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const ManualAttendance = () => {
   const [studentId, setStudentId] = useState('');
@@ -24,6 +26,32 @@ const ManualAttendance = () => {
   
   // Track attendance for each course
   const [courseAttendance, setCourseAttendance] = useState({});
+
+  const notifySuccess = (message) =>
+      toast.success(message, {
+          position: "bottom-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progressClassName: "bg-green-500",
+          className: "border border-green-600 rounded-lg shadow-md",
+          style: { backgroundColor: "#ebfeee" },
+      });
+
+  const notifyError = (message) =>
+      toast.error(message, {
+          position: "bottom-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progressClassName: "bg-red-500",
+          className: "border border-red-600 rounded-lg shadow-md",
+          style: { backgroundColor: "#fcf0f0" },
+      });
 
   useEffect(() => {
     // Get the current date
@@ -395,7 +423,7 @@ const ManualAttendance = () => {
       // Refresh payment data to show updated balances
       fetchStudentPaymentData(studentData.student_id);
       fetchPaymentHistory(studentData.student_id);
-      
+      notifySuccess("Cash payment processed successfully");
     } catch (error) {
       console.error('Error processing payment:', error);
       let errorMsg = 'Failed to process payment';
@@ -811,6 +839,7 @@ const ManualAttendance = () => {
           <ArrowLeft className="h-6 w-6" />
         </button>
       </div>
+        <ToastContainer />
     </div>
   );
 }

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { usePage } from "@inertiajs/react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const EditLesson = () => {
   const { url } = usePage();
@@ -32,6 +34,32 @@ const EditLesson = () => {
   const [originalFileName, setOriginalFileName] = useState("");
   const [currentFilePath, setCurrentFilePath] = useState(null);
   const MAX_CHARS = 1000;
+
+  const notifySuccess = (message) =>
+      toast.success(message, {
+          position: "bottom-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progressClassName: "bg-green-500",
+          className: "border border-green-600 rounded-lg shadow-md",
+          style: { backgroundColor: "#ebfeee" },
+      });
+
+  const notifyError = (message) =>
+      toast.error(message, {
+          position: "bottom-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progressClassName: "bg-red-500",
+          className: "border border-red-600 rounded-lg shadow-md",
+          style: { backgroundColor: "#fcf0f0" },
+      });
 
   // Fetch current lesson data
   useEffect(() => {
@@ -182,10 +210,12 @@ const EditLesson = () => {
       });
       
       console.log("Success:", response.data);
-      alert("Lesson updated successfully!");
+      notifySuccess("Lesson updated successfully!");
       
-      // Redirect back to the course page
-      window.location.href = `/teacher/courses/${formData.course_id}`;
+      setTimeout(() => {
+        window.location.href = `/teacher/courses/${formData.course_id}`;
+      }, 1500);
+      
       
     } catch (error) {
       console.error("Error:", error);
@@ -443,6 +473,7 @@ const EditLesson = () => {
           </form>
         </div>
       </div>
+      <ToastContainer />
     </AuthenticatedLayout>
   );
 };

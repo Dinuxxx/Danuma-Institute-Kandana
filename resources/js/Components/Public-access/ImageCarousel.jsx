@@ -1,94 +1,111 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 const ImageCarousel = ({ images }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(true);
+    const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Auto slide every 3 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      goToNext();
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [currentIndex]);
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+        }, 5000); // Change slide every 5 seconds
 
-  const goToNext = () => {
-    if (currentIndex === images.length - 1) {
-      setIsTransitioning(false);
-      setTimeout(() => {
-        setCurrentIndex(0);
-      }, 700);
-    } else {
-      setCurrentIndex((prevIndex) => prevIndex + 1);
-    }
-  };
+        return () => clearInterval(interval);
+    }, [images.length]);
 
-  const goToPrev = () => {
-    if (currentIndex === 0) {
-      setIsTransitioning(false);
-      setTimeout(() => {
-        setCurrentIndex(images.length - 1);
-      }, 700);
-    } else {
-      setCurrentIndex((prevIndex) => prevIndex - 1);
-    }
-  };
+    const goToSlide = (index) => {
+        setCurrentIndex(index);
+    };
 
-  useEffect(() => {
-    if (currentIndex === 0 || currentIndex === images.length - 1) {
-      setTimeout(() => {
-        setIsTransitioning(true);
-      }, 0);
-    }
-  }, [currentIndex]);
+    const goToPrevious = () => {
+        setCurrentIndex((prevIndex) =>
+            prevIndex === 0 ? images.length - 1 : prevIndex - 1
+        );
+    };
 
-  return (
-    <div className="relative w-full max-w-4xl mx-auto overflow-hidden">
-      {/* Carousel Images */}
-      <div
-        className={`flex ${isTransitioning ? 'transition-transform duration-700' : ''}`}
-        style={{
-          transform: `translateX(-${currentIndex * 100}%)`,
-        }}
-      >
-        {images.map((image, index) => (
-          <img
-            key={index}
-            src={image}
-            alt={`Slide ${index + 1}`}
-            className="w-full flex-shrink-0 h-[300px] sm:h-[380px] md:h-[420px]"
-          />
-        ))}
-      </div>
+    const goToNext = () => {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+    };
 
-      {/* Navigation Buttons */}
-      <button
-        onClick={goToPrev}
-        className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-gray-800 text-white p-2 rounded-full hover:bg-gray-700"
-      >
-        &#10094;
-      </button>
-      <button
-        onClick={goToNext}
-        className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-gray-800 text-white p-2 rounded-full hover:bg-gray-700"
-      >
-        &#10095;
-      </button>
+    return (
+        <div className="relative w-full h-[400px]">
+            {/* Images */}
+            <div className="relative w-full h-full overflow-hidden rounded-lg">
+                {images.map((image, index) => (
+                    <div
+                        key={index}
+                        className={`absolute w-full h-full transition-opacity duration-500 ease-in-out
+                            ${
+                                index === currentIndex
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                            }`}
+                    >
+                        <img
+                            src={image}
+                            alt={`Slide ${index + 1}`}
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
+                ))}
+            </div>
 
-      {/* Indicators */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-        {images.map((_, index) => (
-          <div
-            key={index}
-            onClick={() => setCurrentIndex(index)}
-            className={`w-3 h-3 rounded-full ${
-              currentIndex === index ? 'bg-blue-500' : 'bg-gray-300'
-            } cursor-pointer`}
-          ></div>
-        ))}
-      </div>
-    </div>
-  );
+            {/* Navigation Arrows */}
+            <button
+                onClick={goToPrevious}
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition-colors"
+                aria-label="Previous slide"
+            >
+                <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                    />
+                </svg>
+            </button>
+            <button
+                onClick={goToNext}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition-colors"
+                aria-label="Next slide"
+            >
+                <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                    />
+                </svg>
+            </button>
+
+            {/* Dots Navigation */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
+                {images.map((_, index) => (
+                    <button
+                        key={index}
+                        onClick={() => goToSlide(index)}
+                        className={`w-2 h-2 rounded-full transition-all duration-300 
+                            ${
+                                index === currentIndex
+                                    ? "bg-white w-4"
+                                    : "bg-white/50"
+                            }`}
+                        aria-label={`Go to slide ${index + 1}`}
+                    />
+                ))}
+            </div>
+        </div>
+    );
 };
 
 export default ImageCarousel;

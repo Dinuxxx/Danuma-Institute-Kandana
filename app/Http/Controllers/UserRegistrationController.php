@@ -104,7 +104,16 @@ class UserRegistrationController extends Controller
     {
         try {
             $courses = Course::where('grade', $grade)
-                ->select('course_id', 'course_name', 'course_desc', 'monthly_fees', 'teacher_id')
+                ->leftJoin('teachers', 'courses.teacher_id', '=', 'teachers.tea_id')
+                ->leftJoin('users', 'teachers.user_id', '=', 'users.id')
+                ->select(
+                    'courses.course_id',
+                    'courses.course_name',
+                    'courses.course_desc',
+                    'courses.monthly_fees',
+                    'courses.teacher_id',
+                    DB::raw("COALESCE(users.name, 'No Teacher Assigned') as teacher_name")
+                )
                 ->get();
                 
             return response()->json($courses);
@@ -389,21 +398,53 @@ class UserRegistrationController extends Controller
                 'salary' => 0
             ]);
 
-            // Assign teacher to selected courses (allowing multiple teachers per course)
+            // Assign courses by base code: always use base (before _{teacher_id}) then append _{current_teacher_id}
             if (!empty($request->courses)) {
-                foreach ($request->courses as $courseId) {
-                    $course = Course::find($courseId);
-                    if ($course && !$course->teacher_id) {
-                        // Update the course with teacher_id if it's not already assigned
-                        $course->update(['teacher_id' => $teacher->tea_id]);
-                    } elseif ($course && $course->teacher_id) {
-                        // If course already has a teacher, create a new instance for this teacher
+                foreach ($request->courses as $selectedCourseId) {
+                    // Derive base code (strip any trailing _{digits})
+                    $baseCode = preg_replace('/_\d+$/', '', (string) $selectedCourseId);
+
+                    // If a course for this teacher already exists with this base, skip creating
+                    $targetId = $baseCode . '_' . $teacher->tea_id;
+                    $alreadyExists = Course::where('course_id', $targetId)->exists();
+                    if ($alreadyExists) {
+                        continue;
+                    }
+
+                    // First, try to UPDATE an existing unassigned base course (exact base code and no teacher)
+                    $baseUnassigned = Course::where('course_id', $baseCode)
+                        ->where(function ($q) {
+                            $q->whereNull('teacher_id')
+                              ->orWhere('teacher_id', '')
+                              ->orWhere('teacher_id', 0);
+                        })
+                        ->first();
+
+                    if ($baseUnassigned) {
+                        // Update the existing base course to be teacher-specific
+                        $baseUnassigned->update([
+                            'course_id' => $targetId,
+                            'teacher_id' => $teacher->tea_id,
+                        ]);
+                        continue;
+                    }
+
+                    // Otherwise, create a new teacher-specific course copied from a template
+                    // Prefer an exact base id; else any with same base prefix
+                    $template = Course::where('course_id', $baseCode)->first();
+                    if (!$template) {
+                        $template = Course::where('course_id', 'like', $baseCode . '%')
+                            ->orderByRaw("CASE WHEN course_id = ? THEN 0 ELSE 1 END", [$baseCode])
+                            ->first();
+                    }
+
+                    if ($template) {
                         Course::create([
-                            'course_id' => $course->course_id . '_' . $teacher->tea_id,
-                            'course_name' => $course->course_name,
-                            'grade' => $course->grade,
-                            'monthly_fees' => $course->monthly_fees,
-                            'course_desc' => $course->course_desc,
+                            'course_id' => $targetId,
+                            'course_name' => $template->course_name,
+                            'grade' => $template->grade,
+                            'monthly_fees' => $template->monthly_fees,
+                            'course_desc' => $template->course_desc,
                             'teacher_id' => $teacher->tea_id,
                         ]);
                     }

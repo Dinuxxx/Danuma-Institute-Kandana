@@ -34,6 +34,29 @@ class CourseController extends Controller{
             'courseDesc' => 'nullable|string',
         ]);
         
+        // Enforce that the subject code ends with _{teacherId} when a teacher is provided
+        if (!empty($validatedData['teacherId'])) {
+            $matches = [];
+            $hasSuffix = preg_match('/_(\d+)$/', (string) $validatedData['subjectCode'], $matches);
+            if (!$hasSuffix) {
+                return response([
+                    'errors' => [
+                        'subjectCode' => 'Subject code must end with _{teacher_id} (e.g., MA202511_30) when a teacher is assigned.',
+                    ]
+                ], 422);
+            }
+
+            $suffixTeacherId = (int) $matches[1];
+            if ($suffixTeacherId !== (int) $validatedData['teacherId']) {
+                return response([
+                    'errors' => [
+                        'subjectCode' => 'Subject code suffix does not match the selected teacher. It must end with _' . $validatedData['teacherId'] . '.',
+                        'teacherId' => 'Selected teacher must match the subject code suffix.'
+                    ]
+                ], 422);
+            }
+        }
+
         // Allow multiple courses with the same name and grade
         // Only check if the specific teacher is already assigned to this subject and grade
         if ($validatedData['teacherId']) {

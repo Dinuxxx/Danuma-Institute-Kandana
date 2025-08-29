@@ -20,19 +20,25 @@ const AddressInfo = () => {
             <ul className="mb-4 space-y-2">
                 <li className="flex items-center text-lg">
                     <FaMapMarkerAlt className="mr-2 text-gray-500 " />
-                    Address
+                    <a href="https://maps.google.com/?q=123+Kandana+Road+Kandana+Sri+Lanka" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600">
+                        123 Kandana Road, Kandana, Sri Lanka
+                    </a>
                 </li>
                 <li className="flex items-center text-lg">
                     <FaPhoneAlt className="mr-2 text-gray-500" />
-                    Telephone
+                    0112456789
                 </li>
                 <li className="flex items-center text-lg">
                     <FaEnvelope className="mr-2 text-gray-500" />
-                    Email
+                    <a href="mailto:danumainstitute@gmail.com" className="hover:text-blue-600">
+                        danumainstitute@gmail.com
+                    </a>
                 </li>
                 <li className="flex items-center text-lg">
                     <FaGlobe className="mr-2 text-gray-500" />
-                    Website
+                    <a href="https://www.danumainstitute.com" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600">
+                        www.danumainstitute.com
+                    </a>
                 </li>
             </ul>
             <p className="lg:mb-4">
